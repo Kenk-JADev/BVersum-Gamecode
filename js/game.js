@@ -4704,7 +4704,17 @@
                 }
 
                 // Event listeners for splash
-                document.getElementById("splash-start-btn")?.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); skipSplash(); });
+                const startBtn = document.getElementById("splash-start-btn");
+                if (startBtn) {
+                    startBtn.addEventListener("click", function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("[Splash] Start button clicked");
+                        skipSplash();
+                    });
+                    startBtn.style.pointerEvents = "auto";
+                    startBtn.style.cursor = "pointer";
+                }
                 if (splash) {
                     splash.addEventListener("click", (e) => {
                         if (e.target.closest(".splash-btn, .splash-start, .splash-meta, #rpg-close-btn")) return;
