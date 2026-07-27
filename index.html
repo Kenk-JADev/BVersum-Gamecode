@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BüroVersum RPG - Ultimate Edition v7.10.10</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- START: ZUEF Widget + BüroVersum RPG - Ultimate Edition v7.10.10 - Menu Map Tabs Fixed -->
+    <div id="zuef-main-wrapper">
+
+        <!-- Twemoji für Win10/Win11 konsistente Emojis -->
+        <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+
+        <!-- WIDGET (unverändert) -->
+        <div class="zuef-centered-col">
+            <div class="zuef-premium-card" id="zuef-secret-trigger">
+                <div class="zuef-card-body">
+                    <div class="zuef-status-badge"><span class="zuef-live-dot"></span> LIVE</div>
+                    <div id="zuef-image-host"></div>
+                    <div class="zuef-spotlight-effect"></div>
+                    <div class="zuef-shine-sweep"></div>
+                </div>
+            </div>
+            <div class="zuef-info-section">
+                <h2 class="zuef-main-title">Exklusiv bis <span class="zuef-accent-date">31.03.2026</span></h2>
+                <div class="zuef-countdown-row">
+                    <div class="zuef-time-block"><span class="zuef-num" id="cd-d">00</span><span
+                            class="zuef-label">Tage</span></div>
+                    <div class="zuef-divider-line"></div>
+                    <div class="zuef-time-block"><span class="zuef-num" id="cd-h">00</span><span
+                            class="zuef-label">Std</span></div>
+                    <div class="zuef-divider-line"></div>
+                    <div class="zuef-time-block"><span class="zuef-num" id="cd-m">00</span><span
+                            class="zuef-label">Min</span></div>
+                    <div class="zuef-divider-line"></div>
+                    <div class="zuef-time-block"><span class="zuef-num" id="cd-s">00</span><span
+                            class="zuef-label">Sek</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RPG OVERLAY -->
+        <div id="rpg-overlay">
+
+            <!-- SPLASH SCREEN - Ultimate Edition v3.0 (Office Theme) -->
+            <div id="rpg-splash" class="rpg-fullscreen">
+                <canvas id="splash-canvas" class="splash-bg-canvas"></canvas>
+                <div class="splash-bg-overlay"></div>
+                <div class="splash-pulse-glow"></div>
+                <div class="splash-vignette"></div>
+                <div class="splash-scanlines"></div>
+                <div class="splash-grid-overlay"></div>
+                <div class="splash-float-shapes">
+                    <div class="splash-fshape fs1"></div>
+                    <div class="splash-fshape fs2"></div>
+                    <div class="splash-fshape fs3"></div>
+                    <div class="splash-fshape fs4"></div>
+                    <div class="splash-fshape fs5"></div>
+                </div>
+                <div class="splash-sweep-rays">
+                    <div class="splash-sray sr1"></div>
+                    <div class="splash-sray sr2"></div>
+                    <div class="splash-sray sr3"></div>
+                </div>
+                <div class="splash-bg-orb o1"></div>
+                <div class="splash-bg-orb o2"></div>
+                <div class="splash-bg-orb o3"></div>
+                <div class="splash-bg-orb o4"></div>
+                <div class="splash-bg-beam b1"></div>
+                <div class="splash-bg-beam b2"></div>
+                <div class="splash-bg-beam b3"></div>
+
+                <div class="splash-scene">
+                    <!-- Office-themed floating elements -->
+                    <div class="splash-doc d1"></div>
+                    <div class="splash-doc d2"></div>
+                    <div class="splash-doc d3"></div>
+                    <div class="splash-doc d4"></div>
+                    <div class="splash-clip c1"></div>
+                    <div class="splash-clip c2"></div>
+                    <div class="splash-coffee-steam"></div>
+                    <div class="splash-stamp s1"></div>
+                    <div class="splash-typewriter-cursor"></div>
+                    <div class="splash-ink-dot id1"></div>
+                    <div class="splash-ink-dot id2"></div>
+                    <div class="splash-ink-dot id3"></div>
+
+                    <!-- Top decorative line -->
+                    <div class="splash-top-line"></div>
+
+                    <!-- Floating decorative rings -->
+                    <div class="splash-ring-deco rd1"></div>
+                    <div class="splash-ring-deco rd2"></div>
+
+                    <div class="splash-emblem">
+                        <div class="splash-emblem-ring outer"></div>
+                        <div class="splash-emblem-ring middle"></div>
+                        <div class="splash-emblem-ring inner"></div>
+                        <div class="splash-emblem-icon">🏢</div>
+                        <div class="splash-emblem-glow"></div>
+                    </div>
+                    <div class="splash-headline">
+                        <span class="splash-glitch-text" data-text="BÜROVERSUM">BÜROVERSUM</span>
+                    </div>
+                    <div class="splash-desc-line"></div>
+                    <div class="splash-desc">A Role Playing Game</div>
+
+                    <div class="splash-loader-wrap">
+                        <div class="splash-loader" id="splash-loader">
+                            <div class="splash-loader-track">
+                                <div class="splash-loader-fill" id="splash-loader-fill"></div>
+                            </div>
+                            <div class="splash-loader-info">
+                                <span id="splash-loader-label">Wird geladen</span>
+                                <span id="splash-loader-pct">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="splash-start" id="splash-start">
+                        <button class="splash-btn" id="splash-start-btn">
+                            <span class="splash-btn-border"></span>
+                            <span class="splash-btn-bg"></span>
+                            <span class="splash-btn-content">
+                                <span class="splash-btn-arrow">▶</span>
+                                <span class="splash-btn-text">SPIEL STARTEN</span>
+                            </span>
+                        </button>
+                        <div class="splash-hint desktop-only">
+                            <span class="hint-key">ENTER</span>
+                            <span class="hint-text">Drücke Enter zum Starten</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="splash-meta">
+                    <span class="meta-version">v7.10.10</span>
+                    <span class="meta-dot">✦</span>
+                    <span class="meta-credit">Entwickelt von Justin</span>
+                    <span class="meta-dot">✦</span>
+                    <span class="meta-year">2026</span>
+                </div>
+            </div>
+
+            <!-- MAP TRANSITION -->
+            <div id="map-transition">
+                <div class="transition-overlay top"></div>
+                <div class="transition-overlay bottom"></div>
+                <div class="transition-content">
+                    <div class="transition-icon">🚪</div>
+                    <div class="transition-text">Lade...</div>
+                    <div class="transition-dots"><span>.</span><span>.</span><span>.</span></div>
+                </div>
+            </div>
+
+            <!-- BATTLE PANELS -->
+            <div id="battle-panels">
+                <div class="battle-panel top"></div>
+                <div class="battle-panel bottom"></div>
+            </div>
+
+            <!-- CHEAT CONSOLE -->
+            <div id="cheat-console">
+                <div class="cheat-header">
+                    <span>🎮 Cheat-Konsole</span>
+                    <button onclick="toggleCheatConsole()">✕</button>
+                </div>
+                <div class="cheat-log" id="cheat-log"></div>
+                <input type="text" id="cheat-input" placeholder="Cheat eingeben..." autocomplete="off" />
+                <div class="cheat-hints">
+                    <small>Befehle: /gold, /hp, /lvl, /heal, /skills, /godmode, /ending, /help</small>
+                </div>
+            </div>
+
+            <!-- CLOSE BUTTON -->
+            <button id="rpg-close-btn" onclick="closeRPG()">✕</button>
+
+            <!-- GAME WINDOW -->
+            <div id="rpg-game-window">
+
+                <!-- TITLE MENU SCREEN -->
+                <div id="rpg-title-screen" class="rpg-screen">
+                    <div class="title-screen-bg">
+                        <!-- Animated Background Layers -->
+                        <canvas id="title-canvas" class="title-canvas-bg"></canvas>
+                        <div class="title-bg-gradient"></div>
+                        <div class="title-bg-shapes">
+                            <div class="shape shape-1"></div>
+                            <div class="shape shape-2"></div>
+                            <div class="shape shape-3"></div>
+                            <div class="shape shape-4"></div>
+                            <div class="shape shape-5"></div>
+                        </div>
+                        <div class="title-particles"></div>
+                        <div class="title-grid"></div>
+                        <!-- Light Rays Effect -->
+                        <div class="title-light-rays">
+                            <div class="ray ray-1"></div>
+                            <div class="ray ray-2"></div>
+                            <div class="ray ray-3"></div>
+                        </div>
+                        <!-- Glow Orbs -->
+                        <div class="title-glow-orbs">
+                            <div class="glow-orb orb-1"></div>
+                            <div class="glow-orb orb-2"></div>
+                            <div class="glow-orb orb-3"></div>
+                        </div>
+                        <div class="title-vignette"></div>
+                        <div class="title-scanlines"></div>
+                        <div class="title-float-doc td1"></div>
+                        <div class="title-float-doc td2"></div>
+                        <div class="title-float-clip tc1"></div>
+                    </div>
+                    <div class="title-screen-content">
+                        <div class="title-menu">
+                            <div class="title-logo">
+                                <div class="title-icon-wrapper">
+                                    <div class="title-icon-glow-ring"></div>
+                                    <div class="title-icon">🏢</div>
+                                    <div class="title-icon-reflection"></div>
+                                </div>
+                                <h1 class="title-main-text">
+                                    <span class="letter" style="--i:0">B</span>
+                                    <span class="letter" style="--i:1">ü</span>
+                                    <span class="letter" style="--i:2">r</span>
+                                    <span class="letter" style="--i:3">o</span>
+                                    <span class="letter" style="--i:3">V</span>
+                                    <span class="letter" style="--i:5">e</span>
+                                    <span class="letter" style="--i:6">r</span>
+                                    <span class="letter" style="--i:7">s</span>
+                                    <span class="letter" style="--i:8">u</span>
+                                    <span class="letter" style="--i:9">m</span>
+                                </h1>
+                                <p class="title-subtitle">Mache dich als Mitarbeiter bereit!</p>
+                            </div>
+                            <div class="title-buttons">
+                                <button class="title-btn" id="title-new-game">
+                                    <span class="btn-icon">🆕</span>
+                                    <span class="btn-text">Neues Spiel</span>
+                                    <span class="btn-arrow">→</span>
+                                </button>
+                                <button class="title-btn" id="title-continue" style="display:none;">
+                                    <span class="btn-icon">▶</span>
+                                    <span class="btn-text">Fortfahren</span>
+                                    <span class="btn-arrow">→</span>
+                                </button>
+                                <button class="title-btn" id="title-battle-editor">
+                                    <span class="btn-icon">🛠️</span>
+                                    <span class="btn-text">Battle Editor</span>
+                                    <span class="btn-arrow">→</span>
+                                </button>
+                                <button class="title-btn btn-danger" id="title-delete-save">
+                                    <span class="btn-icon">🗑️</span>
+                                    <span class="btn-text">Speicherdaten löschen</span>
+                                    <span class="btn-arrow">→</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="title-footer-buttons">
+                            <button class="changelog-btn" id="title-changelog" title="Was ist neu?">
+                                <span class="changelog-icon">📜</span>
+                                <span class="changelog-pulse"></span>
+                            </button>
+                            <button class="credits-btn" id="title-credits" title="Credits">
+                                <span class="credits-icon">⭐</span>
+                                <span class="credits-pulse"></span>
+                            </button>
+                        </div>
+                        <div class="title-copyright">© 2026 BüroVersum GmbH. - Entwicklt von Justin</div>
+                    </div>
+                </div>
+
+                <!-- QUIT OPTIONS MODAL (reusable) -->
+                <div id="quit-modal" class="quit-modal" style="display:none;">
+                    <div class="quit-content">
+                        <h3>Beenden</h3>
+                        <p>Was möchtest du tun?</p>
+                        <div class="quit-actions">
+                            <button class="quit-btn" id="quit-to-title">Zurück zum Titelmenü</button>
+                            <button class="quit-btn danger" id="quit-close-window">Fenster schließen</button>
+                            <button class="quit-btn secondary" id="quit-cancel">Abbrechen</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EXIT CONFIRM MODAL -->
+                <div id="exit-confirm-modal" class="exit-confirm-modal">
+                    <div class="exit-confirm-content">
+                        <div class="exit-confirm-icon">🚪</div>
+                        <h3>Spiel verlassen?</h3>
+                        <p>Möchtest du das Spiel wirklich verlassen?</p>
+                        <div class="exit-confirm-actions">
+                            <button class="exit-confirm-btn yes" id="exit-confirm-yes">Ja, verlassen</button>
+                            <button class="exit-confirm-btn no" id="exit-confirm-no">Nein, bleiben</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHANGELOG MODAL -->
+                <div id="changelog-modal" class="changelog-modal">
+                    <div class="changelog-content">
+                        <div class="changelog-header">
+                            <h2>📜 Changelog</h2>
+                            <button class="changelog-close" id="changelog-close">✕</button>
+                        </div>
+                        <div class="changelog-body">
+                            <div class="changelog-version">
+                                <h3>Version 4.1.2 - Spiel Veröffentlichung</h3>
+                                <div class="changelog-date">2 März 2026</div>
+                                <ul>
+                                    <li>🖥️ BüroVersum OS komplett überarbeitet mit neuen Apps und Funktionen</li>
+                                    <li>⚔️ Battlesystem 2.1 verbessert mit Skills und Items im Kampf</li>
+                                    <li>🗺️ Maps erweitert mit sich bewegenden NPCs</li>
+                                    <li>💬 NPCs haben Dialoge und geben Quests</li>
+                                    <li>🏪 Skill-Shop zum Kaufen neuer Fähigkeiten eingebaut</li>
+                                    <li>📧 E-Mail App mit 5 Ordnern und vollständigen Funktionen</li>
+                                    <li>📝 Notepad mit localStorage und modernem Design</li>
+                                    <li>🪟 Apps lassen sich nur 1x öffnen (E-Mail, Dateien, Einstellungen)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CREDITS MODAL -->
+                <div id="credits-modal" class="credits-modal">
+                    <div class="credits-content">
+                        <div class="credits-header">
+                            <h2>⭐ Credits</h2>
+                            <button class="credits-close" id="credits-close">✕</button>
+                        </div>
+                        <div class="credits-body">
+                            <div class="credits-game-title">
+                                <span class="credits-game-icon">🏢</span>
+                                <h3>BüroVersum</h3>
+                                <p class="credits-subtitle">A Role Playing Game</p>
+                            </div>
+                            
+                            <div class="credits-section">
+                                <div class="credits-role">
+                                    <span class="role-icon">💻</span>
+                                    <span class="role-title">Entwickler</span>
+                                </div>
+                                <div class="credits-person developer">
+                                    <span class="person-name">Justin Agus</span>
+                                    <span class="person-desc">Game Design, Programmierung & Konzept</span>
+                                </div>
+                            </div>
+                            
+                            <div class="credits-section">
+                                <div class="credits-role">
+                                    <span class="role-icon">🎮</span>
+                                    <span class="role-title">Game Tester</span>
+                                </div>
+                                <div class="credits-testers">
+                                    <div class="credits-person tester">
+                                        <span class="person-name">Andreas Pavlyuk</span>
+                                    </div>
+                                    <div class="credits-person tester">
+                                        <span class="person-name">Alexander Schatz</span>
+                                    </div>
+                                    <div class="credits-person tester">
+                                        <span class="person-name">Hamda Ferjani</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="credits-footer">
+                                <p>Vielen Dank fürs Spielen!</p>
+                                <p class="credits-year">© 2026 BüroVersum GmbH.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMPUTER MODAL - Fake OS -->
+                <div id="computer-modal" class="computer-modal">
+                    <div class="computer-screen">
+                        <div class="computer-desktop">
+                            <!-- Taskbar -->
+                            <div class="computer-taskbar">
+                                <button class="taskbar-start" onclick="toggleStartMenu()">
+                                    <span>🖥️</span> Start
+                                </button>
+                                <div class="taskbar-time" id="computer-time">12:00</div>
+                            </div>
+                            
+                            <!-- Start Menu -->
+                            <div class="start-menu" id="start-menu">
+                                <div class="start-menu-header">BüroVersum OS</div>
+                                <div class="start-menu-item" onclick="openApp('email')">
+                                    <span>📧</span> E-Mail
+                                </div>
+                                <div class="start-menu-item" onclick="openApp('browser')">
+                                    <span>🌐</span> Internet
+                                </div>
+                                <div class="start-menu-item" onclick="openApp('notepad')">
+                                    <span>📝</span> Notepad
+                                </div>
+                                <div class="start-menu-item" onclick="openApp('files')">
+                                    <span>📁</span> Dateien
+                                </div>
+                                <div class="start-menu-divider"></div>
+                                <div class="start-menu-item shutdown" onclick="closeComputer()">
+                                    <span>⏻</span> Beenden
+                                </div>
+                            </div>
+                            
+                            <!-- Desktop Icons -->
+                            <div class="desktop-icons">
+                                <div class="desktop-icon" onclick="openApp('email')">
+                                    <span class="icon-img">📧</span>
+                                    <span class="icon-label">E-Mail</span>
+                                </div>
+                                <div class="desktop-icon" onclick="openApp('browser')">
+                                    <span class="icon-img">🌐</span>
+                                    <span class="icon-label">Internet</span>
+                                </div>
+                                <div class="desktop-icon" onclick="openApp('notepad')">
+                                    <span class="icon-img">📝</span>
+                                    <span class="icon-label">Notepad</span>
+                                </div>
+                                <div class="desktop-icon" onclick="openApp('files')">
+                                    <span class="icon-img">📁</span>
+                                    <span class="icon-label">Dateien</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- App Windows -->
+                        <div class="app-window" id="app-email">
+                            <div class="app-header">
+                                <span class="app-title">📧 E-Mail - BüroMail</span>
+                                <button class="app-close" onclick="closeApp('email')">✕</button>
+                            </div>
+                            <div class="app-body email-app">
+                                <div class="email-sidebar">
+                                    <div class="email-folder active">📥 Posteingang (3)</div>
+                                    <div class="email-folder">📤 Gesendet</div>
+                                    <div class="email-folder">🗑️ Papierkorb</div>
+                                </div>
+                                <div class="email-content">
+                                    <div class="email-list" id="email-list">
+                                        <div class="email-item unread" onclick="showEmail(0)">
+                                            <span class="email-from">HR Abteilung</span>
+                                            <span class="email-subject">Willkommen im Team!</span>
+                                            <span class="email-preview">Hallo! Herzlich willkommen bei BüroVersum...</span>
+                                        </div>
+                                        <div class="email-item unread" onclick="showEmail(1)">
+                                            <span class="email-from">IT Support</span>
+                                            <span class="email-subject">Wichtig: Passwort ändern</span>
+                                            <span class="email-preview">Bitte ändern Sie Ihr Passwort alle 30 Tage...</span>
+                                        </div>
+                                        <div class="email-item" onclick="showEmail(2)">
+                                            <span class="email-from">Kantine</span>
+                                            <span class="email-subject">Mittagsmenü heute</span>
+                                            <span class="email-preview">Heute gibt es: Schnitzel mit Pommes...</span>
+                                        </div>
+                                    </div>
+                                    <div class="email-view" id="email-view" style="display:none;">
+                                        <div class="email-header-view">
+                                            <div class="email-meta">
+                                                <span id="email-from">Von: HR Abteilung</span>
+                                                <span id="email-date">Datum: Heute</span>
+                                            </div>
+                                            <h3 id="email-subject-view">Betreff: Willkommen!</h3>
+                                        </div>
+                                        <div class="email-body-view" id="email-body">
+                                            E-Mail Inhalt wird hier angezeigt...
+                                        </div>
+                                        <button class="email-back" onclick="closeEmailView()">← Zurück</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- BROWSER v2.0 — Arc/Chrome Redesign -->
+                        <div class="app-window" id="app-browser">
+                            <div class="app-header browser-header">
+                                <!-- Window Controls -->
+                                <div class="browser-window-controls">
+                                    <div class="browser-dots">
+                                        <div class="browser-dot red" onclick="closeApp('browser')"></div>
+                                        <div class="browser-dot yellow" onclick="closeApp('browser')"></div>
+                                        <div class="browser-dot green"></div>
+                                    </div>
+                                </div>
+                                <!-- Tab Strip -->
+                                <div class="browser-tabs">
+                                    <div class="browser-tab active" id="browser-tab-1">
+                                        <span class="tab-icon">🌐</span>
+                                        <span class="tab-title">Neuer Tab</span>
+                                        <button class="tab-close">×</button>
+                                    </div>
+                                    <button class="new-tab-btn">+</button>
+                                </div>
+                            </div>
+                            <div class="app-body browser-app">
+                                <!-- Toolbar with Glass Effect -->
+                                <div class="browser-toolbar">
+                                    <div class="browser-nav-buttons">
+                                        <button class="nav-btn" id="btn-back" title="Zurück">❮</button>
+                                        <button class="nav-btn" id="btn-forward" title="Vorwärts">❯</button>
+                                        <button class="nav-btn" id="btn-refresh" title="Aktualisieren">⟳</button>
+                                        <button class="nav-btn" id="btn-home" title="Startseite">🏠</button>
+                                    </div>
+                                    <div class="browser-url-bar">
+                                        <span class="url-lock">🔒</span>
+                                        <input type="text" class="browser-url-input" id="browser-url-input" placeholder="Suche oder URL eingeben..." value="https://www.buerosearch.de">
+                                        <div class="browser-url-progress" id="browser-url-progress" style="width:0%"></div>
+                                    </div>
+                                    <div class="browser-toolbar-actions">
+                                        <button class="nav-btn" id="btn-bookmark" title="Lesezeichen">★</button>
+                                        <button class="nav-btn" id="btn-menu" title="Menü">⋮</button>
+                                    </div>
+                                </div>
+                                <!-- Bookmarks Bar -->
+                                <div class="browser-bookmarks-bar" id="browser-bookmarks-bar">
+                                    <div class="bm-item" data-url="www.buerosearch.de"><span class="bm-icon">🔍</span> BüroSearch</div>
+                                    <div class="bm-sep"></div>
+                                    <div class="bm-item" data-url="www.bueronews.de"><span class="bm-icon">📰</span> News</div>
+                                    <div class="bm-item" data-url="www.bueroshop.de"><span class="bm-icon">🛒</span> Shop</div>
+                                    <div class="bm-item" data-url="www.buerodash.de"><span class="bm-icon">📊</span> Dashboard</div>
+                                    <div class="bm-item" data-url="www.bueromail.de"><span class="bm-icon">📧</span> Mail</div>
+                                    <div class="bm-sep"></div>
+                                    <div class="bm-item" data-url="www.buerowetter.de"><span class="bm-icon">🌤️</span> Wetter</div>
+                                    <div class="bm-item" data-url="www.buerogames.de"><span class="bm-icon">🎮</span> Games</div>
+                                    <div class="bm-item" data-url="www.buerotube.de"><span class="bm-icon">📺</span> Tube</div>
+                                    <div class="bm-item" data-url="www.bueroplay.de"><span class="bm-icon">🎵</span> Play</div>
+                                </div>
+                                <!-- Content Area -->
+                                <div class="browser-content" id="browser-content">
+                                    <!-- Content wird dynamisch geladen -->
+                                </div>
+                                <!-- Status Bar -->
+                                <div class="browser-statusbar">
+                                    <span class="status-text" id="browser-status">✓ Fertig</span>
+                                    <span id="browser-time"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="app-window" id="app-notepad">
+                            <div class="app-header">
+                                <span class="app-title">📝 Notepad</span>
+                                <button class="app-close" onclick="closeApp('notepad')">✕</button>
+                            </div>
+                            <div class="app-body notepad-app">
+                                <textarea class="notepad-textarea" id="notepad-content" placeholder="Schreibe deine Notizen hier..."></textarea>
+                                <div class="notepad-toolbar">
+                                    <button onclick="saveNotepad()">💾 Speichern</button>
+                                    <button onclick="clearNotepad()">🗑️ Löschen</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="app-window" id="app-files">
+                            <div class="app-header">
+                                <span class="app-title">📁 Dateimanager</span>
+                                <button class="app-close" onclick="closeApp('files')">✕</button>
+                            </div>
+                            <div class="app-body files-app">
+                                <div class="files-sidebar">
+                                    <div class="files-folder active">📁 Dokumente</div>
+                                    <div class="files-folder">📁 Bilder</div>
+                                    <div class="files-folder">📁 Downloads</div>
+                                </div>
+                                <div class="files-content">
+                                    <div class="file-item">
+                                        <span>📄</span> arbeitsvertrag.pdf
+                                    </div>
+                                    <div class="file-item">
+                                        <span>📄</span> handbuch.docx
+                                    </div>
+                                    <div class="file-item">
+                                        <span>📊</span> zeiterfassung.xlsx
+                                    </div>
+                                    <div class="file-item">
+                                        <span>📄</span> notizen.txt
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NAME SCREEN -->
+                <div id="rpg-name-screen" class="rpg-screen">
+                    <div class="name-screen-bg">
+                        <div class="name-particles"></div>
+                        <div class="name-grid"></div>
+                    </div>
+                    <div class="name-screen-content">
+                        <div class="contract-wrapper">
+                            <div class="contract-paper">
+                                <div class="contract-header">
+                                    <div class="contract-logo">🏢</div>
+                                    <div class="contract-company">
+                                        <h2>BüroVersum GmbH.</h2>
+                                        <p>Personalwesen & Ausbildung</p>
+                                    </div>
+                                    <div class="contract-stamp">
+                                        <span>✓</span>
+                                        <small>GENEHMIGT</small>
+                                    </div>
+                                </div>
+
+                                <div class="contract-divider"></div>
+
+                                <div class="contract-title">
+                                    <span class="doc-icon">📄</span>
+                                    <h3>ARBEITSVERTRAG</h3>
+                                    <span class="doc-subtitle">Einstellungsformular für neue Mitarbeiter</span>
+                                </div>
+
+                                <div class="contract-body">
+                                    <div class="contract-section">
+                                        <label class="contract-label">
+                                            <span class="label-num">§1</span>
+                                            Name des Mitarbeiters:
+                                        </label>
+                                        <div class="contract-input-wrapper">
+                                            <input type="text" id="rpg-name-input" maxlength="12"
+                                                placeholder="Vollständiger Name..." autocomplete="off" />
+                                            <div class="input-underline"></div>
+                                        </div>
+                                        <div class="name-error" id="name-error"></div>
+                                    </div>
+
+                                    <div class="contract-section">
+                                        <label class="contract-label">
+                                            <span class="label-num">§2</span>
+                                            Geschlecht:
+                                        </label>
+                                        <div class="gender-select">
+                                            <button type="button" class="gender-btn active" data-gender="m" id="gender-m">
+                                                <span class="gender-icon">🧑‍💼</span>
+                                                <span class="gender-text">Mitarbeiter</span>
+                                            </button>
+                                            <button type="button" class="gender-btn" data-gender="f" id="gender-f">
+                                                <span class="gender-icon">👩‍💼</span>
+                                                <span class="gender-text">Mitarbeiterin</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="contract-section">
+                                        <label class="contract-label">
+                                            <span class="label-num">§3</span>
+                                            Abteilung:
+                                        </label>
+                                        <div class="dept-select">
+                                            <button type="button" class="dept-btn active" data-dept="einkauf"
+                                                id="dept-einkauf">
+                                                <span class="dept-icon">🛒</span>
+                                                <span class="dept-name">Einkauf</span>
+                                            </button>
+                                            <button type="button" class="dept-btn" data-dept="verkauf" id="dept-verkauf">
+                                                <span class="dept-icon">💼</span>
+                                                <span class="dept-name">Verkauf</span>
+                                            </button>
+                                            <button type="button" class="dept-btn" data-dept="zentrale" id="dept-zentrale">
+                                                <span class="dept-icon">🖥️</span>
+                                                <span class="dept-name">Zentrale</span>
+                                            </button>
+                                            <button type="button" class="dept-btn" data-dept="verwaltung"
+                                                id="dept-verwaltung">
+                                                <span class="dept-icon">📋</span>
+                                                <span class="dept-name">Verwaltung</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="contract-section">
+                                        <label class="contract-label">
+                                            <span class="label-num">§4</span>
+                                            Mitarbeiter-Ausweis:
+                                        </label>
+                                        <div class="employee-badge">
+                                            <div class="badge-photo-frame">
+                                                <div class="badge-photo" id="badge-avatar">🧑‍💼</div>
+                                            </div>
+                                            <div class="badge-details">
+                                                <div class="badge-name" id="preview-name">HELD</div>
+                                                <div class="badge-role" id="badge-role" style="display:none;">
+                                                    Auszubildende/r</div>
+                                                <div class="badge-dept" id="badge-dept" style="display:none;">Abteilung:
+                                                    Einkauf</div>
+                                                <div class="badge-id">ID: #BV-2027-001</div>
+                                                <div class="badge-barcode">||||| |||| ||||| ||||</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="contract-footer">
+                                    <div class="contract-signature">
+                                        <div class="signature-line">
+                                            <span class="signature-x" id="signature-x-employee"></span>
+                                            <div class="signature-placeholder">Unterschrift Mitarbeiter</div>
+                                        </div>
+                                        <div class="signature-line">
+                                            <span class="signature-signed">Patrick Abend</span>
+                                            <div class="signature-placeholder">Unterschrift Ausbilder</div>
+                                        </div>
+                                    </div>
+                                    <div class="contract-date">
+                                        Datum: <span id="contract-date"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="rpg-start-btn" class="contract-submit-btn">
+                                <span class="btn-icon">✍️</span>
+                                <span class="btn-text">Vertrag unterschreiben & Arbeit beginnen</span>
+                                <span class="btn-arrow">→</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GAME SCREEN -->
+                <div id="rpg-game-screen" class="rpg-screen">
+                    <!-- HUD -->
+                    <div id="rpg-hud">
+                        <div class="hud-left">
+                            <div class="hud-portrait-frame">
+                                <div class="hud-portrait" id="hud-portrait">🧑‍💼</div>
+                                <div class="hud-level-badge" id="hud-level">1</div>
+                            </div>
+                            <div class="hud-info">
+                                <div class="hud-name" id="hud-player-name">HELD</div>
+                                <div class="hud-stats">
+                                    <div class="hud-bar hp">
+                                        <span class="bar-icon">❤️</span>
+                                        <div class="bar-track">
+                                            <div class="bar-fill" id="hud-hp-bar"></div>
+                                        </div>
+                                        <span class="bar-text"><span id="hud-hp">100</span>/<span
+                                                id="hud-max-hp">100</span></span>
+                                    </div>
+                                    <div class="hud-bar mp">
+                                        <span class="bar-icon">☕</span>
+                                        <div class="bar-track">
+                                            <div class="bar-fill" id="hud-mp-bar"></div>
+                                        </div>
+                                        <span class="bar-text"><span id="hud-mp">10</span>/<span id="hud-max-mp">10</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hud-center">
+                            <div class="hud-location-badge">
+                                <span class="loc-icon">📍</span>
+                                <span class="loc-text" id="hud-location">Hauptbüro</span>
+                            </div>
+                            <!-- Minimap Toggle -->
+                            <button class="minimap-toggle" onclick="toggleMinimap()">🗺️</button>
+                        </div>
+                        <div class="hud-right">
+                            <div class="hud-gold-display">
+                                <span class="gold-icon">💰</span>
+                                <span class="gold-amount" id="hud-gold">50</span>
+                            </div>
+                            <div class="hud-exp-display">
+                                <span class="exp-icon">⭐</span>
+                                <div class="exp-bar-mini">
+                                    <div class="exp-fill-mini" id="hud-exp-bar"></div>
+                                </div>
+                            </div>
+                            <div class="hud-hint">[E] Menü • [C] Cheats</div>
+                        </div>
+                    </div>
+
+                    <!-- MINIMAP -->
+                    <div id="minimap-container">
+                        <canvas id="minimap-canvas"></canvas>
+                        <div class="minimap-legend">
+                            <span>🟢 Du</span>
+                            <span>🔵 NPC</span>
+                            <span>🔴 Gegner</span>
+                            <span>🟡 Tür</span>
+                        </div>
+                    </div>
+
+                    <!-- EASTER EVENT UI -->
+                    <div id="easter-event-ui" style="display:none;">
+                        <div class="easter-event-header">
+                            <span class="easter-event-icon">🐇</span>
+                            <span class="easter-event-title">Oster-Event</span>
+                        </div>
+                        <div class="easter-progress-container">
+                            <div class="easter-progress-bar">
+                                <div class="easter-progress-fill" id="easter-progress-fill"></div>
+                            </div>
+                            <div class="easter-progress-text">
+                                <span id="easter-eggs-count">0</span> / <span id="easter-eggs-total">10</span> 🥚
+                            </div>
+                        </div>
+                        <div class="easter-event-hint" id="easter-event-hint">Finde alle Ostereier!</div>
+                    </div>
+
+                    <!-- VIEWPORT (mit Kamera) -->
+                    <div id="rpg-viewport">
+                        <div id="rpg-camera">
+                            <canvas id="rpg-canvas"></canvas>
+                            <canvas id="rpg-webgl-canvas"></canvas>
+                            <div id="rpg-parallax-layer"></div>
+                            <div id="rpg-deco-layer"></div>
+                            <div id="rpg-chest-layer"></div>
+                            <div id="rpg-easter-egg-layer"></div>
+                            <div id="rpg-door-layer"></div>
+                            <div id="rpg-occlusion-layer"></div>
+                            <div id="rpg-player" class="rpg-sprite">
+                                <div class="sprite-shadow"></div>
+                                <div class="sprite-body">🧑‍💼</div>
+                                <div class="sprite-name" id="player-sprite-name"></div>
+                            </div>
+                            <div id="rpg-npc-layer"></div>
+                        </div>
+                        <!-- PATCH O: Partikel-Overlay (viewport-fix, ueber Map, unter HUD) -->
+                        <div id="rpg-fx-particles"></div>
+                        <div id="interaction-hint">
+                            <span class="hint-key">ENTER</span>
+                            <span class="hint-action-icon" id="interaction-icon">💬</span>
+                            <span class="hint-text" id="interaction-text">Interagieren</span>
+                        </div>
+                    </div>
+
+                    <!-- MESSAGE BOX -->
+                    <div id="rpg-msg-box">
+                        <div class="msg-portrait-frame">
+                            <div class="msg-portrait" id="msg-portrait"></div>
+                        </div>
+                        <div class="msg-content">
+                            <div class="msg-speaker" id="msg-speaker"></div>
+                            <div class="msg-text-container">
+                                <div class="msg-choice" id="msg-choice" aria-hidden="true"></div>
+                                <div class="msg-text" id="msg-text"></div>
+                            </div>
+                        </div>
+                        <div class="msg-continue">
+                            <span class="continue-icon">▼</span>
+                            <span>ENTER</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MENU SCREEN -->
+                <div id="rpg-menu-screen" class="rpg-screen">
+                    <div class="menu-overlay" onclick="closeMenu()"></div>
+                    <div class="menu-window">
+                        <div class="menu-header">
+                            <div class="menu-toast" id="menu-toast"></div>
+                            <span class="menu-title">📋 HAUPTMENÜ</span>
+                            <button class="menu-close" onclick="closeMenu()">✕</button>
+                        </div>
+                        <div class="menu-body">
+                            <div class="menu-tabs-wrap">
+                                <button class="menu-tab-arrow menu-tab-arrow-left" onclick="scrollMenuTabs(-1)">◀</button>
+                                <div class="menu-tabs" id="menu-tabs-container">
+                                    <button class="menu-tab active" data-tab="status">👤 Status</button>
+                                    <button class="menu-tab" data-tab="inventory">🎒 Items</button>
+                                    <button class="menu-tab" data-tab="skills">📎 Skills</button>
+                                    <button class="menu-tab" data-tab="team">👥 Team</button>
+                                    <button class="menu-tab" data-tab="quests">📜 Quests</button>
+                                    <button class="menu-tab" data-tab="achievements">🏆 Erfolge</button>
+                                    <button class="menu-tab" data-tab="map">🗺️ Karte</button>
+                                </div>
+                                <button class="menu-tab-arrow menu-tab-arrow-right" onclick="scrollMenuTabs(1)">▶</button>
+                            </div>
+                            <div class="menu-tab-content active" id="tab-status">
+                                <div class="menu-player-card">
+                                    <div class="player-card-left">
+                                        <div class="menu-portrait-large" id="menu-portrait">🧑‍💼</div>
+                                        <div class="menu-player-name" id="menu-player-name">HELD</div>
+                                        <div class="menu-player-title" id="menu-player-title">Azubi - Einkauf</div>
+                                    </div>
+                                    <div class="player-card-right">
+                                        <div class="stat-grid">
+                                            <div class="stat-item"><span class="stat-icon">📊</span><span
+                                                    class="stat-label">Level</span><span class="stat-value"
+                                                    id="menu-lvl">1</span></div>
+                                            <div class="stat-item"><span class="stat-icon">❤️</span><span
+                                                    class="stat-label">HP</span><span class="stat-value"
+                                                    id="menu-hp">100/100</span></div>
+                                            <div class="stat-item"><span class="stat-icon">☕</span><span
+                                                    class="stat-label">MP</span><span class="stat-value"
+                                                    id="menu-mp">10/10</span></div>
+                                            <div class="stat-item"><span class="stat-icon">⚔️</span><span
+                                                    class="stat-label">Angriff</span><span class="stat-value"
+                                                    id="menu-atk">10</span></div>
+                                            <div class="stat-item"><span class="stat-icon">🛡️</span><span
+                                                    class="stat-label">Verteidigung</span><span class="stat-value"
+                                                    id="menu-def">2</span></div>
+                                            <div class="stat-item"><span class="stat-icon">💰</span><span
+                                                    class="stat-label">Gold</span><span class="stat-value"
+                                                    id="menu-gold">50</span></div>
+                                        </div>
+                                        <div class="exp-display">
+                                            <div class="exp-label">⭐ Erfahrung</div>
+                                            <div class="exp-bar-large">
+                                                <div class="exp-fill-large" id="menu-exp-bar"></div>
+                                            </div>
+                                            <div class="exp-text" id="menu-exp">0 / 30</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="menu-tab-content" id="tab-inventory">
+                                <div class="menu-inventory" id="menu-inventory"></div>
+                            </div>
+                            <div class="menu-tab-content" id="tab-team">
+                                <div class="team-grid" id="team-grid"></div>
+                            </div>
+                            <div class="menu-tab-content" id="tab-map">
+                                <div class="world-map" id="world-map"></div>
+                            </div>
+                            <div class="menu-tab-content" id="tab-skills">
+                                <div id="skills-content"></div>
+                            </div>
+                            <div class="menu-tab-content" id="tab-quests">
+                                <div id="questlog-content"></div>
+                            </div>
+                            <div class="menu-tab-content" id="tab-achievements">
+                                <div id="achievement-content"></div>
+                            </div>
+                        </div>
+                        <div class="menu-footer">
+                            <button class="menu-btn save" onclick="saveGame()"><span>💾</span> Speichern</button>
+                            <button class="menu-btn load" onclick="loadGame()"><span>📂</span> Laden</button>
+                            <button class="menu-btn" onclick="closeMenu()"><span>↩</span> Zurück</button>
+                            <button class="menu-btn danger" onclick="showQuitOptions()"><span>🚪</span> Beenden</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMPUTER SCREEN -->
+                <div id="rpg-computer-screen" class="rpg-screen">
+                    <div class="computer-monitor">
+                        <div class="computer-screen" id="computer-desktop">
+                            <!-- Taskbar -->
+                            <div class="computer-taskbar">
+                                <div class="taskbar-start" id="computer-taskbar-start" onclick="computerToggleStartMenu()">
+                                    <span class="start-icon">🖥️</span>
+                                    <span>Start</span>
+                                </div>
+                                <div class="taskbar-apps" id="taskbar-apps"></div>
+                                <div class="taskbar-clock" id="computer-clock">12:00</div>
+                            </div>
+                            
+                            <!-- Desktop -->
+                            <div class="computer-desktop-icons" id="computer-desktop-icons">
+                                <div class="desktop-icon" ondblclick="computerOpenApp('email')">
+                                    <span class="icon-img">📧</span>
+                                    <span class="icon-label">E-Mail</span>
+                                </div>
+                                <div class="desktop-icon" ondblclick="computerOpenApp('browser')">
+                                    <span class="icon-img">🌐</span>
+                                    <span class="icon-label">Browser</span>
+                                </div>
+                                <div class="desktop-icon" ondblclick="computerOpenApp('notepad')">
+                                    <span class="icon-img">📝</span>
+                                    <span class="icon-label">Notepad</span>
+                                </div>
+                                <div class="desktop-icon" ondblclick="computerOpenApp('files')">
+                                    <span class="icon-img">📁</span>
+                                    <span class="icon-label">Dateien</span>
+                                </div>
+                                <div class="desktop-icon" ondblclick="computerOpenApp('settings')">
+                                    <span class="icon-img">⚙️</span>
+                                    <span class="icon-label">Einstellungen</span>
+                                </div>
+                            </div>
+
+                            <!-- Start Menu -->
+                            <div class="computer-start-menu" id="computer-start-menu">
+                                <div class="start-menu-header">
+                                    <span class="user-avatar">🧑‍💼</span>
+                                    <span class="user-name" id="computer-username">Mitarbeiter</span>
+                                </div>
+                                <div class="start-menu-items">
+                                    <div class="start-menu-item" onclick="computerOpenApp('email')">
+                                        <span>📧</span> E-Mail
+                                    </div>
+                                    <div class="start-menu-item" onclick="computerOpenApp('browser')">
+                                        <span>🌐</span> Browser
+                                    </div>
+                                    <div class="start-menu-item" onclick="computerOpenApp('notepad')">
+                                        <span>📝</span> Notepad
+                                    </div>
+                                    <div class="start-menu-item" onclick="computerOpenApp('files')">
+                                        <span>📁</span> Dateien
+                                    </div>
+                                    <div class="start-menu-item" onclick="computerOpenApp('settings')">
+                                        <span>⚙️</span> Einstellungen
+                                    </div>
+                                    <div class="start-menu-divider"></div>
+                                    <div class="start-menu-item" onclick="computerShutdown()">
+                                        <span>⏻</span> Beenden
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Windows Container -->
+                            <div class="computer-windows" id="computer-windows"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Battle Transition OUT -->
+                    <div id="battle-transition-out">
+                        <div class="bt-out-top"></div>
+                        <div class="bt-out-bottom"></div>
+                        <div class="bt-out-content">
+                            <div class="bt-out-icon">⚔️</div>
+                            <div class="bt-out-text">Kampf beendet!</div>
+                        </div>
+                    </div>
+
+                    
+                <!-- QUIZ SCREEN -->
+                <div id="rpg-quiz-screen" class="rpg-screen">
+                    <div class="quiz-bg">
+                        <div class="quiz-bg-grid"></div>
+                        <div class="quiz-bg-orb orb-1"></div>
+                        <div class="quiz-bg-orb orb-2"></div>
+                        <div class="quiz-spotlight left"></div>
+                        <div class="quiz-spotlight right"></div>
+                        <div class="quiz-audience" aria-hidden="true">
+                            <span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <button class="quiz-close-btn" id="quiz-close-btn" title="Quiz beenden">✕</button>
+                    <div class="quiz-stage">
+                        <div class="quiz-header">
+                            <div class="quiz-title">🧠 BÜRO-QUIZ</div>
+                            <div class="quiz-progress"><span id="quiz-current">1</span>/<span id="quiz-total">5</span></div>
+                        </div>
+                        <div class="quiz-main-card">
+                            <div class="quiz-player-card">
+                                <div class="quiz-player-glow"></div>
+                                <div class="quiz-player-icon" id="quiz-player-icon">🧑‍💼</div>
+                                <div class="quiz-player-name" id="quiz-player-name">Tester</div>
+                                <div class="quiz-score-pill">Score: <span id="quiz-score">0</span></div>
+                            </div>
+                            <div class="quiz-question-panel">
+                                <div class="quiz-timer-wrap">
+                                    <div class="quiz-timer-bar" id="quiz-timer-bar"></div>
+                                </div>
+                                <div class="quiz-category" id="quiz-category">Büro-Wissen</div>
+                                <div class="quiz-question" id="quiz-question">Frage wird geladen...</div>
+                                <div class="quiz-answers" id="quiz-answers"></div>
+                                <div class="quiz-feedback" id="quiz-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="quiz-end" id="quiz-end">
+                        <div class="quiz-end-card">
+                            <div class="quiz-end-icon" id="quiz-end-icon">🏆</div>
+                            <div class="quiz-end-title" id="quiz-end-title">Quiz beendet!</div>
+                            <div class="quiz-end-score" id="quiz-end-score">0/5 richtig</div>
+                            <div class="quiz-end-reward" id="quiz-end-reward">+0 Gold</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BATTLE EDITOR SCREEN -->
+                <div id="rpg-battle-editor-screen" class="rpg-screen" style="z-index:99990; position:absolute; top:0; left:0; width:100%; height:100%;">
+                    <div class="editor-bg">
+                        <div class="editor-particles"></div>
+                        <div class="editor-grid"></div>
+                    </div>
+                    <div class="editor-content">
+                        <div class="editor-header">
+                            <h2>🛠️ BATTLE EDITOR</h2>
+                            <p>Erstelle deinen eigenen Boss & teste ihn im Kampf!</p>
+                        </div>
+
+                        <div class="editor-preview-stage" aria-live="polite">
+                            <div class="editor-preview-orb orb-a"></div>
+                            <div class="editor-preview-orb orb-b"></div>
+                            <div class="editor-preview-card player-side">
+                                <div class="editor-preview-label" id="editor-preview-player-label">TESTER LV10</div>
+                                <div class="editor-preview-avatar" id="editor-preview-player">🧑‍💼</div>
+                                <div class="editor-preview-bar"><span id="editor-preview-player-hpbar"></span></div>
+                            </div>
+                            <div class="editor-preview-vs">VS</div>
+                            <div class="editor-preview-card enemy-side">
+                                <div class="editor-preview-label" id="editor-preview-name">Super Boss</div>
+                                <div class="editor-preview-avatar enemy" id="editor-preview-sprite">👾</div>
+                                <div class="editor-preview-bar enemy"><span id="editor-preview-hpbar"></span></div>
+                            </div>
+                            <div class="editor-preview-message" id="editor-preview-message">Bist du bereit zu kapitulieren?</div>
+                        </div>
+                        <div class="editor-body">
+                            <div class="editor-col-left">
+                                <div class="editor-field">
+                                    <label>Gegner Name:</label>
+                                    <input type="text" id="editor-enemy-name" value="Super Boss" maxlength="16" autocomplete="off" />
+                                </div>
+                                <div class="editor-field">
+                                    <label>Gegner Sprite (Emoji):</label>
+                                    <select id="editor-enemy-sprite">
+                                        <option value="👾">👾 Alien</option>
+                                        <option value="🤖">🤖 Roboter</option>
+                                        <option value="👹">👹 Dämon</option>
+                                        <option value="🐉">🐉 Drache</option>
+                                        <option value="🧛">🧛 Vampir</option>
+                                        <option value="🦁">🦁 Löwe</option>
+                                        <option value="👔">👔 Boss Chef</option>
+                                        <option value="💀">💀 Totenkopf</option>
+                                        <option value="🎃">🎃 Kürbis</option>
+                                    </select>
+                                </div>
+                                <div class="editor-field">
+                                    <label>Gegner-Typ:</label>
+                                    <select id="editor-enemy-is-boss">
+                                        <option value="yes" selected>👑 Boss-Gegner</option>
+                                        <option value="no">👾 Normaler Gegner</option>
+                                    </select>
+                                </div>
+                                <div class="editor-field">
+                                    <label>Kampf-Hintergrund:</label>
+                                    <select id="editor-battle-bg">
+                                        <option value="buero">🏢 Hauptbüro</option>
+                                        <option value="zentrale">🖥️ Server-Zentrale</option>
+                                        <option value="boss_office">👔 Chefbüro</option>
+                                        <option value="flur">🚪 Flur Corridor</option>
+                                        <option value="kantine">☕ Kantine</option>
+                                        <option value="lager">📦 Lagerraum</option>
+                                    </select>
+                                </div>
+                                <div class="editor-field">
+                                    <label>VS Nachricht:</label>
+                                    <input type="text" id="editor-vs-msg" value="Bist du bereit zu kapitulieren?" maxlength="40" autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="editor-col-right">
+                                <div class="editor-field-range">
+                                    <label>Level: <span id="val-editor-lvl">10</span></label>
+                                    <input type="range" id="editor-enemy-lvl" min="1" max="50" value="10" oninput="document.getElementById('val-editor-lvl').innerText=this.value" />
+                                </div>
+                                <div class="editor-field-range">
+                                    <label>Max HP: <span id="val-editor-hp">350</span></label>
+                                    <input type="range" id="editor-enemy-hp" min="10" max="3000" step="10" value="350" oninput="document.getElementById('val-editor-hp').innerText=this.value" />
+                                </div>
+                                <div class="editor-field-range">
+                                    <label>Angriff (ATK): <span id="val-editor-atk">30</span></label>
+                                    <input type="range" id="editor-enemy-atk" min="1" max="300" value="30" oninput="document.getElementById('val-editor-atk').innerText=this.value" />
+                                </div>
+                                <div class="editor-field-range">
+                                    <label>Verteidigung (DEF): <span id="val-editor-def">10</span></label>
+                                    <input type="range" id="editor-enemy-def" min="0" max="150" value="10" oninput="document.getElementById('val-editor-def').innerText=this.value" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="editor-enemy-panel">
+                            <div class="editor-section-title enemy-title">👹 Gegner-Skillliste</div>
+                            <div class="editor-enemy-help">Wähle aus der kompletten Gegner-Skill-Bibliothek, welche Spezialangriffe der Gegner im Testkampf benutzen darf. Die Chancen werden automatisch fair normalisiert.</div>
+                            <div class="editor-enemy-skill-options" id="editor-enemy-skills"></div>
+                        </div>
+
+                        <div class="editor-player-panel">
+                            <div class="editor-section-title">🧑‍💼 Spieler-Testwerte</div>
+                            <div class="editor-player-grid">
+                                <div class="editor-field-range">
+                                    <label>Spieler Level: <span id="val-editor-player-lvl">10</span></label>
+                                    <input type="range" id="editor-player-lvl" min="1" max="50" value="10" oninput="document.getElementById('val-editor-player-lvl').innerText=this.value" />
+                                </div>
+                                <div class="editor-field-range">
+                                    <label>Spieler Max HP: <span id="val-editor-player-hp">220</span></label>
+                                    <input type="range" id="editor-player-hp" min="50" max="3000" step="10" value="220" oninput="document.getElementById('val-editor-player-hp').innerText=this.value" />
+                                </div>
+                                <div class="editor-field-range">
+                                    <label>Spieler Max MP: <span id="val-editor-player-mp">40</span></label>
+                                    <input type="range" id="editor-player-mp" min="0" max="300" value="40" oninput="document.getElementById('val-editor-player-mp').innerText=this.value" />
+                                </div>
+                                <div class="editor-field-range">
+                                    <label>Spieler Angriff (ATK): <span id="val-editor-player-atk">24</span></label>
+                                    <input type="range" id="editor-player-atk" min="1" max="300" value="24" oninput="document.getElementById('val-editor-player-atk').innerText=this.value" />
+                                </div>
+                                <div class="editor-field-range">
+                                    <label>Spieler Verteidigung (DEF): <span id="val-editor-player-def">8</span></label>
+                                    <input type="range" id="editor-player-def" min="0" max="150" value="8" oninput="document.getElementById('val-editor-player-def').innerText=this.value" />
+                                </div>
+                                <div class="editor-field">
+                                    <label>Flucht erlauben:</label>
+                                    <select id="editor-can-flee">
+                                        <option value="no" selected>🚫 Nein - Kampf bis zum Ende</option>
+                                        <option value="yes">🏃 Ja - Spieler kann flüchten</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="editor-loadout-row">
+                                <div class="editor-loadout-card">
+                                    <div class="editor-loadout-title">📎 Spieler Skills</div>
+                                    <div class="editor-skill-options" id="editor-player-skills"></div>
+                                </div>
+                                <div class="editor-loadout-card">
+                                    <div class="editor-loadout-title">🎒 Spieler Items & Anzahl</div>
+                                    <div class="editor-item-options" id="editor-player-items"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="editor-footer">
+                            <button class="editor-btn start-btn" id="editor-start-test" onclick="startEditorBattleTest(event)"><span>🎮 KAMPF-TEST STARTEN</span></button>
+                            <button class="editor-btn back-btn" id="editor-back-to-title"><span>↩ ZURÜCK ZUM MENÜ</span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BATTLE SCREEN -->
+                <div id="rpg-battle-screen" class="rpg-screen">
+                    <!-- Battle Transition IN -->
+                    <div id="battle-transition-in">
+                        <div class="bt-stripe" style="--i:0"></div>
+                        <div class="bt-stripe" style="--i:1"></div>
+                        <div class="bt-stripe" style="--i:2"></div>
+                        <div class="bt-stripe" style="--i:3"></div>
+                        <div class="bt-stripe" style="--i:4"></div>
+                        <div class="bt-stripe" style="--i:5"></div>
+                        <div class="bt-stripe" style="--i:6"></div>
+                        <div class="bt-stripe" style="--i:7"></div>
+                        <div class="bt-flash"></div>
+                    </div>
+
+                    <!-- Battle BG -->
+                    <div id="battle-bg">
+                        <div class="battle-bg-layer bg-layer-1"></div>
+                        <div class="battle-bg-layer bg-layer-2"></div>
+                        <div class="battle-bg-floor"></div>
+                        <div class="battle-deco">
+                            <span class="deco deco-1"></span>
+                            <span class="deco deco-2"></span>
+                            <span class="deco deco-3"></span>
+                            <span class="deco deco-4"></span>
+                            <span class="deco deco-5"></span>
+                            <span class="deco deco-6"></span>
+                        </div>
+                        <div class="battle-fog fog-1"></div>
+                        <div class="battle-fog fog-2"></div>
+                        <div class="battle-particles"></div>
+                    </div>
+
+                    <!-- VS Splash -->
+                    <div id="battle-vs-splash">
+                        <div class="vs-bg-effect"></div>
+                        <div class="vs-content">
+                            <div class="vs-fighter vs-player">
+                                <div class="vs-fighter-bg"></div>
+                                <div class="vs-sprite-wrapper">
+                                    <div class="vs-sprite" id="vs-player-sprite">🧑‍💼</div>
+                                    <div class="vs-glow"></div>
+                                </div>
+                                <div class="vs-info">
+                                    <div class="vs-name" id="vs-player-name">HELD</div>
+                                    <div class="vs-title">Azubi</div>
+                                </div>
+                            </div>
+                            <div class="vs-middle">
+                                <div class="vs-spark spark-1">⚡</div>
+                                <div class="vs-text">VS</div>
+                                <div class="vs-spark spark-2">⚡</div>
+                                <div class="vs-clash-effect"></div>
+                            </div>
+                            <div class="vs-fighter vs-enemy">
+                                <div class="vs-fighter-bg enemy"></div>
+                                <div class="vs-sprite-wrapper">
+                                    <div class="vs-sprite" id="vs-enemy-sprite">👾</div>
+                                    <div class="vs-glow enemy"></div>
+                                </div>
+                                <div class="vs-info">
+                                    <div class="vs-name" id="vs-enemy-name">GEGNER</div>
+                                    <div class="vs-title enemy">Feind</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="vs-message" class="vs-message"></div>
+                        <div id="boss-vs-banner" class="boss-vs-banner"></div>
+                    </div>
+
+                    <!-- Turn Indicator -->
+                    <div id="turn-indicator">
+                        <div class="turn-banner">
+                            <div class="turn-bg-slide"></div>
+                            <div class="turn-content">
+                                <span class="turn-icon" id="turn-icon">⚔️</span>
+                                <span class="turn-text" id="turn-text">Dein Zug!</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enemy Area -->
+                    <div id="battle-enemy-area">
+                        <div id="battle-enemy-hud">
+                            <div class="enemy-hud-inner">
+                                <div class="enemy-name" id="battle-enemy-name">Gegner</div>
+                                <div class="enemy-hp-container">
+                                    <div class="enemy-hp-bar">
+                                        <div class="hp-fill" id="battle-enemy-hp-fill"></div>
+                                    </div>
+                                    <div class="enemy-hp-text" id="battle-enemy-hp-text">100/100</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Boss Speech Bubble -->
+                        <div id="boss-speech-bubble" class="boss-speech-bubble">
+                            <div class="speech-content">
+                                <span class="speech-icon">👔</span>
+                                <span class="speech-text" id="boss-speech-text"></span>
+                            </div>
+                            <div class="speech-tail"></div>
+                        </div>
+                        <div id="battle-enemy-sprite-container">
+                            <div id="battle-enemy-sprite">👾</div>
+                            <div id="battle-enemy-shadow"></div>
+                        </div>
+                        <div id="battle-dmg-enemy"></div>
+                        <div id="battle-effect-enemy"></div>
+                    </div>
+
+                    <!-- Player Area -->
+                    <div id="battle-player-area">
+                        <div id="battle-player-platform"></div>
+                        <div id="battle-player-sprite">🧑‍💼</div>
+                        <div id="battle-dmg-player"></div>
+                        <div id="battle-effect-player"></div>
+                    </div>
+
+                    <!-- Battle UI -->
+                    <div id="battle-ui">
+                        <div id="battle-player-hud">
+                            <div class="battle-hud-frame">
+                                <div class="player-portrait-battle" id="battle-portrait">🧑‍💼</div>
+                                <div class="player-info-battle">
+                                    <div class="player-name-battle" id="battle-player-name">HELD</div>
+                                    <div class="player-bars-battle">
+                                        <div class="p-bar hp">
+                                            <span class="p-bar-label">HP</span>
+                                            <div class="p-bar-track">
+                                                <div class="p-bar-fill" id="battle-hp-fill"></div>
+                                            </div>
+                                            <span class="p-bar-text" id="battle-hp-text">100/100</span>
+                                        </div>
+                                        <div class="p-bar mp">
+                                            <span class="p-bar-label">☕</span>
+                                            <div class="p-bar-track">
+                                                <div class="p-bar-fill" id="battle-mp-fill"></div>
+                                            </div>
+                                            <span class="p-bar-text" id="battle-mp-text">10/10</span>
+                                        </div>
+                                    </div>
+                                    <div class="battle-status-row" id="battle-status-row" aria-live="polite"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="battle-log">
+                            <div class="log-content" id="battle-log-text"></div>
+                        </div>
+
+                        <div id="battle-menu">
+                            <div class="battle-cmd" data-cmd="attack"><span class="cmd-icon">⚔️</span><span
+                                    class="cmd-text">Angriff</span></div>
+                            <div class="battle-cmd" data-cmd="skill"><span class="cmd-icon">📎</span><span
+                                    class="cmd-text">Skill</span></div>
+                            <div class="battle-cmd" data-cmd="item"><span class="cmd-icon">🎒</span><span
+                                    class="cmd-text">Item</span></div>
+                            <div class="battle-cmd" data-cmd="run"><span class="cmd-icon">🚪</span><span
+                                    class="cmd-text">Flucht</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Skill Menu -->
+                    <div id="battle-skill-menu" class="battle-submenu">
+                        <div class="submenu-header">📎 Skills</div>
+                        <div id="battle-skill-list"></div>
+                        <button class="submenu-back" onclick="closeSkillMenu()">← Zurück</button>
+                    </div>
+
+                    <!-- Item Menu -->
+                    <div id="battle-item-menu" class="battle-submenu">
+                        <div class="submenu-header">🎒 Items</div>
+                        <div id="battle-item-list"></div>
+                        <button class="submenu-back" onclick="closeItemMenu()">← Zurück</button>
+                    </div>
+
+                    <!-- Victory Screen -->
+                    <div id="victory-screen">
+                        <div class="victory-bg"></div>
+                        <!-- GPU-beschleunigte CSS-Sterne (0% CPU lag) -->
+                        <div class="victory-css-sparkles">
+                            <span class="v-css-sparkle s-1">✨</span>
+                            <span class="v-css-sparkle s-2">⭐</span>
+                            <span class="v-css-sparkle s-3">✨</span>
+                            <span class="v-css-sparkle s-4">⭐</span>
+                            <span class="v-css-sparkle s-5">✨</span>
+                            <span class="v-css-sparkle s-6">⭐</span>
+                        </div>
+                        <div class="victory-content">
+                            <div class="victory-stars">⭐ ⭐ ⭐</div>
+                            <div class="victory-title">🏆 SIEG!</div>
+                            <div class="victory-subtitle">Kampf gewonnen!</div>
+                            <div class="victory-rewards">
+                                <div class="reward-item gold"><span class="reward-icon">💰</span><span
+                                        class="reward-text">+<span id="victory-gold">0</span> Gold</span></div>
+                                <div class="reward-item exp"><span class="reward-icon">⭐</span><span
+                                        class="reward-text">+<span id="victory-exp">0</span> EXP</span></div>
+                            </div>
+                            <div id="xp-bar-container">
+                                <div class="xp-bar-label">Erfahrung</div>
+                                <div class="xp-bar-bg">
+                                    <div class="xp-bar-fill" id="xp-bar-fill"></div>
+                                </div>
+                                <div class="xp-bar-text"><span id="xp-current">0</span> / <span id="xp-max">100</span></div>
+                            </div>
+                            <div id="levelup-display">
+                                <div class="levelup-text">🎉 LEVEL UP!</div>
+                                <div class="levelup-transition">
+                                    <span class="old-level">Lvl <span id="old-level">1</span></span>
+                                    <span class="level-arrow">→</span>
+                                    <span class="new-level">Lvl <span id="new-level">2</span></span>
+                                </div>
+                            </div>
+                            <div id="victory-chest" class="chest-container">
+                                <div class="chest-icon">📦</div>
+                                <div class="chest-text">Truhe gefunden!</div>
+                                <div class="chest-item" id="chest-item"></div>
+                            </div>
+                            <button class="victory-btn" onclick="endVictory()"><span>Weiter</span><span
+                                    class="btn-arrow">→</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Defeat Screen -->
+                    <div id="defeat-screen">
+                        <div class="defeat-bg"></div>
+                        <div class="defeat-content">
+                            <div class="defeat-icon">💀</div>
+                            <div class="defeat-title">NIEDERLAGE</div>
+                            <div class="defeat-text">Du wurdest besiegt...</div>
+                            <div class="defeat-penalty">-20 Gold</div>
+                            <button class="defeat-btn" onclick="respawnPlayer()"><span>Aufstehen</span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SHOP SCREEN - PATCHED: Shop Overhaul v1.0 -->
+                <div id="rpg-shop-screen" class="rpg-screen" style="justify-content:center;align-items:center;overflow:hidden;">
+                    <!-- Wird komplett per JS (openShop / renderNewShopUI) befüllt -->
+                </div>
+
+                <!-- SKILL SHOP SCREEN - PATCHED: Shop Overhaul v1.0 -->
+                <div id="rpg-skillshop-screen" class="rpg-screen" style="justify-content:center;align-items:center;overflow:hidden;">
+                    <!-- Wird komplett per JS (openSkillShop / renderNewSkillShopUI) befüllt -->
+                </div>
+
+                <!-- BAD ENDING SCREEN -->
+                <div id="rpg-bad-ending-screen" class="rpg-screen">
+                    <div class="bad-ending-bg">
+                        <div class="bad-ending-white-flash"></div>
+                        <div class="bad-ending-grid"></div>
+                        <div class="bad-ending-vignette"></div>
+                    </div>
+                    <div class="bad-ending-content">
+                        <div class="bad-ending-stamp">GEKÜNDIGT</div>
+                        <div class="bad-ending-icon">📄</div>
+                        <h1>BAD ENDING</h1>
+                        <div class="bad-ending-subtitle">Du hast das Gebäude während der Arbeitszeit verlassen.</div>
+                        <div class="bad-ending-letter">
+                            <p><strong>Personalmitteilung:</strong></p>
+                            <p>Hiermit wird das Arbeitsverhältnis mit sofortiger Wirkung beendet.</p>
+                            <p>Grund: Unerlaubtes Verlassen des BüroVersums.</p>
+                        </div>
+                        <div class="bad-ending-stats">
+                            <div><span>👤 Spieler</span><b id="bad-ending-name">HELD</b></div>
+                            <div><span>📊 Level</span><b id="bad-ending-level">1</b></div>
+                            <div><span>💰 Gold</span><b id="bad-ending-gold">0</b></div>
+                            <div><span>⚔️ Kämpfe</span><b id="bad-ending-battles">0</b></div>
+                            <div><span>📦 Kisten</span><b id="bad-ending-chests">0</b></div>
+                        </div>
+                        <div class="bad-ending-actions">
+                            <button class="ending-btn ending-btn-primary" onclick="returnToTitleMenu()">🏠 Zurück zum Titlemenü</button>
+                            <button class="ending-btn ending-btn-secondary" onclick="closeRPG()">🚪 Spiel Beenden</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ENDING SCREEN - Ultimate Celebration Edition -->
+                <div id="rpg-ending-screen" class="rpg-screen">
+                    <div class="ending-bg">
+                        <!-- Base gradient -->
+                        <div class="ending-base-gradient"></div>
+                        <!-- Animated stars layers -->
+                        <div class="ending-stars stars-layer-1"></div>
+                        <div class="ending-stars stars-layer-2"></div>
+                        <div class="ending-stars stars-layer-3"></div>
+                        <!-- Nebula effects -->
+                        <div class="ending-nebula nebula-1"></div>
+                        <div class="ending-nebula nebula-2"></div>
+                        <div class="ending-nebula nebula-3"></div>
+                        <!-- Aurora borealis -->
+                        <div class="ending-aurora"></div>
+                        <!-- Light rays from center -->
+                        <div class="ending-lightrays"></div>
+                        <div class="ending-god-rays"></div>
+                        <!-- Floating particles -->
+                        <div class="ending-particles">
+                            <div class="particle p1"></div>
+                            <div class="particle p2"></div>
+                            <div class="particle p3"></div>
+                            <div class="particle p4"></div>
+                            <div class="particle p5"></div>
+                            <div class="particle p6"></div>
+                            <div class="particle p7"></div>
+                            <div class="particle p8"></div>
+                            <div class="particle p9"></div>
+                            <div class="particle p10"></div>
+                            <div class="particle p11"></div>
+                            <div class="particle p12"></div>
+                            <div class="particle p13"></div>
+                            <div class="particle p14"></div>
+                            <div class="particle p15"></div>
+                            <div class="particle p16"></div>
+                            <div class="particle p17"></div>
+                            <div class="particle p18"></div>
+                            <div class="particle p19"></div>
+                            <div class="particle p20"></div>
+                        </div>
+                        <!-- Golden sparkles -->
+                        <div class="ending-sparkles-container">
+                            <div class="sparkle s1">✨</div>
+                            <div class="sparkle s2">⭐</div>
+                            <div class="sparkle s3">✨</div>
+                            <div class="sparkle s4">⭐</div>
+                            <div class="sparkle s5">✨</div>
+                            <div class="sparkle s6">⭐</div>
+                            <div class="sparkle s7">✨</div>
+                            <div class="sparkle s8">⭐</div>
+                        </div>
+                        <!-- Real Confetti Container (JavaScript gesteuert) -->
+                        <div class="ending-confetti-container" id="confetti-container"></div>
+                        <!-- Floating shapes -->
+                        <div class="ending-shapes">
+                            <div class="shape diamond d1"></div>
+                            <div class="shape diamond d2"></div>
+                            <div class="shape circle c1"></div>
+                            <div class="shape circle c2"></div>
+                            <div class="shape triangle t1"></div>
+                            <div class="shape triangle t2"></div>
+                        </div>
+                        <!-- Vignette overlay -->
+                        <div class="ending-vignette"></div>
+                    </div>
+                    <div class="ending-content">
+                        <div class="ending-trophy-container">
+                            <div class="ending-trophy-glow-ring"></div>
+                            <div class="ending-trophy">🏆</div>
+                            <div class="ending-glow"></div>
+                            <div class="ending-glow-burst"></div>
+                            <div class="ending-trophy-particles">
+                                <span>✨</span><span>⭐</span><span>✨</span><span>⭐</span><span>✨</span>
+                            </div>
+                        </div>
+                        <h1 class="ending-title">
+                            <span class="title-char" style="--i:0">G</span>
+                            <span class="title-char" style="--i:1">L</span>
+                            <span class="title-char" style="--i:2">Ü</span>
+                            <span class="title-char" style="--i:3">C</span>
+                            <span class="title-char" style="--i:4">K</span>
+                            <span class="title-char" style="--i:5">W</span>
+                            <span class="title-char" style="--i:6">U</span>
+                            <span class="title-char" style="--i:7">N</span>
+                            <span class="title-char" style="--i:8">S</span>
+                            <span class="title-char" style="--i:9">C</span>
+                            <span class="title-char" style="--i:10">H</span>
+                            <span class="title-char" style="--i:11">!</span>
+                        </h1>
+                        <div class="ending-subtitle">Du hast BüroVersum abgeschlossen!</div>
+                        <div class="ending-stats-container">
+                            <div class="ending-stats-glow"></div>
+                            <div class="ending-stats">
+                                <div class="ending-stat"><span class="stat-label">👤 Spieler:</span> <span
+                                        id="ending-name">HELD</span></div>
+                                <div class="ending-stat"><span class="stat-label">📊 Level:</span> <span id="ending-level">1</span>
+                                </div>
+                                <div class="ending-stat"><span class="stat-label">💰 Gold:</span> <span id="ending-gold">0</span>
+                                </div>
+                                <div class="ending-stat"><span class="stat-label">⚔️ Kämpfe:</span> <span
+                                        id="ending-battles">0</span></div>
+                                <div class="ending-stat"><span class="stat-label">📦 Kisten:</span> <span
+                                        id="ending-chests">0</span></div>
+                            </div>
+                        </div>
+                        <div class="ending-message">
+                            <p>Vielen Dank, dass du das Spiel gespielt hast!</p>
+                            <p>Wir hoffen, dass du auch unseren Webshop besuchst und unsere Büromaterialien kaufst – das wäre cool! 🛒</p>
+                        </div>
+                        <div class="ending-credits">
+                            <p>🎮 Entwickelt von Justin</p>
+                            <p>© 2026 BüroVersum GmbH.</p>
+                        </div>
+                        <div class="ending-buttons">
+                            <button class="ending-btn ending-btn-primary" onclick="returnToTitleMenu()">🏠 Zurück zum Titlemenü</button>
+                            <button class="ending-btn ending-btn-secondary" onclick="closeRPG()">🚪 Spiel Beenden</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MOBILE CONTROLS (Verbessert) -->
+                <div id="rpg-touch-controls">
+                    <div class="touch-dpad">
+                        <button class="dpad-btn up" data-dir="up">▲</button>
+                        <button class="dpad-btn left" data-dir="left">◀</button>
+                        <button class="dpad-btn center" data-dir="ok">●</button>
+                        <button class="dpad-btn right" data-dir="right">▶</button>
+                        <button class="dpad-btn down" data-dir="down">▼</button>
+                    </div>
+                    <div class="touch-actions">
+                        <button class="touch-action-btn" onclick="if(!(typeof window.isLevelUpChoiceActive==='function'&&window.isLevelUpChoiceActive()))openMenu()">☰</button>
+                        <button class="touch-action-btn cheat" onclick="if(!(typeof window.isLevelUpChoiceActive==='function'&&window.isLevelUpChoiceActive()))toggleCheatConsole()">🎮</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+    <script src="js/patches.js"></script>
+</body>
+</html>
