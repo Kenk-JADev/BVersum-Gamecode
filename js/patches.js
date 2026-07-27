@@ -1,4 +1,3 @@
-
 /* ============================================================
    SHOP OVERHAUL CSS RESET & LAYOUT FIX - Patch v1.0
    ============================================================ */
@@ -12567,5 +12566,3 @@ body.bv-settings-particles-off .title-canvas-bg {
         ensureSkillsTab();
     }, 500);
 })();
-</script>
-

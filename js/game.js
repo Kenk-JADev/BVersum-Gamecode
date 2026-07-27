@@ -1,4 +1,3 @@
-
         (function () {
             // Verhindere doppelte Initialisierung
             if (window._bueroversum_init) return;
@@ -16187,4 +16186,3 @@ window.respawnPlayer = function () {
 
             });
         })();
-    
