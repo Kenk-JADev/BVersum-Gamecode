@@ -1,4 +1,4 @@
-<style>
+
 /* ============================================================
    SHOP OVERHAUL CSS RESET & LAYOUT FIX - Patch v1.0
    ============================================================ */
@@ -18,10 +18,10 @@
 #rpg-skillshop-screen > .shop-container {
     display: none !important;
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA DELETE POLISH: Ingame-Confirm, echte Partikel, Screen-Shake
    Verbessert die Lösch-Animation am Titlemenü:
@@ -214,10 +214,10 @@
         animation: none !important;
     }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA TITLE BUTTON STATE MANAGER
    Zentrales, sauberes State-Management für die Title-Buttons.
@@ -407,9 +407,9 @@
         padding: 8px 12px !important;
     }
 }
-</style>
 
-<script>
+
+
 /* Title Button Press/Release Ripple Tracker */
 (function () {
     function trackPress(e) {
@@ -424,9 +424,9 @@
     document.addEventListener('mousedown', trackPress, { passive: true });
     document.addEventListener('touchstart', trackPress, { passive: true });
 })();
-</script>
 
-<script>
+
+
 /* ARENA TITLE BUTTON STATE MANAGER JS */
 (function () {
     var originalConfirm = window.confirm;
@@ -806,7 +806,7 @@
         waitForElements();
     }
 })();
-</script>
+
 <!-- 
 =============================================================
   ARENA PATCH: SHOP & SKILL SHOP COMPLETE OVERHAUL v1.0
@@ -829,7 +829,7 @@
 <!-- ============================================================
      PATCH CSS: SHOP & SKILLSHOP OVERHAUL
      ============================================================ -->
-<style>
+
 /* ============================================================
    ARENA SHOP OVERHAUL - CSS
    ============================================================ */
@@ -1914,12 +1914,12 @@
     max-width: 860px !important;
     width: 95% !important;
 }
-</style>
+
 
 <!-- ============================================================
      PATCH JS: SHOP & SKILLSHOP OVERHAUL
      ============================================================ -->
-<script>
+
 /* ARENA PATCH JS: SHOP & SKILLSHOP COMPLETE OVERHAUL */
 (function () {
 'use strict';
@@ -3533,10 +3533,10 @@ console.log('🏪 BüroVersum Shop Overhaul Patch v1.0 geladen!');
 console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.length + ' Skills | Tages-Deal aktiv');
 
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA BUGFIX v7.5.1: SkillShop Height + Scroll-Fix
    - Skill-Fenster nutzt jetzt die verfügbare Game-Window-Höhe sauber aus
@@ -3612,9 +3612,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         padding: 9px 14px !important;
     }
 }
-</style>
 
-<style>
+
+
 /* ============================================================
    ARENA BUGFIX v7.5.2: Skill Item Height + Battle Skill Scroll
    Problem:
@@ -3777,10 +3777,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         padding: 7px 9px !important;
     }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA UPGRADE v7.5.3: Shop Quantity Modal + Glass Window Fix
    ============================================================ */
@@ -4246,10 +4246,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     0%   { box-shadow: 0 0 8px rgba(168,85,247,0.2); }
     100% { box-shadow: 0 0 22px rgba(168,85,247,0.5); }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA BUGFIX v7.5.4: Shop Toast im Fenster + Shop Design Refresh
    ============================================================ */
@@ -4402,10 +4402,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     line-height: 1.25 !important;
     flex-wrap: wrap !important;
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA POLISH v7.5.5: Längere, coolere Item-/Skill-Animationen
    + Status-Titel ohne Inline-Icons
@@ -4515,10 +4515,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
 #rpg-skillshop-screen .bv-skill-card {
     transition: transform .32s cubic-bezier(.16,1,.36,1), box-shadow .32s ease, border-color .32s ease, filter .32s ease !important;
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA BUGFIX v7.5.6: Particle-Reset, Quit Center, Menu Blocking,
    Changelog/Credits Header Height Polish
@@ -4716,10 +4716,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         padding: 12px 16px 16px !important;
     }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.6.2: NPC Gerüchte/Witze/Streit + Text-FX Polish
    ============================================================ */
@@ -4784,9 +4784,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
 @keyframes npcSocialThinkV762 { from{transform:translateY(0) scale(.92); opacity:.62} to{transform:translateY(-4px) scale(1.12); opacity:1} }
 @keyframes npcMeanTauntV762 { 0%,100%{transform:translateX(0)} 35%{transform:translateX(-3px) rotate(-3deg)} 70%{transform:translateX(3px) rotate(3deg)} }
 @keyframes npcShovedV762 { 0%{filter:brightness(1.7) drop-shadow(0 0 12px rgba(255,120,120,.7))} 100%{filter:drop-shadow(2px 2px 2px rgba(0,0,0,.5))} }
-</style>
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.6.3: Premium Victory Stars
    - echte 3-Star-Reveal Animation
@@ -5041,9 +5041,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         font-size: 2.85rem !important;
     }
 }
-</style>
 
-<script>
+
+
 /* ARENA UPDATE v7.6.3: Premium Victory Stars JS */
 (function () {
     function buildVictoryStars() {
@@ -5127,9 +5127,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         initVictoryStarObserver();
     }
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.6.4: Victory Atmosphere ersetzt victory-css-sparkles
    - alte Emoji-Sparkles aus
@@ -5311,9 +5311,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         opacity: .25 !important;
     }
 }
-</style>
 
-<script>
+
+
 /* ARENA UPDATE v7.6.4: Victory Atmosphere FX ersetzt victory-css-sparkles */
 (function () {
     function rand(min, max) { return min + Math.random() * (max - min); }
@@ -5417,9 +5417,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         initVictoryAtmosphereObserver();
     }
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.6.5: Fade-Out bei Sieg/Niederlage Buttons
    - Weiter / Aufstehen blendet Screen erst weich aus
@@ -5467,9 +5467,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     0%   { opacity: 1; }
     100% { opacity: 0; }
 }
-</style>
 
-<script>
+
+
 /* ARENA UPDATE v7.6.5: Result Screen Fade-Out Wrapper */
 (function () {
     function wrapResultFadeOut() {
@@ -5515,9 +5515,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         wrapResultFadeOut();
     }
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.6.6: Hauptmenü Scrollbar + Bad Toast + Item Click FX
    ============================================================ */
@@ -5767,9 +5767,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     16% { opacity: 1; transform: translate(calc(var(--dx) * .18), calc(var(--dy) * .18)) scale(1.1) rotate(30deg); }
     100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.28) rotate(var(--rot)); }
 }
-</style>
 
-<script>
+
+
 /* ARENA UPDATE v7.6.6: Menu Toast/Item Click FX JS */
 (function () {
     function rand(min, max) { return min + Math.random() * (max - min); }
@@ -5882,10 +5882,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         init();
     }
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.6.8: Menu-Title nur beim Öffnen animieren
    + Toast-Animation stabilisiert
@@ -5992,10 +5992,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     from { opacity: 1; transform: translateY(0); filter: blur(0); }
     to   { opacity: 0; transform: translateY(-7px); filter: blur(2px); }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.6.9: menu-toast Stable Animation
    Problem: Toast war als Flex-Item im Header und verschob/teleportierte Layout.
@@ -6146,9 +6146,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     from { transform: scaleX(1); opacity: .9; }
     to   { transform: scaleX(0); opacity: .45; }
 }
-</style>
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.0: menu-toast wieder sichtbar
    Ursache: vorherige Base-Regel hatte opacity/transform/filter mit !important.
@@ -6216,9 +6216,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     from { transform: scaleX(1); opacity: .95; }
     to   { transform: scaleX(0); opacity: .45; }
 }
-</style>
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.1: Item-/SkillShop Toast ohne Blur
    Problem: bvShopToastIn hatte filter: blur(...) beim Ein-/Ausblenden.
@@ -6278,10 +6278,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         filter: none;
     }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.2: SkillShop kein Re-Entry nach Kauf
    Problem: Nach Skill-Kauf wurde das Skill-Grid neu gerendert und alle Karten
@@ -6304,10 +6304,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
 #rpg-skillshop-screen .bv-skill-card.bv-skill-no-entry-card:nth-child(n) {
     animation-delay: 0s !important;
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.7.3: Better Persistent Shop/Skill Purchase FX
    - Partikel liegen in eigenem Overlay statt in Cards
@@ -6452,10 +6452,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     72%  { opacity: 1; transform: translate(-50%, -28px) scale(1); }
     100% { opacity: 0; transform: translate(-50%, -48px) scale(.9); filter: blur(2px); }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.4: Skill-Partikel am Freigeschaltet-Button + Scroll-Follow
    ============================================================ */
@@ -6507,10 +6507,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     width: 122px !important;
     height: 122px !important;
 }
-</style>
 
 
-<style>
+
+
 /* DEEP CLEAN: kompakte Dependencies für den finalen Title Button State Manager */
 #rpg-title-screen .title-btn .bv-click-ripple-v2,
 #rpg-title-screen .title-btn .bv-click-shockwave-v2,
@@ -6562,8 +6562,8 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     #rpg-title-screen .title-btn .bv-click-shockwave-v2,
     #rpg-title-screen .title-btn .bv-click-particles-v2 { display:none!important; }
 }
-</style>
-<style>
+
+
 /* ============================================================
    ARENA CONSOLIDATED CLEAN PATCH: entfernte Zwischen-Patches zusammengefasst
    - keine Item-Shop Re-Entry Animation nach Kauf
@@ -6616,9 +6616,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     overflow-x: hidden !important;
     padding: 12px 18px 18px !important;
 }
-</style>
 
-<style>
+
+
 /* ============================================================
    ARENA TOOL v7.7.5: FPS Counter / Lag Check
    Toggle: F2
@@ -6695,9 +6695,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     from { opacity: 0; transform: translateY(-8px) scale(.96); }
     to   { opacity: .92; transform: translateY(0) scale(1); }
 }
-</style>
 
-<script>
+
+
 /* ARENA TOOL v7.7.5: FPS Counter / Lag Check */
 (function () {
     var enabled = true;
@@ -6809,10 +6809,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         init();
     }
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA PERF v7.7.6: Map Movement / Camera Optimization CSS
    ============================================================ */
@@ -6832,9 +6832,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     will-change: transform !important;
     pointer-events: none !important;
 }
-</style>
 
-<style>
+
+
 /* ============================================================
    ARENA PERF v7.7.8: MapEngine Raster Cache
    - Live-SVG-Map wird nach dem Rendern als einzelnes Bild gerastert
@@ -6866,9 +6866,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     transform: translateZ(0);
     backface-visibility: hidden;
 }
-</style>
 
-<script>
+
+
 /* ARENA PERF v7.7.8: MapEngineV6 Raster Cache */
 (function () {
     function mapKey(map) {
@@ -6983,9 +6983,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         waitForEngine();
     }
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.9: Raster Map Z-Index / Occlusion Fix
    Problem: Der Raster-Performance-Patch gab mehreren Layern transform:translateZ(0).
@@ -7039,9 +7039,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     position: absolute !important;
     z-index: auto;
 }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.7.9: Occluder CSS var mirror for raster z-index debug safety */
 (function () {
     function mirrorOccluderZIndex() {
@@ -7065,10 +7065,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         installOccluderObserver();
     }
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.10: NPC Social Bubble Layer / Z-Index / Position
    Problem: Bubble als Kind vom NPC wurde durch Wand-/Occlusion-Z-Index überdeckt
@@ -7215,10 +7215,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     from { transform: translate(-50%, -100%) translateY(0) scale(1); }
     to   { transform: translate(-50%, -100%) translateY(-2px) scale(1.012); }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.11: Stable Movement/Input Timing
    ============================================================ */
@@ -7228,10 +7228,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
 #rpg-player .sprite-body {
     backface-visibility: hidden;
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.7.12: Map Player Idle Animation + Enemy Variety
    ============================================================ */
@@ -7284,10 +7284,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         transform: scaleX(var(--player-face)) translateY(-4px) rotate(-1.5deg) scale(1.035);
     }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.13: Victory Performance / Particle Cost
    Ursache: Victory hatte viele gleichzeitig animierte Up-Partikel + Blur/Drop-Shadow.
@@ -7327,10 +7327,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     #victory-screen .bv-victory-smoke { display: none !important; }
     #victory-screen .bv-victory-ash:nth-child(odd) { display: none !important; }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.7.14: Item/Skill Shop Animation Start Performance
    - weniger DOM auf einmal
@@ -7400,10 +7400,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     58%  { opacity: .95; transform: translate(-50%, -50%) translate(calc(var(--rx) * .66), calc(var(--ry) * .66)) scale(.95) rotate(calc(var(--rot) * .62)); }
     100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--rx), var(--ry)) scale(.24) rotate(var(--rot)); }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA FEATURE v7.8.0: Questlog / Aufgaben-System
    ============================================================ */
@@ -7554,9 +7554,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     #rpg-menu-screen .quest-card { grid-template-columns: 42px 1fr; }
     #rpg-menu-screen .quest-badge { grid-column: 2; justify-self: start; }
 }
-</style>
 
-<script>
+
+
 /* ARENA FEATURE v7.8.0: Questlog / Aufgaben-System */
 (function () {
     'use strict';
@@ -7822,10 +7822,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         initQuestLog();
     }
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA FEATURE v7.8.1: Einstellungen-Menü
    ============================================================ */
@@ -8024,9 +8024,9 @@ body.bv-settings-performance .title-light-rays {
 @media (max-width: 680px) {
     #rpg-menu-screen .settings-grid { grid-template-columns: 1fr; }
 }
-</style>
 
-<script>
+
+
 /* ARENA FEATURE v7.8.1: Einstellungen-Menü */
 (function () {
     'use strict';
@@ -8252,10 +8252,10 @@ body.bv-settings-performance .title-light-rays {
         initSettings();
     }
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA FEATURE v7.8.2: Tages-/Schicht-System
    ============================================================ */
@@ -8483,9 +8483,9 @@ body.bv-settings-performance .title-light-rays {
     #rpg-menu-screen .shift-day-pill { grid-column: 2; justify-self: start; }
     #rpg-menu-screen .shift-effect-grid { grid-template-columns: 1fr; }
 }
-</style>
 
-<script>
+
+
 /* ARENA FEATURE v7.8.2: Tages-/Schicht-System */
 (function () {
     'use strict';
@@ -8736,10 +8736,10 @@ body.bv-settings-performance .title-light-rays {
         initShiftSystem();
     }
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA FEATURE v7.8.3: Skill-Upgrades
    ============================================================ */
@@ -8796,12 +8796,12 @@ body.bv-settings-performance .title-light-rays {
     58% { transform: translateX(-3px) scale(1.01); filter: brightness(1.12); }
     100% { transform: translateX(0) scale(1); filter: brightness(1); }
 }
-</style>
 
 
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.8.5: Quest/Schicht Tabs + Shift Toast + Cutscene Polish
    ============================================================ */
@@ -8837,11 +8837,11 @@ body.bv-settings-performance .title-light-rays {
     100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.98); }
 }
 
-</style>
 
 
 
-<style>
+
+
 /* ============================================================
    ARENA UPDATE v7.8.7: echte Map-NPC-Cutscenes mit Tile-Bewegung
    ============================================================ */
@@ -8959,9 +8959,9 @@ body.bv-settings-performance .title-light-rays {
 @keyframes realCutChoiceBoxIn { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
 @keyframes realCutShake { 0%,100%{transform:translateX(-50%) translateY(0)} 25%{transform:translateX(calc(-50% - 5px)) translateY(0)} 55%{transform:translateX(calc(-50% + 5px)) translateY(0)} 78%{transform:translateX(calc(-50% - 2px)) translateY(0)} }
 @keyframes realCutPopGlow { 0%{filter:brightness(1)} 45%{filter:brightness(1.35)} 100%{filter:brightness(1)} }
-</style>
 
-<script>
+
+
 /* ARENA UPDATE v7.8.7: echte Map-NPC-Cutscenes mit Tile-Bewegung */
 (function () {
     'use strict';
@@ -9635,9 +9635,9 @@ body.bv-settings-performance .title-light-rays {
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRealCutscenes, { once:true }); else initRealCutscenes();
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.8.8: Stabiles Hauptmenü-Tab-System
    - Ein einziger delegierter Tab-Wechsel für ALLE Kategorien
@@ -9689,9 +9689,9 @@ body.bv-settings-performance .title-light-rays {
 }
 .menu-tab-content.bv-tab-switch-in { animation: bvStableMenuTabIn .22s cubic-bezier(.16,1,.36,1) both; }
 @keyframes bvStableMenuTabIn { from { opacity:0; transform:translateY(8px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.8.8: Hauptmenü Kategorien + Bewegungsfix */
 (function () {
     'use strict';
@@ -9880,10 +9880,10 @@ body.bv-settings-performance .title-light-rays {
     else installStableMenuTabs();
     window.BVStableMenuTabs = { activate: activateTab, redrawMap: redrawMapTab, install: installStableMenuTabs };
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.9.0: Cutscene-Textbox näher an normaler Dialogbox
    ============================================================ */
@@ -9986,10 +9986,10 @@ body.bv-settings-performance .title-light-rays {
     #bv-real-cutscene-overlay .real-cut-text { font-size: 1.12rem !important; padding-right: 0; }
     #bv-real-cutscene-overlay .real-cut-hint { position: static; align-self: flex-end; margin-top: 7px; }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.9.1: Cutscene-Textbox Timing, Position & Animation
    - Textbox erscheint erst wenn Text da ist
@@ -10053,10 +10053,10 @@ body.bv-settings-performance .title-light-rays {
 @media (max-width: 620px) {
     #bv-real-cutscene-overlay .real-cut-dialog { bottom: 76px !important; }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.9.2: Cutscene-Fade + Map-Dialog Text/Emoji-Effekt
    ============================================================ */
@@ -10126,10 +10126,10 @@ body.bv-settings-performance .title-light-rays {
     35% { opacity: .8; }
     100% { transform: translateX(260%); opacity: 0; }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.9.5: Boss-Cutscene Kamera + extreme Dialog-FX
    ============================================================ */
@@ -10206,10 +10206,10 @@ body.bv-settings-performance .title-light-rays {
     58% { transform: translateX(calc(-50% - 4px)) translateY(0) scale(1.005); }
     78% { transform: translateX(calc(-50% + 3px)) translateY(-1px) scale(1.006); }
 }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.9.6: Smooth Farbwechsel + neue Cutscene-FX
    ============================================================ */
@@ -10253,10 +10253,10 @@ body.bv-settings-performance .title-light-rays {
     100% { opacity:0; transform:translateX(85px); }
 }
 @keyframes cutFxDimV796 { from { opacity:0; } to { opacity:1; } }
-</style>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.9.8: ENTER-Stuck-Fix + kreative Tutorial-FX
    ============================================================ */
@@ -10276,12 +10276,12 @@ body.bv-settings-performance .title-light-rays {
 }
 #bv-real-cutscene-overlay.fx-guide .real-cut-text .rich-bold { color:#9fe7ff; text-shadow:0 0 12px rgba(74,159,255,.55); }
 @keyframes guideScanV798 { 0%{opacity:0;transform:translateX(-120%)} 35%{opacity:1} 100%{opacity:0;transform:translateX(230%)} }
-</style>
 
 
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.10.1: Partikel in Titelmenü + Map wieder sichtbar
    Performance-Modus reduziert Partikel nur, versteckt sie aber nicht komplett.
@@ -10303,9 +10303,9 @@ body.bv-settings-performance .title-canvas-bg { opacity: .72 !important; }
 #rpg-fx-particles {
     pointer-events: none !important;
 }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.1: Particle Recovery */
 (function(){
     'use strict';
@@ -10333,9 +10333,9 @@ body.bv-settings-performance .title-canvas-bg { opacity: .72 !important; }
     else setTimeout(recoverParticles, 120);
     setInterval(recoverParticles, 1800);
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.10.2: Title-Einstellungen + Hauptmenü-Button-Safety
    ============================================================ */
@@ -10473,9 +10473,9 @@ body.bv-settings-performance .title-canvas-bg { opacity: .72 !important; }
 @keyframes titleSettingsFadeOutV7102 { from{opacity:1} to{opacity:0} }
 @keyframes titleSettingsWindowInV7102 { from{opacity:0; transform:translateY(18px) scale(.96); filter:blur(3px)} to{opacity:1; transform:translateY(0) scale(1); filter:blur(0)} }
 @media (max-width: 620px) { .title-setting-card { grid-template-columns: 1fr; } .title-settings-select { width: 100%; } }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.2: Title Settings + Main Menu Button Audit */
 (function(){
     'use strict';
@@ -10588,9 +10588,9 @@ body.bv-settings-performance .title-canvas-bg { opacity: .72 !important; }
     window.BVTitleSettings = { open: openTitleSettings, close: closeTitleSettings, render: renderTitleSettings };
     window.BVButtonAudit = { run: bindMainMenuButtons };
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.10.3: Partikel-Aus wirklich aus + Title Settings wie Hauptmenü
    ============================================================ */
@@ -10642,9 +10642,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 #title-settings-modal .setting-toggle.on { background:linear-gradient(135deg, rgba(34,197,94,.60), rgba(74,159,255,.38)); border-color:rgba(105,240,174,.52); }
 #title-settings-modal .setting-toggle.on::after { transform:translateX(27px); }
 @media (max-width:680px){ #title-settings-modal .settings-grid{ grid-template-columns:1fr; } }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.3: Title Settings an Hauptmenü angleichen + Partikel-Aus Bugfix */
 (function(){
     'use strict';
@@ -10734,10 +10734,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     else { wrapSettings(); installOverride(); }
     setInterval(() => { wrapSettings(); syncParticleVisibility(); }, 1200);
 })();
-</script>
 
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.4: Hauptmenü-Karte Anzeigenamen stabil */
 (function(){
     'use strict';
@@ -10770,10 +10770,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     }, true);
     window.BVFixMenuMapTitleName = fixMapTitleName;
 })();
-</script>
 
 
-<style>
+
+
 /* ARENA HOTFIX v7.10.5: Hauptmenü-Karte Canvas stabil */
 #rpg-menu-screen.menu-map-mode #menu-current-map-canvas {
     display: block !important;
@@ -10783,9 +10783,9 @@ body.bv-settings-particles-off .title-canvas-bg {
     object-fit: contain !important;
     image-rendering: pixelated;
 }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.5: Menu Map Canvas + aktive Kategorie No-Op */
 (function(){
     'use strict';
@@ -10830,10 +10830,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     }, true);
     window.BVFixMenuMapCanvas = correctMapCanvasAndTitle;
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.10.8: Hauptmenü Guard / No-Glitch Safety
    - verhindert Doppelaktionen durch alte Inline-Handler
@@ -10849,9 +10849,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 #rpg-menu-screen.active .menu-tab-content:not(.active) {
     display: none !important;
 }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.8: Hauptmenü Guard / No-Glitch Safety */
 (function(){
     'use strict';
@@ -10961,10 +10961,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     setTimeout(wrapMenuFunctions, 120);
     window.BVMainMenuGuard = { normalize: normalizeTabs, cleanup: cleanupClosedMenu, wrap: wrapMenuFunctions };
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.10.9: menu-current-map-canvas robuster Render
    - nutzt echte TILES/MAPS Metadaten auch nach Tab-Wechsel
@@ -10990,9 +10990,9 @@ body.bv-settings-particles-off .title-canvas-bg {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.9: Robust Menu Map Canvas Renderer */
 (function(){
     'use strict';
@@ -11171,10 +11171,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     setTimeout(install, 150);
     window.BVRobustMenuMapCanvas = { redraw: robustRedrawMapCanvas, schedule: scheduleMapRedraw, install };
 })();
-</script>
 
 
-<style>
+
+
 /* ============================================================
    ARENA HOTFIX v7.10.10: Hauptmenü Tabs/Header Fix + Map Instant Redraw
    - menu-tabs bleiben stehen; nur aktiver Inhalt scrollt
@@ -11248,9 +11248,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 #title-settings-modal .title-settings-footer {
     flex: 0 0 auto !important;
 }
-</style>
 
-<script>
+
+
 /* ARENA HOTFIX v7.10.10: Map Tab Instant Redraw + Scroll Guards */
 (function(){
     'use strict';
@@ -11323,9 +11323,9 @@ body.bv-settings-particles-off .title-canvas-bg {
     setTimeout(() => { wrapOpenMenu(); observeWorldMap(); }, 160);
     window.BVMenuMapTabsFix = { redraw: forceMapRedraw, protectScroll: protectTabsScroll, wrap: wrapOpenMenu };
 })();
-</script>
 
-<style>
+
+
 /* ============================================================
    BV FEATURE v1.0: Level-Up Choice Screen + Achievements
    ============================================================ */
@@ -11932,9 +11932,9 @@ body.bv-settings-particles-off .title-canvas-bg {
     60% { opacity: 1; transform: scale(1.05) translateY(-5px); }
     100% { opacity: 1; transform: scale(1) translateY(0); }
 }
-</style>
 
-<script>
+
+
 /* ============================================================
    BV FEATURE v1.0: Level-Up Choice + Achievement System
    ============================================================ */
@@ -12460,9 +12460,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 })();
 
-</script>
 
-<script>
+
+
 /* Skills-Tab im Hauptmenü */
 (function () {
     'use strict';
@@ -12567,5 +12567,5 @@ body.bv-settings-particles-off .title-canvas-bg {
         ensureSkillsTab();
     }, 500);
 })();
-</script>
+
 
