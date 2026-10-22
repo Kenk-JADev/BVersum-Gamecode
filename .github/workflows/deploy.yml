@@ -38,8 +38,11 @@ jobs:
           path: public
 
   deploy:
+    # Eigene Environment statt `github-pages`: Der Default-Schutz dieser
+    # Environment erlaubt nur bestimmte Branches (Settings → Environments).
+    # Mit dieser Environment können Arena-/Feature-Branches direkt deployen.
     environment:
-      name: github-pages
+      name: pages-live
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
