@@ -77,12 +77,18 @@ nach `public/` bzw. `smartstore/generated/`. Zum lokalen Testen:
 python -m http.server 8080 --directory public
 ```
 
+**Flyer-Bild lokal bündeln:** Legt man die Promo-Grafik als
+`assets-src/flyer.jpg` ab, liefert die Website sie selbst aus (schnell, immer
+erreichbar). Ohne Datei wird die Remote-Quelle `webshops.zuef.de` genutzt –
+protokoll-passend, mit 5-Sekunden-Timeout und einem gestalteten
+„Klick hier und starte das Spiel"-Fallback, falls das Bild nicht erreichbar ist.
+
 ### Was der Build anpasst (Quell-Datei bleibt unangetastet)
 
 | Patch | Warum |
 |---|---|
 | Fonts & Twemoji selbst gehostet | DSGVO (keine Anfragen an Google/jsDelivr), offline-fähig |
-| Flyer-Bild über https + Fallback | kein Mixed Content auf https-Seiten |
+| Flyer-Bild robust (protokoll-passend, 5-s-Timeout, Fallback-Platzhalter) | kein Mixed Content, keine leeren Lücken bei Host-Ausfall |
 | Robustes Bootstrapping (`__bvMainInit`) | funktioniert auch bei später Injektion, kein Doppel-Start |
 | CSS-Variablen `--bv-*` (Smartstore-Variante) | Shop-Theme wird nicht überschrieben |
 

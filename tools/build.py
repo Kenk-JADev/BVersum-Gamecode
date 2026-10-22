@@ -165,9 +165,10 @@ def _fonts_css(asset_prefix: str) -> str:
     ])
 
 
-def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool) -> str:
+def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_src_expr: str) -> str:
     """Alle Build-Patches. ``asset_prefix`` ist 'assets/' relativ oder eine
-    absolute URL – je nachdem, wo die Datei später liegt."""
+    absolute URL – je nachdem, wo die Datei später liegt. ``flyer_src_expr`` ist
+    ein JavaScript-Ausdruck für die Bild-URL (lokal gebundelt oder Remote)."""
 
     def replace(text: str, old: str, new: str, expected: int) -> str:
         n = text.count(old)
@@ -224,15 +225,62 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool) -> str:
         1,
     )
 
-    # 5) Mixed Content vermeiden: Flyer-Bild nur noch über https laden,
-    #    bei Fehlschlag das Bild ausblenden (kein kaputtes Icon).
-    html = replace(html, "http://webshops.zuef.de/", "https://webshops.zuef.de/", 1)
-    html = replace(
-        html,
-        'img.className = "zuef-promo-img";',
-        'img.className = "zuef-promo-img"; img.onerror = function () { img.style.display = "none"; };',
-        1,
+    # 5) Flyer-Bild robust laden: kein Mixed Content, kein endloses Warten auf
+    #    nicht erreichbare Hosts, gestalteter Fallback-Platzhalter statt Lücke.
+    flyer_block = re.compile(
+        r'const imgHost = document\.getElementById\("zuef-image-host"\);\s*'
+        r"if \(imgHost && !imgHost\.hasChildNodes\(\)\) \{\s*"
+        r'const img = document\.createElement\("img"\);\s*'
+        r'img\.src = "http://webshops\.zuef\.de/[^"]*";\s*'
+        r'img\.alt = "Flyer";\s*'
+        r'img\.className = "zuef-promo-img";\s*'
+        r"imgHost\.appendChild\(img\);\s*"
+        r"\}",
     )
+    fallback_html = (
+        '<div class="zuef-fallback" '
+        'style="width:100%;aspect-ratio:4/5;border-radius:12px;'
+        "background:linear-gradient(155deg,#22336b,#101533 55%,#2a1a4e);"
+        "border:1px solid rgba(140,170,255,.25);display:flex;flex-direction:column;"
+        "align-items:center;justify-content:center;gap:12px;padding:20px;"
+        "box-sizing:border-box;text-align:center;font-family:VT323,monospace;"
+        'color:#cfe0ff;cursor:pointer">'
+        '<div style="font-size:clamp(40px,8vw,64px);line-height:1">🏢</div>'
+        '<div style="font-size:clamp(22px,4.5vw,32px);letter-spacing:.14em;color:#fff">BÜROVERSUM</div>'
+        '<div style="width:56px;height:2px;background:linear-gradient(90deg,transparent,#4a9fff,transparent)"></div>'
+        '<div style="font-size:clamp(16px,3.2vw,21px);opacity:.85">Klick hier und starte das Spiel</div>'
+        "</div>"
+    )
+    flyer_lines = [
+        'const imgHost = document.getElementById("zuef-image-host");',
+        "                    if (imgHost && !imgHost.hasChildNodes()) {",
+        "                        // Robustes Flyer-Laden (Build-Patch): lokales Bundling bevorzugt,",
+        "                        // sonst Remote-Quelle protokoll-passend (kein Mixed Content).",
+        "                        // Bei Fehler oder nach 5 s Timeout erscheint ein gestalteter Fallback.",
+        '                        var FALLBACK_HTML = "'
+        + fallback_html.replace('"', '\\"')
+        + '";',
+        '                        var img = document.createElement("img");',
+        "                        var settled = false;",
+        "                        function flyerFail() {",
+        "                            if (settled) return;",
+        "                            settled = true;",
+        "                            if (img.parentNode) img.parentNode.removeChild(img);",
+        "                            imgHost.innerHTML = FALLBACK_HTML;",
+        "                        }",
+        '                        img.alt = "Flyer";',
+        '                        img.className = "zuef-promo-img";',
+        "                        img.onload = function () { settled = true; };",
+        "                        img.onerror = flyerFail;",
+        "                        setTimeout(function () { if (!settled) flyerFail(); }, 5000);",
+        f"                        img.src = {flyer_src_expr};",
+        "                        imgHost.appendChild(img);",
+        "                    }",
+    ]
+    flyer_new = "\n".join(flyer_lines)
+    html, n = flyer_block.subn(lambda _m: flyer_new, html, count=1)
+    if n != 1:
+        raise SystemExit("FEHLER: Flyer-Block nicht gefunden (Flyer-Patch)")
 
     # 6) Optional: CSS-Variablen mit bv- Präfix versehen, damit das Fragment
     #    im Shop-DOM keine Theme-Variablen (--primary, --gold …) überschreibt.
@@ -466,11 +514,29 @@ def main() -> None:
     source_html = SOURCE.read_text(encoding="utf-8", errors="strict")
     log(f"Quelle: {SOURCE.name} ({len(source_html):,} Zeichen)".replace(",", "."))
 
+    # Flyer-Bild: lokal gebundelt (assets-src/flyer.jpg) hat Vorrang vor der
+    # Remote-Quelle webshops.zuef.de (die kann ausfallen oder gesperrt sein).
+    local_flyer = ROOT / "assets-src" / "flyer.jpg"
+
+    def flyer_expr(prefix: str) -> str:
+        if local_flyer.is_file():
+            return f'"{prefix}assets/flyer.jpg"'
+        # Protokoll-passend: http-Seiten (z. B. Shop) laden http, alles andere https.
+        return (
+            '(location.protocol === "http:" ? "http:" : "https:")'
+            ' + "//webshops.zuef.de/DE01BVG/media/72/pagebuilder/Fyler-M%c3%a4rz.jpg?size=512"'
+        )
+
     # --- öffentliche Website (relativ, unveränderte CSS-Variablen) ---
-    web_fragment = patch_fragment(source_html, asset_prefix="", rename_css_vars=False)
+    web_fragment = patch_fragment(
+        source_html, asset_prefix="", rename_css_vars=False, flyer_src_expr=flyer_expr(""),
+    )
 
     # --- Smartstore-Fragment (absolute Pfade, CSS-Variablen isoliert) ---
-    direct_fragment = patch_fragment(source_html, asset_prefix=SITE_BASE_URL, rename_css_vars=True)
+    direct_fragment = patch_fragment(
+        source_html, asset_prefix=SITE_BASE_URL, rename_css_vars=True,
+        flyer_src_expr=flyer_expr(SITE_BASE_URL),
+    )
 
     if PUBLIC.exists():
         shutil.rmtree(PUBLIC)
@@ -482,6 +548,11 @@ def main() -> None:
         shutil.copyfile(f, assets / "fonts" / f.name)
     (assets / "fonts" / "fonts.css").write_text(build_fonts_css(), encoding="utf-8")
     (assets / "favicon.svg").write_text(FAVICON, encoding="utf-8")
+    if local_flyer.is_file():
+        shutil.copyfile(local_flyer, assets / "flyer.jpg")
+        log("Flyer lokal gebunden: assets-src/flyer.jpg → assets/flyer.jpg")
+    else:
+        log("Kein assets-src/flyer.jpg – nutze Remote-Quelle webshops.zuef.de mit Fallback")
 
     (PUBLIC / "index.html").write_text(build_index(web_fragment), encoding="utf-8")
     (PUBLIC / "embed.html").write_text(build_embed(web_fragment), encoding="utf-8")
@@ -498,8 +569,8 @@ def main() -> None:
         for bad in ("cdn.jsdelivr.net", "fonts.googleapis.com", "http://webshops.zuef.de"):
             if bad in out:
                 raise SystemExit(f"FEHLER: {name} enthält noch {bad!r}")
-        if "assets/vendor/twemoji" not in out and name != "index.html":
-            pass  # index enthält Fragment + Checks oben greifen ohnehin
+        if "zuef-fallback" not in out:
+            raise SystemExit(f"FEHLER: {name} enthält den Flyer-Fallback nicht")
 
     log("Fertig:")
     for p in sorted(PUBLIC.rglob("*")):
