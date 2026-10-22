@@ -1,0 +1,35 @@
+<!-- ============================================================
+     BüroVersum RPG – Smartstore Page Builder „Custom Code“
+     Variante C: Loader (Spiel-Code wird zur Laufzeit geladen)
+     Das Spiel läuft direkt im Shop-DOM (kein iframe). Der Custom-Code-Block
+     bleibt klein; nachgeladen wird https://kenk-jadev.github.io/BVersum-Gamecode/game-fragment.html
+     ============================================================ -->
+<div id="bueroversum-game"></div>
+<script>
+(function () {
+    var BASE = "https://kenk-jadev.github.io/BVersum-Gamecode/";
+    var host = document.getElementById("bueroversum-game");
+    if (!host) return;
+    fetch(BASE + "game-fragment.html")
+        .then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.text();
+        })
+        .then(function (html) {
+            host.innerHTML = html;
+            // <script>-Tags aus innerHTML werden nicht ausgeführt – deshalb
+            // in derselben Reihenfolge neu anlegen und ausführen.
+            Array.prototype.forEach.call(host.querySelectorAll("script"), function (old) {
+                var s = document.createElement("script");
+                if (old.src) { s.src = old.src; if (old.crossOrigin) s.crossOrigin = old.crossOrigin; }
+                else { s.text = old.textContent; }
+                old.parentNode.replaceChild(s, old);
+            });
+        })
+        .catch(function (e) {
+            console.error("[BüroVersum] Loader fehlgeschlagen:", e);
+            host.innerHTML = '<p style="font-family:sans-serif;text-align:center;padding:24px">Das Spiel konnte nicht geladen werden. '
+                + '<a href="' + BASE + 'embed.html" target="_blank" rel="noopener">Hier in neuem Tab öffnen</a></p>';
+        });
+})();
+</script>
