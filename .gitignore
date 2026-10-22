@@ -1,0 +1,11 @@
+# Build-Artefakte (werden von tools/build.py erzeugt)
+public/
+smartstore/generated/
+
+# Vendor-Cache (Fonts/Twemoji, Download bei Bedarf automatisch)
+tools/vendor/
+tools/__pycache__/
+
+# Python
+__pycache__/
+*.pyc
