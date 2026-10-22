@@ -115,10 +115,10 @@ Der Spielstand liegt im `localStorage` der jeweiligen Origin. Bei Variante A
 ist das die Spiel-URL (Spielstand bleibt über alle eingebetteten Seiten
 identisch). Bei B/C ist es die Shop-Domain.
 
-**Countdown / „Exklusiv bis 31.03.2026“.**
-Das Datum ist im Spielcode hinterlegt (Text + Countdown-Ziel) und bereits
-abgelaufen – die Anzeige zeigt dann 00 an. Text und Ziel-Datum können bei Bedarf
-im Quellcode (Widget-Bereich ganz oben) angepasst werden.
+**Countdown / „Exklusiv bis 01.12.2026“.**
+Das Datum ist im Spielcode hinterlegt (Anzeige-Text + Countdown-Ziel) und
+aktuell bis 01.12.2026, 23:59:59 gesetzt. Beides lässt sich im Quellcode
+(Widget-Bereich ganz oben bzw. Countdown-Initialisierung) bei Bedarf anpassen.
 
 **Tastatur im Shop reagiert nicht mehr.**
 Nur möglich, während das Spiel-Overlay offen ist (das Overlay fängt Tasten ab).
