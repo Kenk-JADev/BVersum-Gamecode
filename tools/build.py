@@ -486,14 +486,23 @@ def write_snippets() -> None:
      Variante C: Loader (Spiel-Code wird zur Laufzeit geladen)
      Das Spiel läuft direkt im Shop-DOM (kein iframe). Der Custom-Code-Block
      bleibt klein; nachgeladen wird {base}game-fragment.html
+
+     WICHTIG: BASE muss auf die Spiel-Website zeigen (siehe unten).
+     Der Loader prüft bei jedem Seitenaufruf auf einen neuen Stand
+     (cache: no-cache) – Shop und Website sind damit immer synchron.
      ============================================================ -->
 <div id="bueroversum-game"></div>
 <script>
 (function () {{
-    var BASE = "{base}";
+    // Basis-URL der Spiel-Website. Optional überschreibbar über
+    // data-base am Host-Element: <div id="bueroversum-game" data-base="https://…/">
     var host = document.getElementById("bueroversum-game");
     if (!host) return;
-    fetch(BASE + "game-fragment.html")
+    var BASE = host.getAttribute("data-base") || "{base}";
+    if (window._bvLoaderDone) return;          // kein doppeltes Injizieren
+    window._bvLoaderDone = true;
+
+    fetch(BASE + "game-fragment.html", {{ cache: "no-cache" }})  // immer neu validieren
         .then(function (r) {{
             if (!r.ok) throw new Error("HTTP " + r.status);
             return r.text();
@@ -508,9 +517,13 @@ def write_snippets() -> None:
                 else {{ s.text = old.textContent; }}
                 old.parentNode.replaceChild(s, old);
             }});
+            // Build-Stempel zur Kontrolle ausgeben (Boot-Screen zeigt ihn ebenfalls an)
+            setTimeout(function () {{
+                console.info("[BüroVersum-Loader] Spiel geladen – Build: " + (window.BV_BUILD || "unbekannt"));
+            }}, 300);
         }})
         .catch(function (e) {{
-            console.error("[BüroVersum] Loader fehlgeschlagen:", e);
+            console.error("[BüroVersum-Loader] Laden fehlgeschlagen:", e);
             host.innerHTML = '<p style="font-family:sans-serif;text-align:center;padding:24px">Das Spiel konnte nicht geladen werden. '
                 + '<a href="' + BASE + 'embed.html" target="_blank" rel="noopener">Hier in neuem Tab öffnen</a></p>';
         }});

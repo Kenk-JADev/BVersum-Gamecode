@@ -87,15 +87,32 @@ vorbereitet:
 
 Ein kleiner Code-Block (unter 2 KB), der den Spielcode beim Laden von
 `…/game-fragment.html` nachlädt und injiziert. Vorteil gegenüber Variante B:
-Der Page-Builder-Block bleibt klein und wartbar. Nachteil gegenüber Variante A:
-Styles und Scripts laufen im Shop-DOM (mit den oben genannten, abgeschirmten
-Einschränkungen).
+Der Page-Builder-Block bleibt klein und wartbar, und das Spiel ist **immer
+aktuell**, sobald eine neue Version ausgeliefert wird. Nachteil gegenüber
+Variante A: Styles und Scripts laufen im Shop-DOM (mit den oben genannten,
+abgeschirmten Einschränkungen).
 
-1. `snippet-loader.html` in den Custom-Code-Block einfügen.
-2. Sicherstellen, dass `https://kenk-jadev.github.io/BVersum-Gamecode/game-fragment.html`
-   öffentlich erreichbar ist (Standardfall).
-3. Vorschau prüfen. Fehler landen mit Präfix `[BüroVersum]` in der Browser-
-   Konsole; zusätzlich wird ein Link-Fallback angezeigt.
+1. `snippet-loader.html` in den Custom-Code-Block einfügen (bzw. den alten
+   Loader-Block damit ersetzen).
+2. **BASE-URL prüfen:** Sie muss auf die Spiel-Website zeigen:
+   `https://kenk-jadev.github.io/BVersum-Gamecode/`. Zeigt sie woanders hin
+   (z. B. auf eine Kopie im Medien-Speicher des Shops), läuft dort alter Code!
+   Alternativ kann die URL auch pro Seite gesetzt werden:
+   `<div id="bueroversum-game" data-base="https://…/">`.
+3. Vorschau prüfen. Der Loader holt den Code mit `cache: no-cache` – Browser-
+   Caches können das Update also nicht verzögern.
+
+### Bestehende Loader-Seite auf den aktuellen Stand bringen
+
+Wenn die Seite bereits einen Loader nutzt, reicht es, den **alten Loader-Block
+im Page Builder durch das aktuelle `snippet-loader.html` zu ersetzen**.
+Kontrolle: In der Browser-Konsole muss
+`[BüroVersum-Loader] Spiel geladen – Build: 2026-10-25` (oder neuer) stehen,
+und der Boot-Screen zeigt `Version 7.10.11 • Build …`. Steht dort kein
+Build-Stempel, läuft weiterhin eine alte Kopie des Spiels (BASE-URL prüfen!).
+
+Fehler landen mit Präfix `[BüroVersum-Loader]` in der Browser-Konsole;
+zusätzlich wird ein Link-Fallback (Spiel in neuem Tab) angezeigt.
 
 ---
 
