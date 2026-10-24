@@ -26,6 +26,7 @@ Aufruf:  python tools/build.py
 
 from __future__ import annotations
 
+import datetime
 import re
 import shutil
 import sys
@@ -200,6 +201,25 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
     html, n = close_old.subn(close_new, html, count=1)
     if n != 1:
         raise SystemExit("FEHLER: Ende des Init-Blocks nicht gefunden (Bootstrap-Patch)")
+
+    # 1b) Build-Stempel: macht die laufende Version in Console und Boot-Screen
+    #     sichtbar – so erkennt man sofort, ob Shop und Website gleichen Stand haben.
+    stamp = datetime.datetime.now(
+        datetime.timezone(datetime.timedelta(hours=2))  # Europe/Berlin (MEZ/MESZ)
+    ).date().isoformat()
+    html = replace(
+        html,
+        "window._bueroversum_init = true;",
+        f'window._bueroversum_init = true; window.BV_BUILD = "{stamp}"; '
+        f'console.log("[BüroVersum] Build {stamp}");',
+        1,
+    )
+    html = replace(
+        html,
+        "Version 7.10.11 &bull; &copy; 2026",
+        f"Version 7.10.11 &bull; Build {stamp} &bull; &copy; 2026",
+        1,
+    )
 
     # 2) Twemoji-Library selbst hosten statt CDN
     html = replace(
