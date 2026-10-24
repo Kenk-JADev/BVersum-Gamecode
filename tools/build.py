@@ -302,6 +302,15 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
     if n != 1:
         raise SystemExit("FEHLER: Flyer-Block nicht gefunden (Flyer-Patch)")
 
+    # 5b) A11y: Promo-Karte (öffnet das Spiel) per Tab/Enter erreichbar machen.
+    html = replace(
+        html,
+        '<div class="zuef-premium-card" id="zuef-secret-trigger">',
+        '<div class="zuef-premium-card" id="zuef-secret-trigger" role="button" tabindex="0" '
+        'aria-label="BüroVersum starten">',
+        1,
+    )
+
     # 6) Optional: CSS-Variablen mit bv- Präfix versehen, damit das Fragment
     #    im Shop-DOM keine Theme-Variablen (--primary, --gold …) überschreibt.
     if rename_css_vars:
@@ -332,37 +341,312 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
 # ---------------------------------------------------------------------------
 
 SHELL_STYLE = """
+        /* ============================================================
+           Landing-Page (nur Website-Variante).
+           Alle eigenen Variablen sind mit --bvx- gepräfixt, alle Klassen
+           mit bvx- – das Spiel nutzt --primary/--gold und .bv-* für sich.
+           Wichtig: keine transform/filter/backdrop-filter auf Vorfahren des
+           Spiel-Overlays (position:fixed braucht den Viewport als Bezug).
+           ============================================================ */
+        :root { color-scheme: dark; }
         html, body { margin: 0; padding: 0; }
-        body.bv-shell {
-            background: radial-gradient(1200px 600px at 50% -10%, #16204a 0%, #0a0a1a 55%);
-            color: #dfe7ff;
-            font-family: 'VT323', 'Courier New', monospace;
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body.bvx-shell {
+            --bvx-bg: #060913;
+            --bvx-accent: #4a9fff;
+            --bvx-accent-2: #7c5ce0;
+            --bvx-text: #e8eefc;
+            --bvx-muted: #9db0d6;
+            --bvx-line: rgba(120, 170, 255, .16);
+            --bvx-card: rgba(255, 255, 255, .035);
+            --bvx-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --bvx-font-pixel: 'Press Start 2P', monospace;
+            --bvx-font-mono: 'VT323', 'Courier New', monospace;
+            margin: 0;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            background:
+                radial-gradient(1200px 700px at 50% -12%, #16204a 0%, rgba(22, 32, 74, 0) 62%),
+                radial-gradient(900px 620px at 108% 4%, rgba(124, 92, 224, .18), rgba(124, 92, 224, 0) 62%),
+                var(--bvx-bg);
+            background-attachment: fixed, fixed, scroll;
+            color: var(--bvx-text);
+            font-family: var(--bvx-font-sans);
+            font-size: 17px;
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        body.bvx-shell img { max-width: 100%; }
+        body.bvx-shell a { color: #8fc0ff; }
+        body.bvx-shell a:focus-visible,
+        body.bvx-shell button:focus-visible,
+        body.bvx-shell summary:focus-visible {
+            outline: 2px solid #8cc6ff;
+            outline-offset: 3px;
+            border-radius: 8px;
+        }
+
+        /* Skip-Link (Tastatur) */
+        .bvx-skip {
+            position: absolute; left: -9999px; top: 0;
+            z-index: 200; padding: 10px 16px; border-radius: 10px;
+            background: #0b1226; color: #fff !important; text-decoration: none;
+            font-family: var(--bvx-font-mono); font-size: 18px;
+            border: 1px solid rgba(120, 170, 255, .4);
+        }
+        .bvx-skip:focus { left: 16px; top: 16px; }
+
+        /* ---------------------------------------------------------- Topbar */
+        .bvx-topbar {
+            position: sticky; top: 0; z-index: 60;
+            display: flex; align-items: center; gap: 16px;
+            padding: 11px clamp(16px, 4vw, 40px);
+            background: rgba(6, 9, 19, .8);
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--bvx-line);
+        }
+        .bvx-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .bvx-brand img { width: 36px; height: 36px; border-radius: 11px; display: block; box-shadow: 0 8px 22px rgba(30, 70, 160, .45); }
+        .bvx-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+        .bvx-brand-name { font-family: var(--bvx-font-pixel); font-size: 12px; letter-spacing: .06em; color: #fff; }
+        .bvx-brand-sub { font-family: var(--bvx-font-mono); font-size: 15px; color: var(--bvx-muted); letter-spacing: .04em; }
+        .bvx-spacer { flex: 1 1 auto; }
+        .bvx-nav { display: flex; align-items: center; gap: 2px; }
+        .bvx-nav a {
+            font-family: var(--bvx-font-mono); font-size: 19px; letter-spacing: .07em;
+            text-transform: uppercase; color: var(--bvx-muted); text-decoration: none;
+            padding: 7px 12px; border-radius: 9px;
+            transition: color .18s ease, background .18s ease;
+        }
+        .bvx-nav a:hover { color: #fff; background: rgba(74, 159, 255, .12); }
+        @media (max-width: 900px) { .bvx-nav { display: none; } }
+        @media (max-width: 420px) { .bvx-brand-sub { display: none; } }
+
+        /* ---------------------------------------------------------- Buttons */
+        .bvx-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+            font-family: var(--bvx-font-mono); font-size: 21px; letter-spacing: .06em;
+            padding: 11px 22px; border-radius: 12px;
+            border: 1px solid transparent; cursor: pointer; text-decoration: none;
+            transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+        }
+        .bvx-btn-primary {
+            background: linear-gradient(135deg, #4a9fff, #3d7ee0 55%, #7c5ce0);
+            color: #fff !important; font-weight: 600;
+            box-shadow: 0 12px 30px rgba(74, 159, 255, .35);
+        }
+        .bvx-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(74, 159, 255, .45); }
+        .bvx-btn-primary:active { transform: translateY(0); }
+        .bvx-btn-ghost {
+            background: rgba(255, 255, 255, .04); border-color: var(--bvx-line); color: var(--bvx-text) !important;
+        }
+        .bvx-btn-ghost:hover { background: rgba(74, 159, 255, .12); border-color: rgba(120, 170, 255, .42); }
+        .bvx-btn-small { font-size: 18px; padding: 8px 16px; border-radius: 10px; }
+
+        /* ------------------------------------------------------------ Seiten */
+        .bvx-page {
+            width: 100%; max-width: 1180px; margin: 0 auto;
+            padding: 0 clamp(16px, 4vw, 40px) 48px;
+            box-sizing: border-box;
+        }
+        .bvx-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+            gap: clamp(28px, 5vw, 64px);
             align-items: center;
+            padding: clamp(30px, 6vw, 68px) 0 16px;
         }
-        .bv-shell-header { text-align: center; padding: 42px 20px 8px; }
-        .bv-shell-logo {
-            width: 72px; height: 72px; margin: 0 auto 14px;
-            border-radius: 20px; background: linear-gradient(145deg, #1a2a4a, #12122a);
-            border: 1px solid rgba(140, 170, 255, .25);
+        .bvx-eyebrow {
+            display: inline-flex; align-items: center; gap: 10px;
+            font-family: var(--bvx-font-mono); font-size: 16px; letter-spacing: .13em;
+            text-transform: uppercase; color: #a9c4f5;
+            background: rgba(74, 159, 255, .09);
+            border: 1px solid rgba(120, 170, 255, .26);
+            padding: 6px 14px; border-radius: 999px;
+        }
+        .bvx-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #00cc66;
+            animation: bvxPulse 2s ease-in-out infinite;
+        }
+        @keyframes bvxPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 204, 102, .6); }
+            50% { box-shadow: 0 0 0 6px rgba(0, 204, 102, 0); }
+        }
+        .bvx-hero h1 {
+            font-family: var(--bvx-font-pixel);
+            font-size: clamp(25px, 4.4vw, 44px);
+            line-height: 1.2; letter-spacing: .015em;
+            margin: 20px 0 0; color: #fff;
+            text-shadow: 0 0 44px rgba(74, 159, 255, .42);
+        }
+        .bvx-hero h1 .bvx-h1-sub {
+            display: block; margin-top: 16px;
+            font-family: var(--bvx-font-mono);
+            font-size: clamp(20px, 2.6vw, 27px);
+            letter-spacing: .18em; text-transform: uppercase;
+            color: #8fc0ff; text-shadow: none;
+        }
+        .bvx-lead {
+            margin: 20px 0 0; max-width: 54ch;
+            color: var(--bvx-muted); font-size: clamp(16.5px, 1.5vw, 18.5px);
+        }
+        .bvx-chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 22px 0 0; }
+        .bvx-chips li {
+            font-family: var(--bvx-font-mono); font-size: 17px; letter-spacing: .05em;
+            color: #b8cbec; background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--bvx-line); border-radius: 999px; padding: 4px 13px;
+        }
+        .bvx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 26px 0 0; }
+        .bvx-note { margin: 16px 0 0; font-size: 15px; color: #7e8fb8; }
+        .bvx-note a { color: #8fc0ff; }
+
+        .bvx-hero-visual {
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            padding: clamp(12px, 2.2vw, 22px);
+            border-radius: 22px;
+            background: linear-gradient(160deg, rgba(28, 44, 92, .72), rgba(9, 13, 30, .88) 72%);
+            border: 1px solid var(--bvx-line);
+            box-shadow: 0 30px 80px rgba(3, 6, 16, .6), inset 0 1px 0 rgba(255, 255, 255, .05);
+        }
+
+        /* --- Spiel-Widget (Promo-Karte + Countdown) auf dunklem Grund --- */
+        body.bvx-shell #zuef-main-wrapper { width: 100%; padding: 0; }
+        body.bvx-shell .zuef-centered-col { max-width: 420px; }
+        body.bvx-shell .zuef-card-body {
+            background: rgba(8, 12, 28, .92);
+            border: 1px solid rgba(120, 170, 255, .22);
+            box-shadow: 0 18px 48px rgba(0, 0, 0, .45);
+        }
+        body.bvx-shell .zuef-main-title {
+            color: #eaf1ff; font-family: var(--bvx-font-mono);
+            font-size: 1.32rem; font-weight: 400; letter-spacing: .05em;
+        }
+        body.bvx-shell .zuef-accent-date { color: #8fc0ff; border-bottom-color: rgba(143, 192, 255, .55); }
+        body.bvx-shell .zuef-countdown-row {
+            background: rgba(10, 16, 36, .92);
+            border-color: rgba(120, 170, 255, .18);
+            gap: 10px; padding: 12px 18px;
+        }
+        body.bvx-shell .zuef-num { color: #fff; font-family: var(--bvx-font-mono); }
+        body.bvx-shell .zuef-label { color: #8fa6d8; }
+        body.bvx-shell .zuef-divider-line { background: rgba(120, 170, 255, .16); }
+        body.bvx-shell #zuef-secret-trigger:focus-visible {
+            outline: 2px solid #8cc6ff; outline-offset: 6px; border-radius: 18px;
+        }
+
+        /* --------------------------------------------------------- Sektionen */
+        .bvx-section { padding: clamp(44px, 7vw, 84px) 0 0; scroll-margin-top: 84px; }
+        .bvx-section-head { max-width: 720px; }
+        .bvx-kicker {
+            font-family: var(--bvx-font-mono); font-size: 16px; letter-spacing: .18em;
+            text-transform: uppercase; color: #7fa8ee; margin: 0 0 10px;
+        }
+        .bvx-section h2 {
+            font-family: var(--bvx-font-pixel);
+            font-size: clamp(16px, 2.3vw, 23px);
+            line-height: 1.5; letter-spacing: .03em; margin: 0 0 12px; color: #fff;
+        }
+        .bvx-section-lead { margin: 0; color: var(--bvx-muted); font-size: 17.5px; max-width: 62ch; }
+
+        .bvx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 16px; margin-top: 30px; }
+        .bvx-card {
+            background: var(--bvx-card); border: 1px solid var(--bvx-line);
+            border-radius: 16px; padding: 22px;
+            transition: transform .2s ease, border-color .2s ease, background .2s ease;
+        }
+        .bvx-card:hover { transform: translateY(-3px); border-color: rgba(120, 170, 255, .4); background: rgba(74, 159, 255, .07); }
+        .bvx-card-icon {
+            width: 46px; height: 46px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 38px; box-shadow: 0 12px 40px rgba(30, 60, 160, .35);
+            font-size: 24px; line-height: 1; margin-bottom: 14px;
+            background: linear-gradient(150deg, rgba(74, 159, 255, .22), rgba(124, 92, 224, .18));
+            border: 1px solid rgba(120, 170, 255, .25);
         }
-        .bv-shell-header h1 {
-            margin: 0; letter-spacing: .12em;
-            font-family: 'Press Start 2P', monospace; font-size: clamp(18px, 4vw, 30px);
-            color: #fff; text-shadow: 0 0 24px rgba(74, 159, 255, .55);
+        .bvx-card h3 {
+            margin: 0 0 8px; font-family: var(--bvx-font-mono); font-weight: 400;
+            font-size: 20px; letter-spacing: .04em; color: #fff;
         }
-        .bv-shell-tagline { margin: 14px 0 0; font-size: 21px; color: #9db4e8; }
-        .bv-shell-main { width: 100%; display: flex; justify-content: center; padding: 10px 12px 30px; }
-        .bv-shell-footer {
-            margin-top: auto; padding: 18px 20px 26px; text-align: center;
-            font-size: 16px; color: #6d7ba6;
+        .bvx-card p { margin: 0; color: var(--bvx-muted); font-size: 16px; line-height: 1.62; }
+
+        .bvx-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 30px; }
+        .bvx-step {
+            padding: 24px 22px 22px; border-radius: 16px;
+            border: 1px solid var(--bvx-line);
+            background: linear-gradient(160deg, rgba(20, 32, 66, .72), rgba(10, 14, 32, .55));
         }
-        .bv-shell-footer a { color: #8cf; text-decoration: none; }
-        .bv-shell-footer a:hover { text-decoration: underline; }
+        .bvx-step-num { font-family: var(--bvx-font-pixel); font-size: 12px; color: #ffd86b; letter-spacing: .1em; }
+        .bvx-step h3 { margin: 14px 0 8px; font-size: 18.5px; font-family: var(--bvx-font-mono); font-weight: 400; letter-spacing: .03em; color: #fff; }
+        .bvx-step p { margin: 0; color: var(--bvx-muted); font-size: 16px; }
+
+        .bvx-faq { margin-top: 28px; display: grid; gap: 10px; max-width: 820px; }
+        .bvx-faq details {
+            border: 1px solid var(--bvx-line); border-radius: 14px;
+            background: rgba(255, 255, 255, .03); padding: 15px 20px;
+            transition: border-color .2s ease, background .2s ease;
+        }
+        .bvx-faq details:hover { border-color: rgba(120, 170, 255, .32); }
+        .bvx-faq details[open] { background: rgba(74, 159, 255, .06); border-color: rgba(120, 170, 255, .34); }
+        .bvx-faq summary {
+            cursor: pointer; list-style: none;
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            font-family: var(--bvx-font-mono); font-size: 20px; letter-spacing: .03em; color: #eaf1ff;
+        }
+        .bvx-faq summary::-webkit-details-marker { display: none; }
+        .bvx-faq summary::after { content: '+'; font-family: var(--bvx-font-sans); font-size: 22px; color: #7fa8ee; }
+        .bvx-faq details[open] summary::after { content: '–'; }
+        .bvx-faq p { margin: 12px 0 0; color: var(--bvx-muted); font-size: 16.5px; }
+        .bvx-faq code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 14px; background: rgba(255, 255, 255, .07);
+            padding: 1px 6px; border-radius: 5px; color: #cfe0ff;
+        }
+
+        .bvx-cta-band {
+            margin-top: clamp(48px, 7vw, 88px);
+            padding: clamp(28px, 5vw, 46px);
+            border-radius: 22px; text-align: center;
+            background:
+                radial-gradient(640px 260px at 50% 0%, rgba(124, 92, 224, .38), rgba(124, 92, 224, 0) 72%),
+                linear-gradient(160deg, rgba(28, 44, 92, .92), rgba(9, 13, 30, .92));
+            border: 1px solid rgba(120, 170, 255, .22);
+        }
+        .bvx-cta-band h2 {
+            font-family: var(--bvx-font-pixel); font-size: clamp(16px, 2.4vw, 24px);
+            line-height: 1.5; letter-spacing: .03em; margin: 0 0 10px; color: #fff;
+        }
+        .bvx-cta-band p { margin: 0 auto 22px; max-width: 56ch; color: var(--bvx-muted); }
+
+        .bvx-footer {
+            border-top: 1px solid var(--bvx-line);
+            margin-top: 56px;
+            padding: 26px clamp(16px, 4vw, 40px) 40px;
+            text-align: center; color: #7e8fb8; font-size: 15px;
+        }
+        .bvx-footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 20px; margin: 0 0 12px; padding: 0; list-style: none; }
+        .bvx-footer a { color: #8fc0ff; text-decoration: none; }
+        .bvx-footer a:hover { text-decoration: underline; }
+        .bvx-footer p { margin: 4px 0; }
+
+        @media (max-width: 980px) {
+            .bvx-hero { grid-template-columns: minmax(0, 1fr); gap: 30px; padding-top: 28px; }
+            .bvx-hero-visual { justify-self: center; width: 100%; max-width: 520px; }
+            .bvx-lead { max-width: none; }
+        }
+        @media (max-width: 560px) {
+            body.bvx-shell { font-size: 16px; }
+            .bvx-btn { font-size: 19px; padding: 10px 18px; }
+            .bvx-actions .bvx-btn { flex: 1 1 auto; }
+            body.bvx-shell .zuef-countdown-row { padding: 10px 12px; gap: 6px; }
+            body.bvx-shell .zuef-time-block { min-width: 38px; }
+            .bvx-faq summary { font-size: 18px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .bvx-card:hover, .bvx-btn-primary:hover { transform: none; }
+            .bvx-dot { animation: none; }
+        }
 """
 
 EMBED_HEAD_STYLE = """
@@ -388,6 +672,47 @@ AUTOOPEN_SCRIPT = """
         })();
 """
 
+PLAY_SCRIPT = """
+        // „Jetzt spielen“-Buttons: nutzen die vorhandene Spiel-Logik und
+        // funktionieren auch, wenn das Spiel noch initialisiert.
+        (function () {
+            function startGame(e) {
+                if (e) e.preventDefault();
+                if (typeof window.openRPG === 'function') { window.openRPG(); return; }
+                var trigger = document.getElementById('zuef-secret-trigger');
+                if (trigger) trigger.click();
+                else window.location.href = 'embed.html?autoopen=1';
+            }
+            document.querySelectorAll('[data-bvx-play]').forEach(function (el) {
+                el.addEventListener('click', startGame);
+            });
+            // Promo-Karte: Enter/Leertaste lösen ebenfalls den Klick aus
+            var card = document.getElementById('zuef-secret-trigger');
+            if (card) {
+                card.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                        e.preventDefault();
+                        card.click();
+                    }
+                });
+            }
+            // ?autoopen=1 oder ?play=1 öffnet das Spiel direkt
+            try {
+                var q = new URLSearchParams(location.search);
+                if (q.get('autoopen') !== '1' && q.get('play') !== '1') return;
+            } catch (err) { return; }
+            var tries = 0;
+            var t = setInterval(function () {
+                if (typeof window.openRPG === 'function') {
+                    clearInterval(t);
+                    if (!document.querySelector('#rpg-overlay.open')) window.openRPG();
+                } else if (++tries > 200) {
+                    clearInterval(t);
+                }
+            }, 50);
+        })();
+"""
+
 FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#0a0a1a"/>
   <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#4a9fff" stroke-opacity=".5" stroke-width="2"/>
@@ -395,39 +720,251 @@ FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
 </svg>
 """
 
+# ---------------------------------------------------------------------------
+# Landing-Page
+# ---------------------------------------------------------------------------
 
-def build_index(fragment: str) -> str:
-    return f"""<!DOCTYPE html>
+INDEX_TEMPLATE = """<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BüroVersum – Das Büro-RPG im Browser</title>
-    <meta name="description" content="BüroVersum: Ein RPG aus dem Büroalltag. Direkt im Browser spielen – kein Download nötig.">
-    <meta name="theme-color" content="#0a0a1a">
+    <title>BüroVersum – Das Büro-RPG im Browser spielen</title>
+    <meta name="description" content="BüroVersum ist ein RPG aus dem Büroalltag: isometrische Bürowelt, Kämpfe, Quests, Shop und ein voller Computer-Desktop. Kostenlos im Browser spielen – ohne Download, ohne Konto.">
+    <meta name="author" content="BüroVersum GmbH">
+    <meta name="theme-color" content="#060913">
+    <link rel="canonical" href="{base}">
+
+    <!-- Social / Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="BüroVersum">
+    <meta property="og:locale" content="de_DE">
+    <meta property="og:title" content="BüroVersum – Das Büro-RPG im Browser">
+    <meta property="og:description" content="Akten, Kaffee und Überstunden: Spiele das Büro-RPG direkt im Browser – kostenlos, ohne Download, ohne Konto.">
+    <meta property="og:url" content="{base}">
+    <meta property="og:image" content="{base}assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="BüroVersum – Pixel-Bürogebäude auf dunkelblauem Hintergrund">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BüroVersum – Das Büro-RPG im Browser">
+    <meta name="twitter:description" content="Akten, Kaffee und Überstunden: Spiele das Büro-RPG direkt im Browser – kostenlos, ohne Download.">
+    <meta name="twitter:image" content="{base}assets/og-image.png">
+
+    <!-- Icons & PWA -->
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
+
+    <!-- Schriften: selbst gehostet (keine Anfragen an Google) -->
+    <link rel="preload" href="assets/fonts/press-start-2p-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/vt323-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="assets/fonts/fonts.css">
-    <style>{SHELL_STYLE}</style>
+    <style>{shell_style}</style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "BüroVersum",
+      "url": "{base}",
+      "image": "{base}assets/og-image.png",
+      "description": "Browser-RPG aus dem Büroalltag mit isometrischer Bürowelt, Kämpfen, Quests, Shop und Computer-Desktop.",
+      "genre": ["RPG", "Indie"],
+      "gamePlatform": "Web browser",
+      "operatingSystem": "Beliebiger Browser",
+      "applicationCategory": "Game",
+      "inLanguage": "de",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+      "author": { "@type": "Organization", "name": "BüroVersum GmbH" },
+      "publisher": { "@type": "Organization", "name": "BüroVersum GmbH" }
+    }
+    </script>
 </head>
-<body class="bv-shell">
-    <header class="bv-shell-header">
-        <div class="bv-shell-logo">🏢</div>
-        <h1>BÜROVERSUM</h1>
-        <p class="bv-shell-tagline">Das Büro-RPG im Browser – klicke die Karte an und leg los.</p>
+<body class="bvx-shell">
+    <a class="bvx-skip" href="#spiel">Direkt zum Spiel</a>
+
+    <header class="bvx-topbar">
+        <a class="bvx-brand" href="./" aria-label="BüroVersum – Startseite">
+            <img src="assets/icon-192.png" width="36" height="36" alt="" decoding="async">
+            <span class="bvx-brand-text">
+                <span class="bvx-brand-name">BÜROVERSUM</span>
+                <span class="bvx-brand-sub">Büro-RPG im Browser</span>
+            </span>
+        </a>
+        <div class="bvx-spacer"></div>
+        <nav class="bvx-nav" aria-label="Hauptnavigation">
+            <a href="#spiel">Spiel</a>
+            <a href="#features">Features</a>
+            <a href="#anleitung">Anleitung</a>
+            <a href="#fragen">Fragen</a>
+        </nav>
+        <button type="button" class="bvx-btn bvx-btn-primary bvx-btn-small" data-bvx-play>▶ Spielen</button>
     </header>
 
-    <main class="bv-shell-main">
-{fragment}
+    <main class="bvx-page">
+        <section class="bvx-hero" id="spiel">
+            <div class="bvx-hero-copy">
+                <span class="bvx-eyebrow"><span class="bvx-dot" aria-hidden="true"></span> Live · Version 7.10.11</span>
+                <h1>BÜROVERSUM<span class="bvx-h1-sub">Das Büro-RPG im Browser</span></h1>
+                <p class="bvx-lead">
+                    Vom ersten Arbeitstag bis zur Gehaltsverhandlung: Erkunde das Bürogebäude,
+                    sprich mit deinen Kolleginnen und Kollegen, kämpfe dich durch den
+                    Alltagswahnsinn und baue dir deine Karriere auf – direkt im Browser.
+                </p>
+                <ul class="bvx-chips">
+                    <li>Kein Download</li>
+                    <li>Kein Konto</li>
+                    <li>Spielstand im Browser</li>
+                    <li>Maus, Tastatur &amp; Touch</li>
+                </ul>
+                <div class="bvx-actions">
+                    <button type="button" class="bvx-btn bvx-btn-primary" data-bvx-play>▶ Jetzt spielen</button>
+                    <a class="bvx-btn bvx-btn-ghost" href="embed.html?autoopen=1" target="_blank" rel="noopener">Im neuen Tab öffnen</a>
+                </div>
+                <p class="bvx-note">
+                    Läuft direkt auf dieser Seite – ohne Installation. Der Spielstand bleibt auf deinem Gerät.
+                    <a href="#anleitung">So funktioniert's</a>
+                </p>
+            </div>
+
+            <div class="bvx-hero-visual">
+                <!-- Ab hier: Spiel (Promo-Karte + komplettes Overlay) -->
+{game_fragment}
+            </div>
+        </section>
+
+        <section class="bvx-section" id="features">
+            <div class="bvx-section-head">
+                <p class="bvx-kicker">Was dich erwartet</p>
+                <h2>Ein Arbeitstag wie im echten Büro – nur als Spiel</h2>
+                <p class="bvx-section-lead">
+                    BüroVersum verbindet eine isometrische Bürowelt mit Rollenspiel-Mechaniken:
+                    Quests, Kämpfe, Ausrüstung und ein Computer auf dem Schreibtisch, der
+                    tatsächlich funktioniert.
+                </p>
+            </div>
+            <div class="bvx-grid">
+                <article class="bvx-card">
+                    <div class="bvx-card-icon" aria-hidden="true">🗺️</div>
+                    <h3>Isometrische Bürowelt</h3>
+                    <p>Flure, Büros und Serverraum als isometrische Karte – mit Türen, Truhen und Kolleginnen und Kollegen, die sich bewegen.</p>
+                </article>
+                <article class="bvx-card">
+                    <div class="bvx-card-icon" aria-hidden="true">⚔️</div>
+                    <h3>Kampfsystem</h3>
+                    <p>Kämpfe mit Skills und Items, Levelaufstiege und eigene Boss-Kämpfe mit eigener HUD-Anzeige.</p>
+                </article>
+                <article class="bvx-card">
+                    <div class="bvx-card-icon" aria-hidden="true">💼</div>
+                    <h3>Vier Abteilungen</h3>
+                    <p>Einkauf, Verkauf, Zentrale oder Verwaltung: Deine Abteilung bestimmt, wie dein Arbeitstag beginnt.</p>
+                </article>
+                <article class="bvx-card">
+                    <div class="bvx-card-icon" aria-hidden="true">🖥️</div>
+                    <h3>BüroVersum OS</h3>
+                    <p>Der Computer auf dem Schreibtisch ist ein eigenes Betriebssystem: E-Mail-App mit Ordnern, Dateien, Notepad und Einstellungen.</p>
+                </article>
+                <article class="bvx-card">
+                    <div class="bvx-card-icon" aria-hidden="true">🛒</div>
+                    <h3>Shop &amp; Skill-Shop</h3>
+                    <p>Neue Fähigkeiten, Ausrüstung und Items – dein verdientes Gehalt entscheidet, was sich lohnt.</p>
+                </article>
+                <article class="bvx-card">
+                    <div class="bvx-card-icon" aria-hidden="true">🏅</div>
+                    <h3>Erfolge &amp; Spielstand</h3>
+                    <p>Erfolge mit Einblendung, gespeicherter Fortschritt und Einstellungen bis hin zum Performance-Modus für schwache Rechner.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="bvx-section" id="anleitung">
+            <div class="bvx-section-head">
+                <p class="bvx-kicker">In drei Schritten</p>
+                <h2>So startest du deinen ersten Arbeitstag</h2>
+            </div>
+            <div class="bvx-steps">
+                <article class="bvx-step">
+                    <span class="bvx-step-num">01</span>
+                    <h3>Spiel öffnen</h3>
+                    <p>Klicke oben auf „Jetzt spielen“ oder auf die Promo-Karte. Das Spiel öffnet sich im Vollbild über dieser Seite.</p>
+                </article>
+                <article class="bvx-step">
+                    <span class="bvx-step-num">02</span>
+                    <h3>Charakter erstellen</h3>
+                    <p>Name, Abteilung und Aussehen wählen, Vertrag unterschreiben – fertig ist die erste Stelle.</p>
+                </article>
+                <article class="bvx-step">
+                    <span class="bvx-step-num">03</span>
+                    <h3>Loslegen</h3>
+                    <p>Mit WASD oder den Pfeiltasten durchs Büro laufen und mit <code>E</code> interagieren. Auf dem Handy übernimmt die Touch-Steuerung.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="bvx-section" id="fragen">
+            <div class="bvx-section-head">
+                <p class="bvx-kicker">Gut zu wissen</p>
+                <h2>Häufige Fragen</h2>
+            </div>
+            <div class="bvx-faq">
+                <details>
+                    <summary>Kostet das Spiel etwas?</summary>
+                    <p>Nein. BüroVersum läuft komplett im Browser – ohne Installation, ohne Konto und ohne Bezahlung.</p>
+                </details>
+                <details>
+                    <summary>Wo wird mein Spielstand gespeichert?</summary>
+                    <p>Auf deinem Gerät, im <code>localStorage</code> des Browsers. Wird der Browser-Speicher geleert, ist auch der Spielstand weg. Bei einer Einbettung per iframe gilt der Speicher der Spiel-Domain – der Stand bleibt also über alle eingebetteten Seiten hinweg erhalten.</p>
+                </details>
+                <details>
+                    <summary>Funktioniert das Spiel auf dem Handy?</summary>
+                    <p>Ja. Auf schmalen Bildschirmen und Touch-Geräten füllt das Spiel den ganzen Bildschirm und blendet eine Touch-Steuerung ein.</p>
+                </details>
+                <details>
+                    <summary>Werden Daten an Drittanbieter gesendet?</summary>
+                    <p>Nein. Schriften und Emoji-Grafiken werden von dieser Website selbst ausgeliefert; es gibt weder Analyse-Tools noch externe CDNs.</p>
+                </details>
+                <details>
+                    <summary>Kann ich das Spiel auf meiner eigenen Website einbetten?</summary>
+                    <p>Ja. Dafür gibt es drei fertige Varianten – iframe, Loader-Schnipsel oder den kompletten Spielcode. Anleitung und Snippets liegen im Repository unter <code>smartstore/</code>.</p>
+                </details>
+            </div>
+        </section>
+
+        <section class="bvx-cta-band">
+            <h2>Bereit für den ersten Arbeitstag?</h2>
+            <p>Ein Klick – und du stehst im Büro. Kein Download, keine Anmeldung, kein Warten.</p>
+            <button type="button" class="bvx-btn bvx-btn-primary" data-bvx-play>▶ Jetzt spielen</button>
+        </section>
     </main>
 
-    <footer class="bv-shell-footer">
-        <p>© 2026 BüroVersum GmbH · Entwickelt von Justin ·
-            Emoji-Grafiken: <a href="https://github.com/jdecked/twemoji" rel="noopener" target="_blank">Twemoji</a> (CC-BY 4.0) ·
-            Fonts: VT323 &amp; Press Start 2P (SIL OFL)</p>
+    <footer class="bvx-footer">
+        <ul class="bvx-footer-links">
+            <li><a href="embed.html" target="_blank" rel="noopener">Einbettung</a></li>
+            <li><a href="https://github.com/Kenk-JADev/BVersum-Gamecode" target="_blank" rel="noopener">Quellcode</a></li>
+            <li><a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a></li>
+            <li><a href="https://fonts.google.com/specimen/VT323" target="_blank" rel="noopener">VT323</a></li>
+            <li><a href="https://fonts.google.com/specimen/Press+Start+2P" target="_blank" rel="noopener">Press Start 2P</a></li>
+        </ul>
+        <p>© 2026 BüroVersum GmbH · Entwickelt von Justin</p>
+        <p>Selbst gehostete Schriften &amp; Emoji-Grafiken · kein Tracking</p>
     </footer>
+
+    <script>{play_script}</script>
 </body>
 </html>
 """
+
+
+def build_index(fragment: str) -> str:
+    html = INDEX_TEMPLATE
+    html = html.replace("{base}", SITE_BASE_URL)
+    html = html.replace("{shell_style}", SHELL_STYLE)
+    html = html.replace("{play_script}", PLAY_SCRIPT)
+    html = html.replace("{game_fragment}", fragment)
+    return html
 
 
 def build_embed(fragment: str) -> str:
@@ -437,8 +974,12 @@ def build_embed(fragment: str) -> str:
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>BüroVersum RPG</title>
+    <meta name="description" content="BüroVersum RPG – das Büro-RPG im Browser.">
+    <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0a0a1a">
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="stylesheet" href="assets/fonts/fonts.css">
     <style>{EMBED_HEAD_STYLE}</style>
 </head>
 <body>
@@ -449,8 +990,122 @@ def build_embed(fragment: str) -> str:
 """
 
 
+NOT_FOUND_TEMPLATE = """<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Seite nicht gefunden – BüroVersum</title>
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#060913">
+    <link rel="icon" href="{base}assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="{base}assets/fonts/fonts.css">
+    <style>
+        html, body { margin: 0; padding: 0; }
+        body {
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 6px;
+            text-align: center; padding: 24px; box-sizing: border-box;
+            background: radial-gradient(900px 500px at 50% -10%, #16204a, #060913 65%);
+            color: #e8eefc; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+        .art { width: 180px; height: 180px; display: block; margin-bottom: 6px; }
+        .code { font-family: 'Press Start 2P', monospace; font-size: 14px; letter-spacing: .3em; color: #7fa8ee; margin: 18px 0 6px; }
+        h1 { font-family: 'Press Start 2P', monospace; font-size: clamp(16px, 3vw, 22px); line-height: 1.5; margin: 0 0 10px; }
+        p { color: #9db0d6; margin: 0 0 24px; max-width: 46ch; }
+        a.btn {
+            font-family: 'VT323', monospace; font-size: 21px; letter-spacing: .06em;
+            padding: 11px 24px; border-radius: 12px; text-decoration: none; color: #fff;
+            background: linear-gradient(135deg, #4a9fff, #3d7ee0 55%, #7c5ce0);
+            box-shadow: 0 12px 30px rgba(74, 159, 255, .35);
+        }
+        a.btn:hover { filter: brightness(1.08); }
+    </style>
+</head>
+<body>
+    <img class="art" src="{base}assets/hero-building.png" alt="" width="180" height="180" decoding="async">
+    <div class="code">404</div>
+    <h1>Akte nicht gefunden</h1>
+    <p>Diese Seite liegt nicht in unserem Aktenschrank. Vielleicht wurde sie verschoben – oder sie war nie da.</p>
+    <a class="btn" href="{base}">Zurück zum Büro</a>
+</body>
+</html>
+"""
+
+MANIFEST = """{
+  "name": "BüroVersum – Das Büro-RPG im Browser",
+  "short_name": "BüroVersum",
+  "description": "Browser-RPG aus dem Büroalltag: isometrische Bürowelt, Kämpfe, Quests und ein voller Computer-Desktop.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#060913",
+  "theme_color": "#060913",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
+"""
+
+
 def build_fonts_css() -> str:
     return _fonts_css("") + "\n"
+
+
+def write_meta_files(lastmod: str) -> None:
+    (PUBLIC / "robots.txt").write_text(
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /embed.html\n"
+        "Disallow: /game-fragment.html\n"
+        "\n"
+        f"Sitemap: {SITE_BASE_URL}sitemap.xml\n",
+        encoding="utf-8",
+    )
+    (PUBLIC / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        "  <url>\n"
+        f"    <loc>{SITE_BASE_URL}</loc>\n"
+        f"    <lastmod>{lastmod}</lastmod>\n"
+        "    <changefreq>weekly</changefreq>\n"
+        "    <priority>1.0</priority>\n"
+        "  </url>\n"
+        "</urlset>\n",
+        encoding="utf-8",
+    )
+    (PUBLIC / "manifest.webmanifest").write_text(MANIFEST, encoding="utf-8")
+    (PUBLIC / "404.html").write_text(NOT_FOUND_TEMPLATE.replace("{base}", SITE_BASE_URL), encoding="utf-8")
+    # GitHub Pages: keine Jekyll-Verarbeitung nötig
+    (PUBLIC / ".nojekyll").write_text("", encoding="utf-8")
+    log("Meta-Dateien geschrieben (robots.txt, sitemap.xml, manifest, 404.html, .nojekyll)")
+
+
+def copy_brand_assets() -> None:
+    """OG-Bild und App-Icons aus assets-src/ (erzeugt von tools/make-brand.py)."""
+    assets_dir = PUBLIC / "assets"
+    wanted = {
+        "og-image.png": "og-image.png",
+        "icon-192.png": "icon-192.png",
+        "icon-512.png": "icon-512.png",
+        "apple-touch-icon.png": "apple-touch-icon.png",
+        "hero-building.png": "hero-building.png",
+    }
+    missing = []
+    for src_name, dest_name in wanted.items():
+        src = ROOT / "assets-src" / src_name
+        if src.is_file():
+            shutil.copyfile(src, assets_dir / dest_name)
+        else:
+            missing.append(src_name)
+    if missing:
+        log(f"Warnung: Brand-Assets fehlen ({', '.join(missing)}) – "
+            "`python tools/make-brand.py` erzeugt sie neu")
+    else:
+        log("Brand-Assets kopiert (OG-Bild, Icons)")
 
 
 # ---------------------------------------------------------------------------
@@ -586,6 +1241,7 @@ def main() -> None:
         log("Flyer lokal gebunden: assets-src/flyer.jpg → assets/flyer.jpg")
     else:
         log("Kein assets-src/flyer.jpg – nutze Remote-Quelle webshops.zuef.de mit Fallback")
+    copy_brand_assets()
 
     (PUBLIC / "index.html").write_text(build_index(web_fragment), encoding="utf-8")
     (PUBLIC / "embed.html").write_text(build_embed(web_fragment), encoding="utf-8")
@@ -596,6 +1252,11 @@ def main() -> None:
 
     write_snippets()
 
+    stamp = datetime.datetime.now(
+        datetime.timezone(datetime.timedelta(hours=2))
+    ).date().isoformat()
+    write_meta_files(stamp)
+
     # --- Sanity-Checks: keine externen CDN-/Mixed-Content-Reste ---
     for name in ("index.html", "embed.html", "game-fragment.html"):
         out = (PUBLIC / name).read_text(encoding="utf-8")
@@ -604,6 +1265,16 @@ def main() -> None:
                 raise SystemExit(f"FEHLER: {name} enthält noch {bad!r}")
         if "zuef-fallback" not in out:
             raise SystemExit(f"FEHLER: {name} enthält den Flyer-Fallback nicht")
+
+    # Landing-Page: Pflicht-Bausteine für SEO/Social vorhanden?
+    index_html = (PUBLIC / "index.html").read_text(encoding="utf-8")
+    for needle in ("og:image", "twitter:card", "application/ld+json",
+                   "manifest.webmanifest", 'data-bvx-play', "assets/og-image.png"):
+        if needle not in index_html:
+            raise SystemExit(f"FEHLER: index.html enthält {needle!r} nicht")
+    for icon in ("icon-192.png", "icon-512.png", "apple-touch-icon.png", "og-image.png"):
+        if not (assets / icon).is_file():
+            raise SystemExit(f"FEHLER: Brand-Asset fehlt: assets/{icon}")
 
     log("Fertig:")
     for p in sorted(PUBLIC.rglob("*")):

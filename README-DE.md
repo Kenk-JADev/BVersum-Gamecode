@@ -19,9 +19,18 @@ Die Website wird automatisch per GitHub Actions gebaut und auf
 
 | URL | Inhalt |
 |---|---|
-| `/` | Landing-Seite mit Promo-Karte + Spiel |
+| `/` | Landing-Page mit Hero, Promo-Karte, Features, Anleitung, FAQ und dem Spiel selbst |
 | `/embed.html` | schlanke Seite für iframes (`?autoopen=1` öffnet das Spiel direkt) |
 | `/game-fragment.html` | reines Spiel-Fragment (für Custom-Code-Einbettung) |
+| `/404.html` | gestaltete Fehlerseite (GitHub Pages nutzt sie automatisch) |
+| `/manifest.webmanifest` | Web-App-Manifest (Icon, Name, Farbe – „Zum Startbildschirm“) |
+| `/robots.txt`, `/sitemap.xml` | Crawler-Steuerung; `embed.html`/`game-fragment.html` sind ausgeschlossen |
+
+Die Landing-Page bringt außerdem Open-Graph-/Twitter-Meta (Vorschaukarte beim
+Teilen), JSON-LD (`VideoGame`), Preload der Schriften und `canonical`.
+Alle eigenen CSS-Klassen dort sind mit `bvx-` gepräfixt und alle Variablen mit
+`--bvx-`, damit sie nicht mit den `bv-*`-Klassen und `--bv-*`-Variablen des
+Spiels kollidieren (das Spiel bleibt vollständig unverändert).
 
 **Deployment:** Jeder Push auf `main` oder einen `arena/*`-Zweig löst
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) aus:
@@ -58,6 +67,8 @@ Schritt-für-Schritt-Anleitung inkl. Troubleshooting:
 BVersum-Gamecode/
 ├── Gamecode-Bueroversum-7.5 (16).html   # QUELLE – die Spiel-Datei (unverändert!)
 ├── tools/build.py                       # erzeugt public/ + smartstore/generated/
+├── tools/make-brand.py                  # erzeugt OG-Bild + App-Icons (Pillow)
+├── assets-src/                          # Brand-Assets (OG-Bild, Icons, Hero-Grafik)
 ├── smartstore/                          # Smartstore-Snippets + Anleitung
 ├── public/                              # Build-Ausgabe (GitHub Pages, gitignored)
 └── .github/workflows/deploy.yml         # Build + Deploy-Pipeline
@@ -83,6 +94,18 @@ erreichbar). Ohne Datei wird die Remote-Quelle `webshops.zuef.de` genutzt –
 protokoll-passend, mit 5-Sekunden-Timeout und einem gestalteten
 „Klick hier und starte das Spiel"-Fallback, falls das Bild nicht erreichbar ist.
 
+**Brand-Assets (OG-Bild & Icons):** `assets-src/` enthält das Social-Preview-Bild
+(1200 × 630) sowie die App-Icons (192/512 px, Apple-Touch-Icon) und die
+Hero-Grafik. Sie sind eingecheckt – der Build kopiert sie nur nach `public/assets/`.
+Neu erzeugen lassen sie sich jederzeit mit:
+
+```bash
+pip install pillow
+python tools/make-brand.py
+```
+
+Der Build läuft auch ohne Pillow; fehlt ein Asset, gibt er nur eine Warnung aus.
+
 ### Was der Build anpasst (Quell-Datei bleibt unangetastet)
 
 | Patch | Warum |
@@ -91,6 +114,8 @@ protokoll-passend, mit 5-Sekunden-Timeout und einem gestalteten
 | Flyer-Bild robust (protokoll-passend, 5-s-Timeout, Fallback-Platzhalter) | kein Mixed Content, keine leeren Lücken bei Host-Ausfall |
 | Robustes Bootstrapping (`__bvMainInit`) | funktioniert auch bei später Injektion, kein Doppel-Start |
 | CSS-Variablen `--bv-*` (Smartstore-Variante) | Shop-Theme wird nicht überschrieben |
+| Promo-Karte mit `role="button"`, `tabindex`, `aria-label` | Spiel ist per Tab + Enter startbar |
+| Eigene Landing-Klassen `bvx-*`, Variablen `--bvx-*` | keine Kollision mit Spiel-Klassen (u. a. `.bv-card`) |
 
 ---
 
