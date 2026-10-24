@@ -23957,7 +23957,9 @@
                             { x: 28, y: 8, type: "enemy", sprite: "📉", name: "Excel-Fehler", enemyId: "excel" },
                             { x: 15, y: 16, type: "enemy", sprite: "🤷", name: "Praktikant", enemyId: "praktikant" }
                         ],
-                        start: { x: 5, y: 7 }
+                        // FIX: 5/7 war eine Pflanze (blockierend) – der Spieler
+                        // startete im Objekt und konnte nicht mehr dorthin zurück.
+                        start: { x: 5, y: 8 }
                     },
 
                     flur: {
@@ -28726,8 +28728,16 @@
                     });
 
                     // Standardmäßig der Map-Startpunkt ...
-                    player.x = mapData.start.x;
-                    player.y = mapData.start.y;
+                    // FIX: Startpunkte können auf blockierenden Tiles liegen (z. B.
+                    // buero 5/7 = Pflanze) – dann landet der Spieler IM Objekt und
+                    // kann sich dort nicht mehr hingehen. Deshalb auf das nächste
+                    // begehbare Feld snappen (findNearestValidSpawnTile).
+                    const spawnPoint = findNearestValidSpawnTile(mapData.start.x, mapData.start.y);
+                    player.x = spawnPoint.x;
+                    player.y = spawnPoint.y;
+                    if (spawnPoint.x !== mapData.start.x || spawnPoint.y !== mapData.start.y) {
+                        console.warn(`[BüroVersum] Startpunkt ${mapData.start.x}/${mapData.start.y} auf "${(TILES[mapData.tiles?.[mapData.start.y]?.[mapData.start.x]] || {}).name || '?'}" blockiert – Spieler startet auf ${spawnPoint.x}/${spawnPoint.y}`);
+                    }
 
                     // ... aber falls ein Spielstand geladen wird und die gespeicherte
                     // Position zu DIESER Map gehört, diese wiederherstellen (statt Start).
@@ -28748,7 +28758,15 @@
                     const mapCols = mapData.cols || currentMap[0]?.length || VIEW_COLS;
                     const mapRows = mapData.rows || currentMap.length || VIEW_ROWS;
                     if (BV3D.enabled && BV3D.resizeToMap(currentMap)) {
-                        if (canvas) { canvas.width = BV3D.canvas.width; canvas.height = BV3D.canvas.height; }
+                        // FIX: MapEngineV6 rendert in SVG, BV3D.canvas ist nur ein
+                        // Platzhalter-Objekt. canvas.width = undefined setzte die
+                        // 2D-Canvas auf 0x0 – jetzt echte Map-Größe als Puffer.
+                        if (canvas) {
+                            const bw = Math.max(1, Math.floor(BV3D.bounds?.width || mapCols * TILE));
+                            const bh = Math.max(1, Math.floor(BV3D.bounds?.height || mapRows * TILE));
+                            if (canvas.width !== bw) canvas.width = bw;
+                            if (canvas.height !== bh) canvas.height = bh;
+                        }
                     } else if (canvas) {
                         if (cameraEl) cameraEl.classList.remove('bv-25d-active');
                         document.getElementById('rpg-game-window')?.classList.remove('bv-25d-mode');
@@ -29064,7 +29082,7 @@
                             this.cache.set(key,svg.innerHTML); if(this.cache.size>6)this.cache.delete(this.cache.keys().next().value); return true;
                         }
                     };
-                    BV3D.enabled=true; BV3D.canvas={}; BV3D.project=(x,y,z=0)=>ME.project(x,y,z); BV3D.resizeToMap=(map)=>{ME.render(map);return true}; BV3D.renderMap=(map)=>ME.render(map); BV3D.tileMeta=(tile)=>ME.meta(tile); BV3D.depthZ=(x,y,extra=0)=>getMapDepth(x,y,'ground',extra); window.MapEngineV6=ME;
+                    BV3D.enabled=true; BV3D.canvas={}; BV3D.project=(x,y,z=0)=>ME.project(x,y,z); BV3D.resizeToMap=(map)=>ME.render(map); BV3D.renderMap=(map)=>ME.render(map); BV3D.tileMeta=(tile)=>ME.meta(tile); BV3D.depthZ=(x,y,extra=0)=>getMapDepth(x,y,'ground',extra); window.MapEngineV6=ME;
                 }
                 installMapEngineV600();
                 function checkNearbyNPC() {
