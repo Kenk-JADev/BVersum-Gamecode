@@ -15,7 +15,7 @@
             </div>
         </div>
         <div class="zuef-info-section">
-            <h2 class="zuef-main-title">Exklusiv bis <span class="zuef-accent-date">31.03.2026</span></h2>
+            <h2 class="zuef-main-title">Exklusiv bis <span class="zuef-accent-date">01.12.2026</span></h2>
             <div class="zuef-countdown-row">
                 <div class="zuef-time-block"><span class="zuef-num" id="cd-d">00</span><span
                         class="zuef-label">Tage</span></div>
@@ -1821,6 +1821,52 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+
+        /* ============================================================
+           HOST-ISOLATION v1.0 – Rendert das Spiel überall identisch
+           Im Shop-DOM erben Themes (Bootstrap/Smartstore) line-height,
+           letter-spacing, Schriftgrößen und box-sizing in das Spiel und
+           koppeln Buttons/Inputs um – dadurch wirkte die UI "überall ein
+           bisschen anders" als im Standalone-Test. Diese Regeln setzen die
+           Browser-Standardwerte fest, gegen die das Spiel entwickelt wurde.
+           Explizite Spiel-Regeln gewinnen weiter durch höhere Spezifität
+           (:where() bleibt bewusst schwach).
+           ============================================================ */
+        #zuef-main-wrapper {
+            line-height: normal;
+            letter-spacing: normal;
+            word-spacing: normal;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            font-style: normal;
+            font-weight: 400;
+            text-align: left;
+            text-transform: none;
+            white-space: normal;
+            color: #000;
+            cursor: auto;
+            tab-size: 8;
+        }
+        /* Formularelemente: Themes koppeln font-family/size/line-height hier
+           oft um (Bootstrap-Reboot: inherit). Gestrichelte Werte =
+           Browser-Standard, wie im Standalone-Test. */
+        :where(#zuef-main-wrapper) button,
+        :where(#zuef-main-wrapper) input,
+        :where(#zuef-main-wrapper) select,
+        :where(#zuef-main-wrapper) textarea,
+        :where(#zuef-main-wrapper) optgroup {
+            line-height: normal;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13.333px;
+        }
+        /* box-sizing: Themes setzen oft global border-box; das Spiel wurde
+           mit content-box (Browser-Standard) plus einzelnen expliziten
+           border-box-Regeln gebaut – beides bleibt unverändert erhalten. */
+        :where(#zuef-main-wrapper) *,
+        :where(#zuef-main-wrapper) *::before,
+        :where(#zuef-main-wrapper) *::after {
+            box-sizing: content-box;
+        }
 
         :root {
             --primary: #4a9fff;
@@ -4364,7 +4410,7 @@
         .title-buttons {
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 12px;
             align-items: center;
             perspective: 1200px;
             position: relative;
@@ -4372,8 +4418,8 @@
 
         .title-btn {
             position: relative;
-            padding: 18px 52px;
-            font-size: 1.52rem;
+            padding: 12px 36px;
+            font-size: 1.3rem;
             background: linear-gradient(145deg, #152a52 0%, #0b1c33 100%);
             color: #e8f4ff;
             border: 3px solid #5ab0ff;
@@ -4385,8 +4431,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            min-width: 325px;
+            gap: 11px;
+            min-width: 270px;
             text-shadow: 0 3px 8px rgba(0, 0, 0, 0.75);
             box-shadow:
                 0 8px 0 #061626,
@@ -4418,7 +4464,7 @@
         /* old .btn-shine span removed - using ::before shine now */
 
         .title-btn .btn-icon {
-            font-size: 2.05rem;
+            font-size: 1.72rem;
             filter: drop-shadow(0 3px 5px rgba(0,0,0,0.55));
             transition: transform 0.26s cubic-bezier(0.23, 1.0, 0.32, 1);
             z-index: 2;
@@ -4435,7 +4481,7 @@
         }
 
         .title-btn .btn-arrow {
-            font-size: 1.35rem;
+            font-size: 1.15rem;
             opacity: 0.75;
             transition: transform 0.32s cubic-bezier(0.23, 1.0, 0.32, 1), opacity 0.22s;
             z-index: 2;
@@ -4703,13 +4749,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #4a9fff;
         }
 
         .changelog-header h2 {
-            font-size: 1.8rem;
+            font-size: 1.45rem;
             color: #4a9fff;
             margin: 0;
             text-shadow: 0 0 10px rgba(74, 159, 255, 0.5);
@@ -4741,15 +4787,15 @@
 
         .changelog-version h3 {
             color: #4a9fff;
-            font-size: 1.3rem;
-            margin: 0 0 8px 0;
+            font-size: 1.15rem;
+            margin: 0 0 5px 0;
             text-shadow: 0 0 10px rgba(74, 159, 255, 0.3);
         }
 
         .changelog-date {
             color: #666;
             font-size: 0.9rem;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .changelog-version ul {
@@ -4759,7 +4805,7 @@
         }
 
         .changelog-version li {
-            margin: 8px 0;
+            margin: 5px 0;
             color: #bbb;
             position: relative;
             padding-left: 15px;
@@ -4818,13 +4864,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #ffd700;
         }
 
         .credits-header h2 {
-            font-size: 1.8rem;
+            font-size: 1.45rem;
             color: #ffd700;
             margin: 0;
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
@@ -4851,13 +4897,13 @@
         }
 
         .credits-game-title {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
             border-bottom: 1px solid rgba(255, 215, 0, 0.3);
         }
 
         .credits-game-icon {
-            font-size: 4rem;
+            font-size: 3rem;
             display: block;
             margin-bottom: 10px;
             filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.5));
@@ -4865,7 +4911,7 @@
 
         .credits-game-title h3 {
             color: #ffd700;
-            font-size: 2rem;
+            font-size: 1.6rem;
             margin: 0;
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
         }
@@ -4878,8 +4924,8 @@
         }
 
         .credits-section {
-            margin-bottom: 25px;
-            padding: 15px;
+            margin-bottom: 16px;
+            padding: 11px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
             border: 1px solid rgba(255, 215, 0, 0.2);
@@ -4890,24 +4936,24 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .role-icon {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
 
         .role-title {
             color: #ffd700;
-            font-size: 1.2rem;
+            font-size: 1.05rem;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
 
         .credits-person {
-            padding: 10px;
-            margin: 8px 0;
+            padding: 8px;
+            margin: 6px 0;
             background: rgba(74, 159, 255, 0.1);
             border-radius: 8px;
             border: 1px solid rgba(74, 159, 255, 0.3);
@@ -4944,8 +4990,8 @@
         }
 
         .credits-footer {
-            margin-top: 25px;
-            padding-top: 20px;
+            margin-top: 16px;
+            padding-top: 12px;
             border-top: 1px solid rgba(255, 215, 0, 0.3);
         }
 
@@ -20257,8 +20303,8 @@
 
         /* ---------- BUTTONS: Glasmorphismus ---------- */
         #rpg-title-screen .title-btn {
-            padding: 17px 46px !important;
-            min-width: 340px !important;
+            padding: 12px 36px !important;
+            min-width: 280px !important;
             background: linear-gradient(135deg, rgba(74,159,255,.16), rgba(20,40,72,.42)) !important;
             border: 1.5px solid rgba(120,190,255,.42) !important;
             border-radius: 16px !important;
@@ -20450,7 +20496,7 @@
         .changelog-close:hover, .credits-close:hover { transform: rotate(90deg) scale(1.15); color:#fff !important; background: rgba(255,90,90,.18) !important; }
         .changelog-version {
             background: rgba(74,159,255,.05); border:1px solid rgba(122,208,255,.14);
-            border-radius: 12px; padding: 14px 16px !important; margin-bottom: 14px !important;
+            border-radius: 12px; padding: 10px 13px !important; margin-bottom: 10px !important;
             transition: transform .25s ease, border-color .25s ease, background .25s ease;
         }
         .changelog-version:hover { transform: translateX(4px); border-color: rgba(122,208,255,.4); background: rgba(74,159,255,.09); }
@@ -20474,21 +20520,21 @@
 
         /* ---- W2: Modals groesser + Scroll ---- */
         .changelog-content {
-            max-width: 720px !important;
+            max-width: 640px !important;
             width: 92% !important;
-            max-height: 78vh !important;
-            min-height: 320px;
-            padding: 28px 30px !important;
+            max-height: 72vh !important;
+            min-height: 260px;
+            padding: 20px 22px !important;
             top: 0 !important;
             display: flex !important; flex-direction: column !important;
             overflow: hidden !important;            /* Scroll uebernimmt der body */
         }
         .credits-content {
-            max-width: 560px !important;
+            max-width: 520px !important;
             width: 92% !important;
-            max-height: 78vh !important;
-            min-height: 280px;
-            padding: 30px !important;
+            max-height: 72vh !important;
+            min-height: 250px;
+            padding: 22px !important;
             top: 0 !important;
             display: flex !important; flex-direction: column !important;
             overflow: hidden !important;
@@ -21041,11 +21087,12 @@
             --btn-bg-a: rgba(74, 159, 255, .16);
             --btn-bg-b: rgba(20, 40, 72, .46);
             width: 100% !important;
+            box-sizing: border-box !important;
             min-width: 0 !important;
-            min-height: clamp(46px, 7.9cqh, 62px) !important;
-            padding: clamp(9px, 1.9cqh, 15px) clamp(18px, 4.6cqw, 40px) !important;
-            font-size: clamp(1.04rem, 3.05cqw, 1.44rem) !important;
-            gap: clamp(9px, 2.6cqw, 15px) !important;
+            min-height: clamp(42px, 5.9cqh, 48px) !important;
+            padding: clamp(8px, 1.4cqh, 10px) clamp(18px, 4.2cqw, 32px) !important;
+            font-size: clamp(1.04rem, 2.6cqw, 1.32rem) !important;
+            gap: clamp(8px, 2.2cqw, 12px) !important;
             isolation: isolate !important;
             transform-origin: center center !important;
             backface-visibility: hidden !important;
@@ -22078,7 +22125,7 @@
 
                     if (!window._bvCountdownRunning) {
                         window._bvCountdownRunning = true;
-                        const endDate = new Date("2026-03-31T23:59:59").getTime();
+                        const endDate = new Date("2026-12-01T23:59:59").getTime();
 
                         function tick() {
                             const diff = endDate - Date.now();
@@ -49784,10 +49831,10 @@ body.bv-settings-lowspec * {
 #title-settings-modal.active { display: flex; animation: titleSettingsFadeInV7102 .22s ease-out both; }
 #title-settings-modal.closing { animation: titleSettingsFadeOutV7102 .18s ease-in forwards; }
 .title-settings-window {
-    width: min(720px, 94vw);
-    max-height: min(640px, 90vh);
+    width: min(620px, 92vw);
+    max-height: min(560px, 86vh);
     overflow: auto;
-    border-radius: 22px;
+    border-radius: 18px;
     background:
         radial-gradient(circle at 12% -10%, rgba(74,159,255,.28), transparent 36%),
         radial-gradient(circle at 92% 110%, rgba(122,80,220,.16), transparent 32%),
@@ -49809,19 +49856,19 @@ body.bv-settings-lowspec * {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 18px 20px 14px;
+    padding: 13px 16px 10px;
     border-bottom: 1px solid rgba(122,208,255,.16);
     background: linear-gradient(90deg, rgba(74,159,255,.16), rgba(20,40,72,.08));
 }
-.title-settings-head h3 { margin: 0; font-size: 1.45rem; letter-spacing: 1.2px; color: #fff; text-shadow:0 0 16px rgba(74,159,255,.35); }
+.title-settings-head h3 { margin: 0; font-size: 1.25rem; letter-spacing: 1.2px; color: #fff; text-shadow:0 0 16px rgba(74,159,255,.35); }
 .title-settings-tabs {
-    display:flex; gap:8px; padding:12px 18px 0;
+    display:flex; gap:6px; padding:9px 14px 0;
 }
 .title-settings-tab {
-    flex:1; padding:9px 12px; border-radius:12px; cursor:pointer;
+    flex:1; padding:7px 10px; border-radius:10px; cursor:pointer;
     border:1px solid rgba(142,197,255,.2);
     background:rgba(255,255,255,.05); color:rgba(215,232,255,.72);
-    font-family:'VT323', monospace; font-size:1.05rem; letter-spacing:.6px;
+    font-family:'VT323', monospace; font-size:.95rem; letter-spacing:.6px;
 }
 .title-settings-tab.on {
     color:#fff; border-color:rgba(122,208,255,.5);
@@ -49832,21 +49879,21 @@ body.bv-settings-lowspec * {
     border: 1px solid rgba(255,255,255,.16);
     background: rgba(255,255,255,.06);
     color: #fff;
-    border-radius: 12px;
-    width: 36px;
-    height: 36px;
+    border-radius: 10px;
+    width: 32px;
+    height: 32px;
     cursor: pointer;
     transition: transform .18s ease, background .18s ease;
 }
 .title-settings-close:hover { background:rgba(255,90,90,.2); transform:rotate(90deg); }
-.title-settings-body { padding: 16px 18px 8px; display: grid; gap: 12px; }
+.title-settings-body { padding: 12px 14px 8px; display: grid; gap: 10px; }
 .title-setting-card {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    border-radius: 16px;
+    gap: 10px;
+    padding: 11px 13px;
+    border-radius: 13px;
     background: linear-gradient(145deg, rgba(74,159,255,.10), rgba(255,255,255,.04));
     border: 1px solid rgba(142,197,255,.16);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
@@ -50078,11 +50125,11 @@ body.bv-settings-particles-off .title-canvas-bg {
     visibility: hidden !important;
     opacity: 0 !important;
 }
-#title-settings-modal .settings-panel { padding: 0; display:grid; gap:16px; }
+#title-settings-modal .settings-panel { padding: 0; display:grid; gap:12px; }
 #title-settings-modal .settings-hero {
-    display:flex; gap:14px; align-items:center;
-    padding:16px 16px;
-    border-radius:18px;
+    display:flex; gap:10px; align-items:center;
+    padding:11px 13px;
+    border-radius:14px;
     background:
         radial-gradient(circle at 0% 0%, rgba(122,208,255,.22), transparent 42%),
         linear-gradient(135deg, rgba(74,159,255,.20), rgba(20,36,68,.55));
@@ -50090,22 +50137,22 @@ body.bv-settings-particles-off .title-canvas-bg {
     box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
 }
 #title-settings-modal .settings-hero-icon {
-    width:52px; height:52px; border-radius:16px;
-    display:grid; place-items:center; font-size:1.7rem;
+    width:42px; height:42px; border-radius:13px;
+    display:grid; place-items:center; font-size:1.35rem;
     background:linear-gradient(145deg, rgba(74,159,255,.28), rgba(10,20,40,.4));
     border:1px solid rgba(160,210,255,.28);
     box-shadow:0 0 18px rgba(74,159,255,.22);
 }
-#title-settings-modal .settings-hero h3 { margin:0; color:#fff; font-size:1.32rem; letter-spacing:.6px; }
-#title-settings-modal .settings-hero p { margin:4px 0 0; color:rgba(215,232,255,.72); font-size:.9rem; }
+#title-settings-modal .settings-hero h3 { margin:0; color:#fff; font-size:1.12rem; letter-spacing:.6px; }
+#title-settings-modal .settings-hero p { margin:4px 0 0; color:rgba(215,232,255,.72); font-size:.82rem; }
 #title-settings-modal .settings-section-label {
     margin:2px 2px 0; font-size:.78rem; letter-spacing:1.6px; text-transform:uppercase;
     color:rgba(160,210,255,.62);
 }
-#title-settings-modal .settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+#title-settings-modal .settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 #title-settings-modal .setting-card {
-    padding:14px 15px;
-    border-radius:16px;
+    padding:10px 12px;
+    border-radius:13px;
     background:linear-gradient(160deg, rgba(74,159,255,.10), rgba(255,255,255,.035));
     border:1px solid rgba(142,197,255,.16);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
@@ -50116,15 +50163,15 @@ body.bv-settings-particles-off .title-canvas-bg {
     background:linear-gradient(160deg, rgba(74,159,255,.16), rgba(255,255,255,.05));
     transform:translateY(-1px);
 }
-#title-settings-modal .setting-title { font-size:1.1rem; color:#fff; margin-bottom:4px; }
-#title-settings-modal .setting-desc { font-size:.84rem; color:rgba(215,232,255,.68); line-height:1.3; margin-bottom:10px; }
+#title-settings-modal .setting-title { font-size:.98rem; color:#fff; margin-bottom:4px; }
+#title-settings-modal .setting-desc { font-size:.78rem; color:rgba(215,232,255,.68); line-height:1.3; margin-bottom:7px; }
 #title-settings-modal .setting-control { display:flex; justify-content:space-between; align-items:center; gap:10px; color:rgba(215,232,255,.78); }
 #title-settings-modal .setting-select,
 #title-settings-modal .setting-button {
-    width:100%; padding:10px 12px; border-radius:12px;
+    width:100%; padding:8px 10px; border-radius:10px;
     border:1px solid rgba(142,197,255,.32);
     background:rgba(5,12,28,.88); color:#eaf6ff;
-    font-family:'VT323', monospace; font-size:1rem;
+    font-family:'VT323', monospace; font-size:.92rem;
 }
 #title-settings-modal .setting-button {
     cursor:pointer;
@@ -50133,15 +50180,15 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 #title-settings-modal .setting-button:hover { transform:translateY(-1px); filter:brightness(1.1); border-color:#7ec1ff; }
 #title-settings-modal .setting-toggle {
-    width:58px; height:30px; border-radius:999px; border:1px solid rgba(255,255,255,.16);
+    width:50px; height:26px; border-radius:999px; border:1px solid rgba(255,255,255,.16);
     background:rgba(255,255,255,.10); position:relative; cursor:pointer;
 }
 #title-settings-modal .setting-toggle::after {
-    content:''; position:absolute; width:22px; height:22px; left:4px; top:3px; border-radius:50%;
+    content:''; position:absolute; width:18px; height:18px; left:4px; top:3px; border-radius:50%;
     background:#dbeeff; box-shadow:0 2px 8px rgba(0,0,0,.35); transition:transform .18s ease;
 }
 #title-settings-modal .setting-toggle.on { background:linear-gradient(135deg, rgba(34,197,94,.60), rgba(74,159,255,.38)); border-color:rgba(105,240,174,.52); }
-#title-settings-modal .setting-toggle.on::after { transform:translateX(27px); }
+#title-settings-modal .setting-toggle.on::after { transform:translateX(23px); }
 #title-settings-modal .setting-card.info { background:linear-gradient(160deg, rgba(122,80,220,.12), rgba(74,159,255,.08)); }
 @media (max-width:680px){ #title-settings-modal .settings-grid{ grid-template-columns:1fr; } }
 </style>
@@ -53539,6 +53586,163 @@ body.bv-settings-particles-off .title-canvas-bg {
 @keyframes storySpark { 0%{opacity:0; transform:translate(0,0) scale(.4)} 20%{opacity:1} 100%{opacity:0; transform:translate(var(--sx), var(--sy)) scale(.1)} }
 @keyframes storyImpact { 0%{opacity:.8} 100%{opacity:0} }
 @keyframes storyGlitch { 0%{filter:none; transform:none} 30%{filter:hue-rotate(-20deg); transform:translateX(-4px)} 60%{filter:contrast(1.3); transform:translateX(4px)} 100%{filter:none; transform:none} }
+/* ============================================================
+   MODAL-FEINSCHLIFF v7.10.12: kompakte Fenster + flacher Footer
+   - Changelog/Credits: kleineres Fenster, dichterer Inhalt, Feinschliff
+   - Settings-Footer: flacher, Standard/Fertig niedriger
+   - Karten-Buttons (Oeffnen): nur textbreit, rechtsbuendig
+   ============================================================ */
+/* ---- Settings-Footer: flacher, Buttons knapper ---- */
+#title-settings-modal .title-settings-footer {
+    padding: 11px 16px 13px !important;
+    gap: 9px !important;
+}
+/* Footer-Buttons (Standard/Fertig): niedriger, weniger wuchtig */
+#title-settings-modal .title-settings-footer .title-settings-action {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 6px 20px !important;
+    font-size: 1.02rem !important;
+    line-height: 1.25 !important;
+    border-radius: 11px !important;
+}
+/* Karten-Buttons (Öffnen): nur so breit wie der Text und rechtsbündig –
+   auch dann, wenn die Karte auf schmalen Screens einspaltig umbricht */
+#title-settings-modal .title-setting-card > .title-settings-action {
+    justify-self: end !important;
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 5px 16px !important;
+    font-size: .98rem !important;
+    line-height: 1.25 !important;
+    border-radius: 10px !important;
+}
+#title-settings-modal .title-settings-body {
+    padding: 12px 14px 12px !important;
+}
+/* ---- Box-Sizing im Settings-Fenster ----
+   Das Spiel läuft im Shop-DOM mit `box-sizing: content-box` (Host-Isolation).
+   Dadurch wurden width:100%-Elemente um Padding + Rahmen breiter als ihre
+   Karte/Spalte und ragten rechts heraus (Select, Buttons, Tabs). */
+#title-settings-modal .settings-panel,
+#title-settings-modal .settings-grid,
+#title-settings-modal .setting-card,
+#title-settings-modal .setting-select,
+#title-settings-modal .setting-button,
+#title-settings-modal .setting-control,
+#title-settings-modal .title-settings-tabs,
+#title-settings-modal .title-settings-tab,
+#title-settings-modal .title-settings-select,
+#title-settings-modal .title-setting-card,
+#title-settings-modal .title-settings-action {
+    box-sizing: border-box !important;
+}
+/* Grid-Spalten dürfen nicht durch breite Kinder aufgesprengt werden */
+#title-settings-modal .settings-panel,
+#title-settings-modal .settings-grid,
+#title-settings-modal .settings-grid > *,
+#title-settings-modal .setting-card {
+    min-width: 0 !important;
+}
+#title-settings-modal .setting-select,
+#title-settings-modal .setting-button,
+#title-settings-modal .title-settings-select {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+/* ---- Changelog: kleineres Fenster + kompaktere Version-Cards ---- */
+#changelog-modal .changelog-content {
+    width: min(600px, 92vw) !important;
+    height: auto !important;
+    max-height: min(540px, calc(100vh - 48px)) !important;
+}
+#changelog-modal .changelog-header,
+#credits-modal .credits-header {
+    min-height: 52px !important;
+    padding: 11px 18px !important;
+}
+#changelog-modal .changelog-header h2,
+#credits-modal .credits-header h2 {
+    font-size: 1.3rem !important;
+}
+#changelog-modal .changelog-body {
+    padding: 12px 16px 16px !important;
+    line-height: 1.45 !important;
+}
+#changelog-modal .changelog-version h3 {
+    font-size: 1.18rem !important;
+    letter-spacing: .4px;
+    margin: 0 0 4px 0 !important;
+}
+#changelog-modal .changelog-date {
+    display: inline-block;
+    padding: 1px 10px;
+    border-radius: 999px;
+    background: rgba(74,159,255,.12);
+    border: 1px solid rgba(122,208,255,.20);
+    color: #9fc4ee !important;
+    font-size: .84rem !important;
+    margin-bottom: 6px !important;
+}
+#changelog-modal .changelog-version ul {
+    margin: 8px 0 2px !important;
+    padding-left: 18px !important;
+}
+#changelog-modal .changelog-version li {
+    margin: 3px 0 !important;
+    line-height: 1.35;
+}
+/* ---- Credits: kleineres Fenster + kompaktere Sektionen ---- */
+#credits-modal .credits-content {
+    width: min(520px, 92vw) !important;
+    height: auto !important;
+    max-height: min(540px, calc(100vh - 48px)) !important;
+}
+#credits-modal .credits-body {
+    padding: 14px 18px 20px !important;
+    line-height: 1.45 !important;
+}
+#credits-modal .credits-game-title {
+    margin-bottom: 13px !important;
+    padding-bottom: 10px !important;
+}
+#credits-modal .credits-game-icon {
+    font-size: 2.3rem !important;
+    margin-bottom: 7px !important;
+}
+#credits-modal .credits-game-title h3 {
+    font-size: 1.42rem !important;
+}
+#credits-modal .credits-subtitle {
+    margin-top: 3px !important;
+}
+#credits-modal .credits-section {
+    margin-bottom: 12px !important;
+    padding: 9px 11px !important;
+}
+#credits-modal .credits-role {
+    margin-bottom: 8px !important;
+    gap: 8px !important;
+}
+#credits-modal .credits-person {
+    padding: 7px 9px !important;
+    margin: 5px 0 !important;
+}
+#credits-modal .person-name {
+    font-size: 1.1rem !important;
+}
+#credits-modal .person-desc {
+    margin-top: 3px !important;
+}
+/* Fenster bleiben auch auf flachen Screens brauchbar */
+@media (max-height: 620px) {
+    #changelog-modal .changelog-content,
+    #credits-modal .credits-content {
+        height: auto !important;
+        max-height: calc(100vh - 24px) !important;
+    }
+}
 </style>
 
 <script>
