@@ -53621,6 +53621,36 @@ body.bv-settings-particles-off .title-canvas-bg {
 #title-settings-modal .title-settings-body {
     padding: 12px 14px 12px !important;
 }
+/* ---- Box-Sizing im Settings-Fenster ----
+   Das Spiel läuft im Shop-DOM mit `box-sizing: content-box` (Host-Isolation).
+   Dadurch wurden width:100%-Elemente um Padding + Rahmen breiter als ihre
+   Karte/Spalte und ragten rechts heraus (Select, Buttons, Tabs). */
+#title-settings-modal .settings-panel,
+#title-settings-modal .settings-grid,
+#title-settings-modal .setting-card,
+#title-settings-modal .setting-select,
+#title-settings-modal .setting-button,
+#title-settings-modal .setting-control,
+#title-settings-modal .title-settings-tabs,
+#title-settings-modal .title-settings-tab,
+#title-settings-modal .title-settings-select,
+#title-settings-modal .title-setting-card,
+#title-settings-modal .title-settings-action {
+    box-sizing: border-box !important;
+}
+/* Grid-Spalten dürfen nicht durch breite Kinder aufgesprengt werden */
+#title-settings-modal .settings-panel,
+#title-settings-modal .settings-grid,
+#title-settings-modal .settings-grid > *,
+#title-settings-modal .setting-card {
+    min-width: 0 !important;
+}
+#title-settings-modal .setting-select,
+#title-settings-modal .setting-button,
+#title-settings-modal .title-settings-select {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
 /* ---- Changelog: kleineres Fenster + kompaktere Version-Cards ---- */
 #changelog-modal .changelog-content {
     width: min(600px, 92vw) !important;
