@@ -1822,6 +1822,52 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
 
+        /* ============================================================
+           HOST-ISOLATION v1.0 – Rendert das Spiel überall identisch
+           Im Shop-DOM erben Themes (Bootstrap/Smartstore) line-height,
+           letter-spacing, Schriftgrößen und box-sizing in das Spiel und
+           koppeln Buttons/Inputs um – dadurch wirkte die UI "überall ein
+           bisschen anders" als im Standalone-Test. Diese Regeln setzen die
+           Browser-Standardwerte fest, gegen die das Spiel entwickelt wurde.
+           Explizite Spiel-Regeln gewinnen weiter durch höhere Spezifität
+           (:where() bleibt bewusst schwach).
+           ============================================================ */
+        #zuef-main-wrapper {
+            line-height: normal;
+            letter-spacing: normal;
+            word-spacing: normal;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            font-style: normal;
+            font-weight: 400;
+            text-align: left;
+            text-transform: none;
+            white-space: normal;
+            color: #000;
+            cursor: auto;
+            tab-size: 8;
+        }
+        /* Formularelemente: Themes koppeln font-family/size/line-height hier
+           oft um (Bootstrap-Reboot: inherit). Gestrichelte Werte =
+           Browser-Standard, wie im Standalone-Test. */
+        :where(#zuef-main-wrapper) button,
+        :where(#zuef-main-wrapper) input,
+        :where(#zuef-main-wrapper) select,
+        :where(#zuef-main-wrapper) textarea,
+        :where(#zuef-main-wrapper) optgroup {
+            line-height: normal;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13.333px;
+        }
+        /* box-sizing: Themes setzen oft global border-box; das Spiel wurde
+           mit content-box (Browser-Standard) plus einzelnen expliziten
+           border-box-Regeln gebaut – beides bleibt unverändert erhalten. */
+        :where(#zuef-main-wrapper) *,
+        :where(#zuef-main-wrapper) *::before,
+        :where(#zuef-main-wrapper) *::after {
+            box-sizing: content-box;
+        }
+
         :root {
             --primary: #4a9fff;
             --primary-dark: #1a3a6f;
