@@ -53587,21 +53587,36 @@ body.bv-settings-particles-off .title-canvas-bg {
 @keyframes storyImpact { 0%{opacity:.8} 100%{opacity:0} }
 @keyframes storyGlitch { 0%{filter:none; transform:none} 30%{filter:hue-rotate(-20deg); transform:translateX(-4px)} 60%{filter:contrast(1.3); transform:translateX(4px)} 100%{filter:none; transform:none} }
 /* ============================================================
-   MODAL-FEINSCHLIFF v7.10.12: kompakte Fenster + luftiger Footer
+   MODAL-FEINSCHLIFF v7.10.12: kompakte Fenster + flacher Footer
    - Changelog/Credits: kleineres Fenster, dichterer Inhalt, Feinschliff
-   - Settings-Footer: mehr Raum fuer Standard/Fertig
+   - Settings-Footer: flacher, Standard/Fertig niedriger
+   - Karten-Buttons (Oeffnen): nur textbreit, rechtsbuendig
    ============================================================ */
-/* ---- Settings-Footer ---- */
+/* ---- Settings-Footer: flacher, Buttons knapper ---- */
 #title-settings-modal .title-settings-footer {
-    padding: 18px 18px 20px !important;
-    gap: 12px !important;
+    padding: 11px 16px 13px !important;
+    gap: 9px !important;
 }
-#title-settings-modal .title-settings-action {
-    min-width: 118px !important;
-    min-height: 46px !important;
-    padding: 11px 24px !important;
-    font-size: 1.1rem !important;
-    border-radius: 14px !important;
+/* Footer-Buttons (Standard/Fertig): niedriger, weniger wuchtig */
+#title-settings-modal .title-settings-footer .title-settings-action {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 6px 20px !important;
+    font-size: 1.02rem !important;
+    line-height: 1.25 !important;
+    border-radius: 11px !important;
+}
+/* Karten-Buttons (Öffnen): nur so breit wie der Text und rechtsbündig –
+   auch dann, wenn die Karte auf schmalen Screens einspaltig umbricht */
+#title-settings-modal .title-setting-card > .title-settings-action {
+    justify-self: end !important;
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 5px 16px !important;
+    font-size: .98rem !important;
+    line-height: 1.25 !important;
+    border-radius: 10px !important;
 }
 #title-settings-modal .title-settings-body {
     padding: 12px 14px 12px !important;
