@@ -22610,6 +22610,7 @@
                 let cameraForceRender = true;
                 let lastCameraDomX = NaN, lastCameraDomY = NaN;
                 let lastCameraCssX = NaN, lastCameraCssY = NaN;
+                let camCssFrameSkip = 0; // PERF: drosselt die :root-CSS-Variablen auf ~30 Hz
 
                 function applyCameraTransform(force = false) {
                     if (!cameraEl) return;
@@ -22623,7 +22624,13 @@
                     }
 
                     // CSS-Variablen nur grob updaten, da sie Style-Recalc im ganzen Overlay triggern können.
-                    if (!isLowSpecMap() && (force || Math.abs(rx - lastCameraCssX) >= 1 || Math.abs(ry - lastCameraCssY) >= 1)) {
+                    // PERF v7.10.13: --cam-* hängen an :root und treiben `background-position`
+                    // von vollflächigen Effekt-Layern (mix-blend-mode: screen/soft-light).
+                    // Jedes Schreiben = Style-Recalc + Repaint dieser großen Layer.
+                    // Deshalb nur jeden 2. Frame (≈30 Hz) – optisch nicht unterscheidbar.
+                    camCssFrameSkip = (camCssFrameSkip + 1) % 2;
+                    if (!isLowSpecMap() && (force || camCssFrameSkip === 0) &&
+                        (force || Math.abs(rx - lastCameraCssX) >= 1 || Math.abs(ry - lastCameraCssY) >= 1)) {
                         document.documentElement.style.setProperty('--cam-x', (-rx * 0.5) + "px");
                         document.documentElement.style.setProperty('--cam-y', (-ry * 0.5) + "px");
                         document.documentElement.style.setProperty('--cam-x-windows', (-rx * 0.3) + "px");
@@ -22639,10 +22646,26 @@
                     }
                 }
 
+                // PERF v7.10.13: Während die Kamera dem Spieler folgt, schreibt
+                // dieser rAF-Loop JEDEN Frame eine neue transform. Die CSS-Regel
+                // `#rpg-camera:not(.battle-zoom-in) { transition: transform .15s }`
+                // startet dadurch jeden Frame eine neue 150ms-Transition –
+                // zusammen mit der JS-Glättung (CAMERA_SPEED) ergibt das eine
+                // doppelte Dämpfung: die Kamera zieht sichtbar hinterher.
+                // Deshalb während des Folgens die Transition abschalten.
+                let cameraFollowing = false;
+                function setCameraFollowing(on) {
+                    if (!cameraEl || cameraFollowing === on) return;
+                    cameraFollowing = on;
+                    cameraEl.classList.toggle('bv-cam-following', on);
+                }
+
                 function animateCamera() {
                     const diffX = targetCameraX - cameraX;
                     const diffY = targetCameraY - cameraY;
                     const moving = Math.abs(diffX) > 0.35 || Math.abs(diffY) > 0.35;
+
+                    setCameraFollowing(moving);
 
                     if (moving) {
                         const speed = isLowSpecMap() ? 0.55 : CAMERA_SPEED;
@@ -22668,11 +22691,13 @@
 
                 function startCameraLoop() {
                     cameraForceRender = true;
+                    setCameraFollowing(true); // PERF: erster Frame ohne CSS-Transition
                     if (!cameraAnimFrame) cameraAnimFrame = requestAnimationFrame(animateCamera);
                 }
 
                 function stopCameraLoop() {
                     if (cameraAnimFrame) { cancelAnimationFrame(cameraAnimFrame); cameraAnimFrame = null; }
+                    setCameraFollowing(false);
                 }
 
                 function snapCamera() {
@@ -53760,6 +53785,28 @@ body.bv-settings-particles-off .title-canvas-bg {
         height: auto !important;
         max-height: calc(100vh - 24px) !important;
     }
+}
+/* ============================================================
+   PERF v7.10.13: Kamera-Follow ohne doppelte Glättung
+   - animateCamera() schreibt jeden Frame eine neue transform und
+     glättet selbst (CAMERA_SPEED). Eine zusätzliche CSS-Transition
+     auf #rpg-camera startet pro Frame neu (0.15s ease-out) und ließ
+     die Kamera beim Laufen sichtbar hinterherziehen.
+   - Die Klasse .bv-cam-following setzt animateCamera/startCameraLoop
+     nur, solange die Kamera aktiv nachführt; im Ruhezustand (und für
+     Battle-Zoom) bleibt die weiche Transition erhalten.
+   ============================================================ */
+#rpg-camera.bv-cam-following {
+    transition: none !important;
+}
+/* ---- Laufender Spieler: kein drop-shadow-Filter ----
+   `filter: drop-shadow()` muss bei jeder Positionsänderung neu gerastert
+   werden (bei left/top-Transition also jeden Frame). Der Schlagschatten
+   kommt in dieser Zeit aus dem ohnehin vorhandenen .bv-25d-shadow-Element.
+   Im Stand bleibt der Filter unverändert. */
+#rpg-camera.map-engine-v6 #rpg-player.walking,
+#rpg-camera.bv-25d-active #rpg-player.walking {
+    filter: none !important;
 }
 </style>
 
