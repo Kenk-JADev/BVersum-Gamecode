@@ -32598,6 +32598,11 @@
                             battleLog("Ein wilder " + currentEnemy.displayName + " erscheint!");
                         }
 
+                        setTimeout(() => battleLog(
+                            "💥 Krit-Chance: Du " + Math.round(bvCritChance("player") * 100) + " % · " +
+                            "Gegner " + Math.round(bvCritChance("enemy") * 100) + " %"
+                        ), 950);
+
                         setTimeout(() => showTurn("Dein Zug!", true), 300);
                     }, battleIntroDuration);
                 }
@@ -32806,16 +32811,16 @@ function performAttack() {
                 }, 400);
             }
         } else {
-            // Normal attack
+            // Normal attack (Krit-Chance/Treffer kommen aus der zentralen Krit-Regel)
             const baseDmg = player.atk + Math.floor(Math.random() * 10);
-            const isCrit = Math.random() < 0.15;
-            let dmg = Math.max(1, baseDmg - currentEnemy.def);
-            if (isCrit) dmg = Math.floor(dmg * 1.8);
+            const rawDmg = Math.max(1, baseDmg - currentEnemy.def);
+            const critHit = bvApplyCrit(rawDmg, "player");
+            const dmg = critHit.dmg;
 
-            damageEnemy(dmg, isCrit);
+            damageEnemy(dmg, critHit.crit);
 
-            if (isCrit) {
-                battleLog("KRITISCHER TREFFER! " + dmg + " Schaden! 💥");
+            if (critHit.crit) {
+                battleLog("KRITISCHER TREFFER! " + dmg + " Schaden! (" + critHit.mult.toFixed(2) + "x) 💥");
                 spawnBattleEffect("enemy", "💥");
             } else {
                 battleLog("Angriff! " + dmg + " Schaden!");
@@ -32960,7 +32965,7 @@ function performSkill(skillId) {
             }, 150);
             
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 12) - currentEnemy.def);
-            setTimeout(() => { damageEnemy(dmg, false); battleLog(`${skill.name}! ${skill.icon} ${dmg} Schaden!`); checkBattleEnd(); }, 500);
+            setTimeout(() => { { const skCrit = bvApplyCrit(dmg, "player"); damageEnemy(skCrit.dmg, skCrit.crit); battleLog(`${skill.name}! ${skill.icon} ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : "")); checkBattleEnd(); } }, 500);
             resetPlayerVisuals(800);
 
         } else if (skillId === "kaffee" && playerSprite) {
@@ -32987,7 +32992,7 @@ function performSkill(skillId) {
             }, 250);
             
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 18) - currentEnemy.def);
-            setTimeout(() => { damageEnemy(dmg, false); battleLog(`${skill.name}! ${skill.icon} ${dmg} Schaden!`); checkBattleEnd(); }, 600);
+            setTimeout(() => { { const skCrit = bvApplyCrit(dmg, "player"); damageEnemy(skCrit.dmg, skCrit.crit); battleLog(`${skill.name}! ${skill.icon} ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : "")); checkBattleEnd(); } }, 600);
             resetPlayerVisuals(900);
 
         } else if (skillId === "meeting" && playerSprite) {
@@ -33015,7 +33020,7 @@ function performSkill(skillId) {
             }, 300);
             
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 10) - currentEnemy.def);
-            setTimeout(() => { damageEnemy(dmg, false); battleLog(`${skill.name}! ${skill.icon} ${dmg} Schaden!`); checkBattleEnd(); }, 600);
+            setTimeout(() => { { const skCrit = bvApplyCrit(dmg, "player"); damageEnemy(skCrit.dmg, skCrit.crit); battleLog(`${skill.name}! ${skill.icon} ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : "")); checkBattleEnd(); } }, 600);
             resetPlayerVisuals(950);
 
         } else if (skillId === "papier" && playerSprite) {
@@ -33050,7 +33055,7 @@ function performSkill(skillId) {
             }, 180);
 
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 16) - currentEnemy.def);
-            setTimeout(() => { damageEnemy(dmg, false); battleLog(`${skill.name}! ${skill.icon} ${dmg} Schaden!`); checkBattleEnd(); }, 620);
+            setTimeout(() => { { const skCrit = bvApplyCrit(dmg, "player"); damageEnemy(skCrit.dmg, skCrit.crit); battleLog(`${skill.name}! ${skill.icon} ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : "")); checkBattleEnd(); } }, 620);
             setTimeout(() => { if (gameWin) gameWin.style.filter = ""; }, 520);
             resetPlayerVisuals(950);
 
@@ -33068,7 +33073,7 @@ function performSkill(skillId) {
             }, t));
             
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 22) - currentEnemy.def);
-            setTimeout(() => { damageEnemy(dmg, false); battleLog(`${skill.name}! ${skill.icon} ${dmg} Schaden!`); checkBattleEnd(); }, 400);
+            setTimeout(() => { { const skCrit = bvApplyCrit(dmg, "player"); damageEnemy(skCrit.dmg, skCrit.crit); battleLog(`${skill.name}! ${skill.icon} ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : "")); checkBattleEnd(); } }, 400);
             resetPlayerVisuals(800);
 
         } else if (skillId === "printer" && playerSprite) {
@@ -33084,7 +33089,7 @@ function performSkill(skillId) {
             }, t));
             
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 28) - currentEnemy.def);
-            setTimeout(() => { damageEnemy(dmg, false); battleLog(`${skill.name}! ${skill.icon} ${dmg} Schaden!`); checkBattleEnd(); }, 500);
+            setTimeout(() => { { const skCrit = bvApplyCrit(dmg, "player"); damageEnemy(skCrit.dmg, skCrit.crit); battleLog(`${skill.name}! ${skill.icon} ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : "")); checkBattleEnd(); } }, 500);
             resetPlayerVisuals(900);
 
         } else if (skillId === "email_bomb" && playerSprite) {
@@ -33113,8 +33118,9 @@ function performSkill(skillId) {
 
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 24) - currentEnemy.def);
             setTimeout(() => {
-                damageEnemy(dmg, false);
-                battleLog(`${skill.name}! 📧 Inbox überflutet: ${dmg} Schaden!`);
+                const skCrit = bvApplyCrit(dmg, "player");
+                damageEnemy(skCrit.dmg, skCrit.crit);
+                battleLog(`${skill.name}! 📧 Inbox überflutet: ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : ""));
                 if (gameWin) gameWin.style.filter = "";
                 checkBattleEnd();
             }, 690);
@@ -33139,8 +33145,9 @@ function performSkill(skillId) {
 
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 18) - currentEnemy.def);
             setTimeout(() => {
-                damageEnemy(dmg, false);
-                battleLog(`${skill.name}! 📑 47 Folien später: ${dmg} Schaden!`);
+                const skCrit = bvApplyCrit(dmg, "player");
+                damageEnemy(skCrit.dmg, skCrit.crit);
+                battleLog(`${skill.name}! 📑 47 Folien später: ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : ""));
                 if (enemySprite && enemyHp > 0) { enemySprite.style.transform = ""; enemySprite.style.filter = ""; }
                 if (gameWin) gameWin.style.filter = "";
                 checkBattleEnd();
@@ -33174,8 +33181,9 @@ function performSkill(skillId) {
 
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 36) - currentEnemy.def);
             setTimeout(() => {
-                damageEnemy(dmg, false);
-                battleLog(`${skill.name}! 📋 GEKÜNDIGT-Stempel: ${dmg} Schaden!`);
+                const skCrit = bvApplyCrit(dmg, "player");
+                damageEnemy(skCrit.dmg, skCrit.crit);
+                battleLog(`${skill.name}! 📋 GEKÜNDIGT-Stempel: ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : ""));
                 if (gameWin) gameWin.style.filter = "";
                 checkBattleEnd();
             }, 760);
@@ -33207,8 +33215,9 @@ function performSkill(skillId) {
 
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 45) - currentEnemy.def);
             setTimeout(() => {
-                damageEnemy(dmg, false);
-                battleLog(`${skill.name}! 🏛️ Vorstandsbeschluss: ${dmg} Schaden!`);
+                const skCrit = bvApplyCrit(dmg, "player");
+                damageEnemy(skCrit.dmg, skCrit.crit);
+                battleLog(`${skill.name}! 🏛️ Vorstandsbeschluss: ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : ""));
                 if (gameWin) gameWin.style.filter = "";
                 checkBattleEnd();
             }, 860);
@@ -33239,8 +33248,9 @@ function performSkill(skillId) {
             
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 30) - currentEnemy.def);
             setTimeout(() => {
-                damageEnemy(dmg, false);
-                battleLog(`🌸 Oster-Flower-Power! +${healAmount} HP geheilt, ${dmg} Schaden!`);
+                const skCrit = bvApplyCrit(dmg, "player");
+                damageEnemy(skCrit.dmg, skCrit.crit);
+                battleLog(`🌸 Oster-Flower-Power! +${healAmount} HP geheilt, ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : ""));
                 if (gameWin) gameWin.style.animation = "battlePulse 0.4s ease-out";
                 checkBattleEnd();
             }, 650);
@@ -33282,8 +33292,9 @@ function performSkill(skillId) {
             resetPlayerVisuals(1000);} else {
             const dmg = Math.max(1, Math.floor(player.atk * skill.dmgMult + Math.random() * 15) - currentEnemy.def);
             setTimeout(() => {
-                damageEnemy(dmg, false);
-                battleLog(`${skill.name}! ${skill.icon} ${dmg} Schaden!`);
+                const skCrit = bvApplyCrit(dmg, "player");
+                damageEnemy(skCrit.dmg, skCrit.crit);
+                battleLog(`${skill.name}! ${skill.icon} ${skCrit.dmg} Schaden!` + (skCrit.crit ? " 💥 KRITISCH!" : ""));
                 spawnBattleEffect("enemy", skill.icon);
                 checkBattleEnd();
             }, 220);
@@ -33728,6 +33739,64 @@ function performSkill(skillId) {
                 }
 
 
+                /* ===== v2.6: KRITISCHE TREFFER =====
+                   Chance-basierter Zusatzschaden. Gegner treffen sehr selten
+                   kritisch, der Spieler etwas haeufiger dafuer weniger heftig. */
+                const BV_CRIT = {
+                    player: { chance: 0.18, mult: 1.75 },
+                    enemy:  { chance: 0.06, mult: 1.40 }
+                };
+
+                function bvCritChance(side) {
+                    const c = BV_CRIT[side] || BV_CRIT.player;
+                    return c.chance;
+                }
+
+                function bvApplyCrit(baseDmg, side) {
+                    const c = BV_CRIT[side] || BV_CRIT.player;
+                    const base = Math.max(1, Math.round(baseDmg));
+                    const hit = Math.random() < c.chance;
+                    return {
+                        dmg: hit ? Math.max(1, Math.round(base * c.mult)) : base,
+                        crit: hit,
+                        mult: hit ? c.mult : 1
+                    };
+                }
+                window.bvCritChance = bvCritChance;
+
+                /* Kurzes Feedback: Label, Funken, Bildschirm-Blitz */
+                function bvCritFeedback(side) {
+                    const area = document.getElementById("battle-" + side + "-area");
+                    const screen = document.getElementById("rpg-battle-screen");
+                    if (area) {
+                        const old = area.querySelector(".bv-crit-label");
+                        if (old) old.remove();
+                        const label = document.createElement("div");
+                        label.className = "bv-crit-label";
+                        label.innerText = "KRITISCH!";
+                        area.appendChild(label);
+                        setTimeout(() => label.remove(), 1000);
+
+                        for (let i = 0; i < 10; i++) {
+                            const spark = document.createElement("span");
+                            spark.className = "bv-crit-spark";
+                            const angle = (Math.PI * 2 * i / 10) + Math.random() * 0.4;
+                            const dist = 32 + Math.random() * 46;
+                            spark.style.setProperty("--cx", (Math.cos(angle) * dist).toFixed(1) + "px");
+                            spark.style.setProperty("--cy", (Math.sin(angle) * dist).toFixed(1) + "px");
+                            area.appendChild(spark);
+                            setTimeout(() => spark.remove(), 900);
+                        }
+                    }
+                    if (screen) {
+                        screen.classList.remove("bv-crit-flash");
+                        void screen.offsetWidth;
+                        screen.classList.add("bv-crit-flash");
+                        setTimeout(() => screen.classList.remove("bv-crit-flash"), 420);
+                    }
+                }
+                window.bvCritFeedback = bvCritFeedback;
+
                 function damageEnemy(dmg, isCrit) {
                     enemyHp -= dmg;
                     if (enemyHp < 0) enemyHp = 0;
@@ -33746,7 +33815,8 @@ function performSkill(skillId) {
                         }, 180);
                     }
 
-                    showDmgPopup("battle-dmg-enemy", dmg, isCrit ? "#f4f" : "#ff0", isCrit);
+                    showDmgPopup("battle-dmg-enemy", dmg, isCrit ? "#ffe066" : "#ff0", isCrit);
+                    if (isCrit) bvCritFeedback("enemy");
 
                     // BUGFIX: Wenn Gegner stirbt (HP = 0), keine Treffer-Animation anzeigen
                     // Die Todesanimation wird in checkBattleEnd() ausgeführt
@@ -33871,33 +33941,44 @@ function performSkill(skillId) {
                     }, 200);
                 }
 
-                function damagePlayer(dmg) {
+                /* isCrit ist optional: ohne Angabe wird die (sehr niedrige)
+                   Gegner-Krit-Chance gewuerfelt. Gibt {dmg, crit} zurueck, damit
+                   Aufrufer den Krit im Kampflog nennen koennen. */
+                function damagePlayer(dmg, isCrit) {
+                    if (typeof isCrit !== "boolean") {
+                        const enemyCrit = bvApplyCrit(dmg, "enemy");
+                        dmg = enemyCrit.dmg;
+                        isCrit = enemyCrit.crit;
+                    }
+
                     if (godMode) { 
                         dmg = 0;
                         battleLog("God Mode aktiv! Kein Schaden!");
-                        return; // Skip all damage effects
+                        return { dmg: 0, crit: false }; // Skip all damage effects
                     }
 
                     player.hp -= dmg;
                     if (player.hp < 0) player.hp = 0;
 
-                    showDmgPopup("battle-dmg-player", dmg, "#f44", false);
+                    showDmgPopup("battle-dmg-player", dmg, isCrit ? "#ffe066" : "#f44", isCrit);
+                    if (isCrit) bvCritFeedback("player");
 
                     const playerSprite = document.getElementById("battle-player-sprite");
                     const gameWin = document.getElementById("rpg-game-window");
                     
                     if (playerSprite) {
                         // 3 zufällige Damage-Bewegungen für Spieler
-                        playDamageReaction(playerSprite, "player", false);
+                        playDamageReaction(playerSprite, "player", isCrit);
                     }
 
                     // If player died, play defeat animation (also used by poison damage)
                     if (player.hp <= 0) {
                         playPlayerDefeatAnimation("damage");
-                        return;
+                        return { dmg, crit: isCrit };
                     }
 
                     updateBattleUI();
+                    return { dmg, crit: isCrit };
                 }
 
                 function showDmgPopup(id, dmg, color, isCrit) {
@@ -34153,13 +34234,15 @@ function performSkill(skillId) {
                             // Use skill
                             executeEnemySkill(selectedSkill);
                         } else {
-                            // Basic attack
+                            // Basic attack (Krit wird in damagePlayer gewuerfelt)
                             const baseDmg = currentEnemy.atk + Math.floor(Math.random() * 8);
-                            const dmg = Math.max(1, baseDmg - player.def);
+                            const rawDmg = Math.max(1, baseDmg - player.def);
                             playEnemyAttackAnimation("basic");
-                            damagePlayer(dmg);
-                            battleLog(currentEnemy.name + " greift an! " + dmg + " Schaden!");
-                            spawnBattleEffect("player", "💢");
+                            const enemyHit = damagePlayer(rawDmg) || { dmg: rawDmg, crit: false };
+                            battleLog(enemyHit.crit
+                                ? currentEnemy.name + " trifft KRITISCH! " + enemyHit.dmg + " Schaden! 💥"
+                                : currentEnemy.name + " greift an! " + enemyHit.dmg + " Schaden!");
+                            spawnBattleEffect("player", enemyHit.crit ? "💥" : "💢");
                             
                             if (player.hp > 0) {
                                 setTimeout(endEnemyTurn, 1000);
@@ -34299,7 +34382,7 @@ function performSkill(skillId) {
                             case "poison":
                                 // Poison player (damage over time)
                                 const poisonDmg = Math.max(1, Math.floor(currentEnemy.atk * skill.dmgMult) - player.def);
-                                damagePlayer(poisonDmg);
+                                damagePlayer(poisonDmg, false);
                                 player.isPoisoned = true;
                                 player.poisonTurns = 3;
                                 player.poisonDmg = Math.floor(currentEnemy.atk * 0.3);
@@ -56642,19 +56725,33 @@ body.bv-settings-particles-off .title-canvas-bg {
    v2.5 – Battle-Fenster, Shop-Animationen, Partikel-Physik
    ============================================================ */
 
-/* ---------- 1) Battle: Skill-/Item-Fenster passt immer ins Fenster ---------- */
-/* Vorher: bottom:145px + max-height min(430px, calc(100% - 190px)) und die
-   alte submenuPop-Animation hat das transform ueberschrieben -> der
-   "Zurück"-Button rutschte unten aus dem Fenster. Jetzt mittig, mit
-   fixem Kopf, scrollender Liste und festem Zurück-Button. */
+/* ---------- 1) Battle: Skill- und Item-Fenster exakt gleich ausgerichtet ---------- */
+/* Beide Fenster haengen am selben Anker: mittig, mit der Unterkante knapp
+   ueber der Kommandoleiste. Vorher stand das Fenster mittig im Screen - da
+   Skill- und Item-Liste unterschiedlich hoch sind, sassen sie nicht auf
+   derselben Linie (Skill-Fenster wirkte "verrutscht"). Die Hoehe ist so
+   gedeckelt, dass Kopf, Liste und Zurueck-Button immer im Fenster bleiben. */
+#rpg-battle-screen {
+    --bv-bui-h: 130px;
+}
+
+@media (max-width: 920px), (pointer: coarse) {
+    #rpg-battle-screen { --bv-bui-h: 140px; }
+}
+
+@media (max-height: 680px) {
+    #rpg-battle-screen { --bv-bui-h: 120px; }
+}
+
 #rpg-battle-screen .battle-submenu {
-    top: 50% !important;
-    bottom: auto !important;
+    top: auto !important;
+    bottom: calc(var(--bv-bui-h, 130px) + 12px) !important;
     left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: min(480px, calc(100% - 24px)) !important;
-    max-height: calc(100% - 24px) !important;
-    padding: 12px !important;
+    transform: translateX(-50%) !important;
+    width: min(460px, calc(100% - 24px)) !important;
+    max-height: calc(100% - var(--bv-bui-h, 130px) - 24px) !important;
+    margin: 0 !important;
+    padding: 10px !important;
     box-sizing: border-box !important;
     display: none;
     flex-direction: column !important;
@@ -56663,12 +56760,12 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 #rpg-battle-screen .battle-submenu.visible {
     display: flex !important;
-    animation: bvBattleMenuIn .26s cubic-bezier(.16,1,.3,1) both !important;
+    animation: bvBattleMenuIn .24s cubic-bezier(.16,1,.3,1) both !important;
 }
 
 @keyframes bvBattleMenuIn {
-    from { opacity: 0; transform: translate(-50%, -50%) scale(.94); }
-    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    from { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.96); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
 #rpg-battle-screen .battle-submenu .submenu-header {
@@ -56696,7 +56793,8 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 @media (max-height: 480px) {
     #rpg-battle-screen .battle-submenu {
-        max-height: calc(100% - 12px) !important;
+        bottom: calc(var(--bv-bui-h, 130px) + 6px) !important;
+        max-height: calc(100% - var(--bv-bui-h, 130px) - 12px) !important;
         padding: 8px !important;
     }
     #rpg-battle-screen .submenu-back { margin-top: 5px !important; padding: 4px !important; }
@@ -56853,4 +56951,104 @@ body.bv-settings-particles-off .title-canvas-bg {
 /* Low-Spec: nur die günstigsten Effekte */
 .bs-lowspec .bs-card::after, .bs-lowspec .bs-skill::after { display: none; }
 .bs-lowspec .bs-card:hover, .bs-lowspec .bs-skill:hover { transform: none; }
+</style>
+
+<style>
+/* ============================================================
+   v2.6 – Kritische Treffer: Feedback-Optik
+   ============================================================ */
+
+/* Krit-Zahl: groesser, golden, mit Puls */
+.dmg-crit {
+    font-size: 2.2rem !important;
+    color: #ffe066 !important;
+    letter-spacing: 1px;
+    text-shadow: 0 0 12px #ffb700, 0 0 22px rgba(255, 140, 0, .55), 3px 3px 0 #000 !important;
+    animation: dmgPop 1.2s forwards, bvCritNumberPulse .42s ease-out !important;
+}
+
+@keyframes bvCritNumberPulse {
+    0%   { filter: brightness(2.1); }
+    100% { filter: brightness(1); }
+}
+
+/* "KRITISCH!"-Schriftzug ueber dem Getroffenen */
+.bv-crit-label {
+    position: absolute;
+    top: -42px;
+    left: 50%;
+    z-index: 120;
+    font-family: 'Press Start 2P', monospace;
+    font-size: .68rem;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    color: #ffe066;
+    text-shadow: 0 0 10px #ff8a00, 2px 2px 0 #000;
+    pointer-events: none;
+    animation: bvCritLabel 1s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+@keyframes bvCritLabel {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.7); }
+    22%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.14); }
+    62%  { opacity: 1; transform: translateX(-50%) translateY(-3px) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(.94); }
+}
+
+/* Funken, die vom Trefferpunkt wegfliegen (nur transform/opacity -> GPU) */
+.bv-crit-spark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    z-index: 119;
+    pointer-events: none;
+    background: radial-gradient(circle, #fffbd0 0%, #ffc400 55%, rgba(255, 140, 0, 0) 100%);
+    animation: bvCritSpark .85s ease-out forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes bvCritSpark {
+    0%   { opacity: 1; transform: translate(-50%, -50%) scale(.35); }
+    55%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--cx, 0px)), calc(-50% + var(--cy, 0px))) scale(.25); }
+}
+
+/* Kurzer warmer Blitz ueber dem Kampfbild */
+#rpg-battle-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 99;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle at 50% 45%, rgba(255, 224, 102, .26), rgba(255, 150, 0, .07) 45%, transparent 68%);
+}
+
+#rpg-battle-screen.bv-crit-flash::after {
+    animation: bvCritFlash .4s ease-out;
+}
+
+@keyframes bvCritFlash {
+    0%   { opacity: 0; }
+    22%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Reduced Motion: Blitz und Funken aus, Label bleibt lesbar */
+@media (prefers-reduced-motion: reduce) {
+    .bv-crit-spark { display: none !important; }
+    #rpg-battle-screen.bv-crit-flash::after { animation: none !important; }
+    .bv-crit-label { animation: bvCritLabelLite 1s ease-out forwards !important; }
+    .dmg-crit { animation: dmgPop 1.2s forwards !important; }
+}
+
+@keyframes bvCritLabelLite {
+    0%   { opacity: 0; }
+    15%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { opacity: 0; }
+}
 </style>
