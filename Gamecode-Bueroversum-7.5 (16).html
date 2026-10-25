@@ -57622,7 +57622,7 @@ body.bv-settings-particles-off .title-canvas-bg {
     'use strict';
 
     var HOST_ID = 'bv-battle-transition';
-    var NORMAL = ['slash', 'vortex', 'crack', 'iris'];
+    var NORMAL = ['slash', 'vortex', 'crack', 'iris', 'mosaic', 'scan', 'impact'];
 
     function btLowSpec() {
         try {
@@ -57662,6 +57662,13 @@ body.bv-settings-particles-off .title-canvas-bg {
             '</svg>';
     }
 
+    /* Low-Spec bekommt eine eigene, billige Inszenierung: harter Vorhang,
+       der hereinfährt - nur ein Element, nur transform. */
+    function lowArtHtml() {
+        var dirs = ['w1', 'w2', 'w3'];
+        return '<i class="bvbt-wipe ' + dirs[Math.floor(Math.random() * dirs.length)] + '"></i>';
+    }
+
     function artHtml(v) {
         var out = '';
         if (v === 'slash') {
@@ -57680,6 +57687,25 @@ body.bv-settings-particles-off .title-canvas-bg {
         } else if (v === 'iris') {
             out += '<i class="bvbt-iris"></i><i class="bvbt-rays"></i>';
             out += '<i class="bvbt-shock"></i>';
+        } else if (v === 'mosaic') {
+            out += '<i class="bvbt-vig"></i>';
+            for (i = 0; i < 48; i++) {
+                var c = i % 8, r = Math.floor(i / 8);
+                var dist = Math.abs(c - 3.5) + Math.abs(r - 2.5);
+                out += '<i class="bvbt-tile" style="left:' + (c * 12.5) + '%;top:' + (r * 16.6) +
+                    '%;--d:' + Math.round(dist * 20) + 'ms"></i>';
+            }
+            out += '<i class="bvbt-shock"></i>';
+        } else if (v === 'scan') {
+            out += '<i class="bvbt-flash short"></i>';
+            out += '<i class="bvbt-band b1"></i><i class="bvbt-band b2"></i>' +
+                   '<i class="bvbt-band b3"></i><i class="bvbt-band b4"></i>';
+            out += '<i class="bvbt-scanline"></i><i class="bvbt-vig"></i>';
+        } else if (v === 'impact') {
+            out += '<i class="bvbt-flash"></i>';
+            out += '<i class="bvbt-rays impact"></i>';
+            out += '<i class="bvbt-impactstar"></i>';
+            out += '<i class="bvbt-shock"></i><i class="bvbt-shock late"></i>';
         } else if (v === 'boss') {
             out += '<i class="bvbt-vig"></i>';
             out += '<i class="bvbt-swirl boss s1"></i><i class="bvbt-swirl boss s2"></i>';
@@ -57723,7 +57749,7 @@ body.bv-settings-particles-off .title-canvas-bg {
                        (host === document.body ? ' bt-global' : '');
         el.setAttribute('aria-hidden', 'true');
         el.innerHTML = '<i class="bvbt-veil"></i>' +
-            (low ? '' : artHtml(variant)) +
+            (low ? lowArtHtml() : artHtml(variant)) +
             captionHtml(variant, opts.name);
 
         host.appendChild(el);
@@ -58139,6 +58165,144 @@ body.bv-settings-particles-off .title-canvas-bg {
     100% { opacity: 0; transform: translate(-50%, -50%) rotate(50deg) scale(.4); }
 }
 
+/* --- Variante: Mosaik (Retro-Raster) --- */
+#bv-battle-transition .bvbt-tile {
+    position: absolute;
+    width: 12.5%;
+    height: 16.7%;
+    background: linear-gradient(150deg, #16204f, #04060f 75%);
+    box-shadow: inset 0 0 0 1px rgba(120, 190, 255, .16);
+    transform: scale(0);
+    animation: bvbtTileIn .28s cubic-bezier(.2, .9, .2, 1) forwards;
+    animation-delay: var(--d, 0ms);
+}
+
+@keyframes bvbtTileIn {
+    to { transform: scale(1.01); }
+}
+
+/* --- Variante: Signal / Scanline (Kanalwechsel-Optik) --- */
+#bv-battle-transition .bvbt-band {
+    position: absolute;
+    left: -12%;
+    width: 124%;
+    height: 26%;
+    background: linear-gradient(180deg, rgba(120, 180, 255, .18), rgba(6, 10, 26, .96));
+    border-top: 1px solid rgba(175, 218, 255, .55);
+    transform: translateX(-115%);
+    animation: bvbtBandIn .3s cubic-bezier(.2, .9, .2, 1) forwards;
+}
+
+#bv-battle-transition .bvbt-band.b1 { top: -1%; }
+#bv-battle-transition .bvbt-band.b2 { top: 24%; animation-delay: .05s; }
+#bv-battle-transition .bvbt-band.b3 { top: 49%; animation-delay: .1s; }
+#bv-battle-transition .bvbt-band.b4 { top: 74%; animation-delay: .15s; }
+
+@keyframes bvbtBandIn {
+    to { transform: translateX(0); }
+}
+
+#bv-battle-transition .bvbt-scanline {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0 44%, rgba(200, 235, 255, .42) 50%, transparent 56%);
+    transform: translateY(-100%);
+    animation: bvbtScanSweep .5s linear .12s forwards;
+}
+
+@keyframes bvbtScanSweep {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+/* --- Variante: Impact (Speedlines + Blitzkreuz) --- */
+#bv-battle-transition .bvbt-rays.impact {
+    background: repeating-conic-gradient(from 0deg,
+        rgba(220, 240, 255, .38) 0deg 1.2deg,
+        transparent 1.2deg 9deg);
+    animation: bvbtImpactRays .58s cubic-bezier(.3, 0, .2, 1) forwards;
+}
+
+@keyframes bvbtImpactRays {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(0deg) scale(2.1); }
+    22%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(-26deg) scale(.85); }
+}
+
+#bv-battle-transition .bvbt-impactstar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 34%;
+    height: 34%;
+    margin: -17% 0 0 -17%;
+    transform: scale(.1);
+    opacity: 0;
+    animation: bvbtImpactStar .52s cubic-bezier(.16, 1, .3, 1) .1s forwards;
+}
+
+#bv-battle-transition .bvbt-impactstar::before,
+#bv-battle-transition .bvbt-impactstar::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    margin-left: -1.5px;
+    background: linear-gradient(180deg, transparent, #fff 35%, #cfe6ff 50%, #fff 65%, transparent);
+    box-shadow: 0 0 14px rgba(160, 210, 255, .9);
+}
+
+#bv-battle-transition .bvbt-impactstar::after {
+    transform: rotate(90deg);
+}
+
+@keyframes bvbtImpactStar {
+    0%   { opacity: 0; transform: scale(.1); }
+    28%  { opacity: 1; transform: scale(1.6); }
+    100% { opacity: 0; transform: scale(3.2); }
+}
+
+#bv-battle-transition .bvbt-shock.late {
+    animation-delay: .2s;
+    border-color: rgba(220, 240, 255, .55);
+}
+
+/* --- Low-Spec: harter Vorhang (ein Element, nur transform) --- */
+#bv-battle-transition .bvbt-wipe {
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(120deg, #05070f, #0a1230 55%, #05070f);
+    transform-origin: top center;
+    animation: bvbtWipeY .26s ease-out forwards;
+}
+
+#bv-battle-transition .bvbt-wipe.w2 {
+    transform-origin: bottom center;
+    animation-name: bvbtWipeY2;
+}
+
+#bv-battle-transition .bvbt-wipe.w3 {
+    transform-origin: left center;
+    animation-name: bvbtWipeX;
+}
+
+@keyframes bvbtWipeY {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+}
+
+@keyframes bvbtWipeY2 {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+}
+
+@keyframes bvbtWipeX {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
 /* --- Boss-Variante --- */
 #bv-battle-transition .bvbt-swirl.boss.s1 {
     background: repeating-conic-gradient(from 0deg,
@@ -58214,6 +58378,10 @@ body.bv-settings-particles-off .title-canvas-bg {
 #bv-battle-transition.bt-low .bvbt-iris,
 #bv-battle-transition.bt-low .bvbt-rays,
 #bv-battle-transition.bt-low .bvbt-spark,
+#bv-battle-transition.bt-low .bvbt-tile,
+#bv-battle-transition.bt-low .bvbt-band,
+#bv-battle-transition.bt-low .bvbt-scanline,
+#bv-battle-transition.bt-low .bvbt-impactstar,
 #bv-battle-transition.bt-low .bvbt-vig {
     display: none !important;
 }
