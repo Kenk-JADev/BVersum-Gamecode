@@ -22548,7 +22548,48 @@
                 // ===== CAMERA SYSTEM =====
                 let cameraX = 0, cameraY = 0;
                 let targetCameraX = 0, targetCameraY = 0;
-                const CAMERA_SPEED = 0.28; // PERF: schnellere Kamera, weniger gefühlter Input-Lag
+                const CAMERA_SPEED = 0.28; // (Alt) wird nicht mehr benutzt – siehe CAMERA_MODES
+                // v7.10.14: Smooth-Kamera-Profile. lambda = Aufholgeschwindigkeit
+                // pro Sekunde (höher = direkter, niedriger = sanfter/nachziehender).
+                const CAMERA_MODES = {
+                    smooth:   { lambda: 10,       label: 'Sanft' },
+                    balanced: { lambda: 18,       label: 'Ausgewogen' },
+                    snappy:   { lambda: 32,       label: 'Zügig' },
+                    off:      { lambda: Infinity, label: 'Direkt (kein Nachziehen)' }
+                };
+                let cameraLastFrameAt = 0;
+
+                function getCameraMode() {
+                    const mode = (window.BV_SETTINGS && window.BV_SETTINGS.cameraMode) || 'balanced';
+                    return CAMERA_MODES[mode] ? mode : 'balanced';
+                }
+                function getCameraLambda() {
+                    let l = CAMERA_MODES[getCameraMode()].lambda;
+                    if (l === Infinity) return Infinity;
+                    // Low-Spec: schneller aufholen = weniger Frames mit Bewegung
+                    if (isLowSpecMap()) l *= 1.6;
+                    return l;
+                }
+                // Kleine Brücke zum Live-Tunen (Konsole/Cutscenes):
+                //   BVCamera.setMode('snappy') | BVCamera.modes()
+                window.BVCamera = {
+                    modes: () => Object.keys(CAMERA_MODES).map(k => ({ mode: k, label: CAMERA_MODES[k].label, lambda: CAMERA_MODES[k].lambda })),
+                    getMode: getCameraMode,
+                    setMode(mode) {
+                        if (!CAMERA_MODES[mode]) return false;
+                        if (window.BVSettings && typeof window.BVSettings.set === 'function') window.BVSettings.set('cameraMode', mode);
+                        else {
+                            try {
+                                const s = Object.assign({}, JSON.parse(localStorage.getItem('bv_settings') || '{}'), { cameraMode: mode });
+                                localStorage.setItem('bv_settings', JSON.stringify(s));
+                                window.BV_SETTINGS = Object.assign({}, window.BV_SETTINGS || {}, { cameraMode: mode });
+                            } catch (e) {}
+                        }
+                        cameraLastFrameAt = 0;
+                        return true;
+                    },
+                    reset() { cameraLastFrameAt = 0; }
+                };
                 let cameraAnimFrame = null;
                 function isLowSpecMap() {
                     const s = window.BV_SETTINGS || {};
@@ -22668,14 +22709,28 @@
                     setCameraFollowing(moving);
 
                     if (moving) {
-                        const speed = isLowSpecMap() ? 0.55 : CAMERA_SPEED;
-                        cameraX += diffX * speed;
-                        cameraY += diffY * speed;
+                        // v7.10.14: Framerate-unabhängige Smooth-Kamera.
+                        // Vorher: fester Lerp-Faktor pro Frame (0.28) -> auf einem
+                        // 144-Hz-Monitor lief die Kamera ~2,4x schneller als auf 60 Hz.
+                        // Jetzt: exponentielle Dämpfung mit dt, dadurch identisches
+                        // Nachziehverhalten auf jeder Bildwiederholrate.
+                        const nowT = performance.now();
+                        const dt = cameraLastFrameAt
+                            ? Math.min(0.05, Math.max(0.001, (nowT - cameraLastFrameAt) / 1000))
+                            : 1 / 60;
+                        cameraLastFrameAt = nowT;
+
+                        const lambda = getCameraLambda();
+                        const factor = lambda === Infinity ? 1 : 1 - Math.exp(-lambda * dt);
+
+                        cameraX += diffX * factor;
+                        cameraY += diffY * factor;
                         if (Math.abs(targetCameraX - cameraX) < 0.35) cameraX = targetCameraX;
                         if (Math.abs(targetCameraY - cameraY) < 0.35) cameraY = targetCameraY;
                     } else {
                         cameraX = targetCameraX;
                         cameraY = targetCameraY;
+                        cameraLastFrameAt = 0;
                     }
 
                     applyCameraTransform(cameraForceRender);
@@ -47024,7 +47079,8 @@ body.bv-settings-performance .title-light-rays {
         particles: true,
         reducedMotion: false,
         fps: false,
-        textSpeed: 'normal'
+        textSpeed: 'normal',
+        cameraMode: 'balanced'
     };
 
     let settings = loadSettings();
@@ -47143,6 +47199,16 @@ body.bv-settings-performance .title-light-rays {
                             <option value="normal" ${settings.textSpeed === 'normal' ? 'selected' : ''}>Normal</option>
                             <option value="fast" ${settings.textSpeed === 'fast' ? 'selected' : ''}>Schnell</option>
                             <option value="instant" ${settings.textSpeed === 'instant' ? 'selected' : ''}>Fast sofort</option>
+                        </select>
+                    </div>
+                    <div class="setting-card">
+                        <div class="setting-title">🎥 Kamera</div>
+                        <div class="setting-desc">Wie weich die Kamera dem Charakter auf der Map folgt.</div>
+                        <select class="setting-select" data-setting-select="cameraMode">
+                            <option value="smooth" ${(settings.cameraMode || 'balanced') === 'smooth' ? 'selected' : ''}>Sanft (zieht weich nach)</option>
+                            <option value="balanced" ${(settings.cameraMode || 'balanced') === 'balanced' ? 'selected' : ''}>Ausgewogen</option>
+                            <option value="snappy" ${(settings.cameraMode || 'balanced') === 'snappy' ? 'selected' : ''}>Zügig</option>
+                            <option value="off" ${(settings.cameraMode || 'balanced') === 'off' ? 'selected' : ''}>Direkt (kein Nachziehen)</option>
                         </select>
                     </div>
                     <div class="setting-card">
@@ -50013,7 +50079,7 @@ body.bv-settings-lowspec * {
 /* ARENA HOTFIX v7.10.2: Title Settings + Main Menu Button Audit */
 (function(){
     'use strict';
-    const DEFAULTS = { performance:'balanced', particles:true, reducedMotion:false, fps:false, textSpeed:'normal' };
+    const DEFAULTS = { performance:'balanced', particles:true, reducedMotion:false, fps:false, textSpeed:'normal', cameraMode:'balanced' };
 
     function readSettings(){
         try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('bv_settings') || '{}'), window.BV_SETTINGS || {}); }
@@ -50103,7 +50169,8 @@ body.bv-settings-lowspec * {
                 toggleHtml('particles','Partikel','Titel- und Map-Partikel.')+
                 toggleHtml('reducedMotion','Weniger Bewegung','Animationen drosseln.')+
                 toggleHtml('fps','FPS-Anzeige','Kleine Zahl oben links.')+
-                '<div class="title-setting-card"><div><div class="title-setting-title">Texttempo</div><div class="title-setting-desc">Wie schnell Dialoge geschrieben werden.</div></div><select class="title-settings-select" data-ts-select="textSpeed"><option value="slow" '+(s.textSpeed==='slow'?'selected':'')+'>Langsam</option><option value="normal" '+(s.textSpeed==='normal'?'selected':'')+'>Normal</option><option value="fast" '+(s.textSpeed==='fast'?'selected':'')+'>Schnell</option><option value="instant" '+(s.textSpeed==='instant'?'selected':'')+'>Sofort</option></select></div>';
+                '<div class="title-setting-card"><div><div class="title-setting-title">Texttempo</div><div class="title-setting-desc">Wie schnell Dialoge geschrieben werden.</div></div><select class="title-settings-select" data-ts-select="textSpeed"><option value="slow" '+(s.textSpeed==='slow'?'selected':'')+'>Langsam</option><option value="normal" '+(s.textSpeed==='normal'?'selected':'')+'>Normal</option><option value="fast" '+(s.textSpeed==='fast'?'selected':'')+'>Schnell</option><option value="instant" '+(s.textSpeed==='instant'?'selected':'')+'>Sofort</option></select></div>'+
+                '<div class="title-setting-card"><div><div class="title-setting-title">Kamera</div><div class="title-setting-desc">Wie weich die Kamera folgt.</div></div><select class="title-settings-select" data-ts-select="cameraMode"><option value="smooth" '+((s.cameraMode||'balanced')==='smooth'?'selected':'')+'>Sanft</option><option value="balanced" '+((s.cameraMode||'balanced')==='balanced'?'selected':'')+'>Ausgewogen</option><option value="snappy" '+((s.cameraMode||'balanced')==='snappy'?'selected':'')+'>Zügig</option><option value="off" '+((s.cameraMode||'balanced')==='off'?'selected':'')+'>Direkt</option></select></div>';
         }
         body.querySelectorAll('[data-ts-toggle]').forEach(btn => btn.addEventListener('click', () => { const key = btn.dataset.tsToggle; writeSetting(key, !readSettings()[key]); renderTitleSettings(); }));
         body.querySelectorAll('[data-ts-select]').forEach(sel => sel.addEventListener('change', () => writeSetting(sel.dataset.tsSelect, sel.value)));
@@ -50240,7 +50307,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 /* ARENA HOTFIX v7.10.3: Title Settings an Hauptmenü angleichen + Partikel-Aus Bugfix */
 (function(){
     'use strict';
-    const DEFAULTS = { performance:'balanced', particles:true, reducedMotion:false, fps:false, textSpeed:'normal' };
+    const DEFAULTS = { performance:'balanced', particles:true, reducedMotion:false, fps:false, textSpeed:'normal', cameraMode:'balanced' };
     function getSettings(){
         try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('bv_settings') || '{}'), window.BV_SETTINGS || {}); }
         catch(e){ return Object.assign({}, DEFAULTS, window.BV_SETTINGS || {}); }
@@ -50294,6 +50361,7 @@ body.bv-settings-particles-off .title-canvas-bg {
                 toggleHtml('reducedMotion','Weniger Bewegung','Animationen drosseln.')+
                 toggleHtml('fps','FPS-Anzeige','Kleine Zahl oben links.')+
                 '<div class="setting-card"><div class="setting-title">Texttempo</div><div class="setting-desc">Wie schnell Dialoge geschrieben werden.</div><select class="setting-select" data-title-setting-select="textSpeed"><option value="slow" '+(s.textSpeed==='slow'?'selected':'')+'>Langsam</option><option value="normal" '+(s.textSpeed==='normal'?'selected':'')+'>Normal</option><option value="fast" '+(s.textSpeed==='fast'?'selected':'')+'>Schnell</option><option value="instant" '+(s.textSpeed==='instant'?'selected':'')+'>Sofort</option></select></div>'+
+                '<div class="setting-card"><div class="setting-title">Kamera</div><div class="setting-desc">Wie weich die Kamera dem Charakter folgt.</div><select class="setting-select" data-title-setting-select="cameraMode"><option value="smooth" '+((s.cameraMode||'balanced')==='smooth'?'selected':'')+'>Sanft</option><option value="balanced" '+((s.cameraMode||'balanced')==='balanced'?'selected':'')+'>Ausgewogen</option><option value="snappy" '+((s.cameraMode||'balanced')==='snappy'?'selected':'')+'>Zügig</option><option value="off" '+((s.cameraMode||'balanced')==='off'?'selected':'')+'>Direkt</option></select></div>'+
                 '</div></div>';
         }
         body.querySelectorAll('[data-title-setting-toggle]').forEach(btn => btn.addEventListener('click', () => { const key = btn.dataset.titleSettingToggle; setSettingFixed(key, !getSettings()[key]); renderTitleSettingsLikeMain(); }));
