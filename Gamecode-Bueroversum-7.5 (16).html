@@ -1073,57 +1073,112 @@
                 
             <!-- QUIZ SCREEN -->
             <div id="rpg-quiz-screen" class="rpg-screen">
-                <div class="quiz-bg">
-                    <div class="quiz-bg-grid"></div>
-                    <div class="quiz-bg-orb orb-1"></div>
-                    <div class="quiz-bg-orb orb-2"></div>
-                    <div class="quiz-spotlight left"></div>
-                    <div class="quiz-spotlight right"></div>
-                    <div class="quiz-audience" aria-hidden="true">
-                        <span></span><span></span><span></span><span></span><span></span><span></span>
-                        <span></span><span></span><span></span><span></span><span></span><span></span>
+                <!-- ===== BÜHNENRAUM ===== -->
+                <div class="bvq-room">
+                    <div class="bvq-ceiling"><i></i><i></i><i></i><i></i><i></i></div>
+                    <div class="bvq-spot s1"></div>
+                    <div class="bvq-spot s2"></div>
+                    <div class="bvq-spot s3"></div>
+                    <div class="bvq-floor"></div>
+                    <div class="bvq-haze"></div>
+                    <div class="bvq-audience" id="bvq-audience" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span>
                     </div>
+                    <div class="bvq-flash" id="bvq-flash"></div>
                 </div>
-                <button class="quiz-close-btn" id="quiz-close-btn" title="Quiz beenden">✕</button>
-                <div class="quiz-stage">
-                    <div class="quiz-header">
-                        <div class="quiz-title">🧠 BÜRO-QUIZ</div>
-                        <div class="quiz-header-right">
-                            <div class="quiz-gold-pill">🪙 <span id="quiz-gold">0</span></div>
-                            <div class="quiz-progress"><span id="quiz-current">1</span>/<span id="quiz-total">5</span></div>
+
+                <button class="bvq-close" id="quiz-close-btn" title="Show verlassen (Esc)">✕</button>
+
+                <!-- ===== BÜHNE ===== -->
+                <div class="bvq-stage">
+                    <div class="bvq-topbar">
+                        <div class="bvq-logo">BÜRO<span>QUIZ</span><small>SHOW</small></div>
+                        <div class="bvq-hud">
+                            <div class="bvq-chip bvq-chip-gold" id="bvq-gold-chip">🪙 <b id="quiz-gold">0</b></div>
+                            <div class="bvq-chip">Frage <b id="quiz-current">1</b><i>/</i><b id="quiz-total">7</b></div>
+                            <button class="bvq-chip bvq-sound" id="bvq-sound" type="button" title="Ton an/aus">🔊</button>
                         </div>
                     </div>
-                    <div class="quiz-main-card">
-                        <div class="quiz-player-card">
-                            <div class="quiz-player-glow"></div>
-                            <div class="quiz-player-icon" id="quiz-player-icon">🧑‍💼</div>
-                            <div class="quiz-player-name" id="quiz-player-name">Tester</div>
-                            <div class="quiz-score-pill">Score: <span id="quiz-score">0</span></div>
-                        </div>
-                        <div class="quiz-question-panel">
-                            <div class="quiz-timer-wrap">
-                                <div class="quiz-timer-bar" id="quiz-timer-bar"></div>
+
+                    <!-- Jury -->
+                    <div class="bvq-judges" id="bvq-judges"></div>
+
+                    <!-- Spielbrett -->
+                    <div class="bvq-board" id="bvq-board">
+                        <div class="bvq-board-rail"></div>
+                        <div class="bvq-qcard" id="bvq-qcard">
+                            <div class="bvq-qmeta">
+                                <span class="bvq-cat" id="quiz-category">Kategorie</span>
+                                <span class="bvq-stars" id="bvq-stars">★☆☆</span>
+                                <span class="bvq-value" id="bvq-value">20 🪙</span>
                             </div>
-                            <div class="quiz-category" id="quiz-category">Büro-Wissen</div>
-                            <div class="quiz-question" id="quiz-question">Frage wird geladen...</div>
-                            <div class="quiz-answers" id="quiz-answers"></div>
-                            <div class="quiz-question-strip">
-                                <div class="quiz-streak" id="quiz-streak"></div>
-                                <button class="quiz-joker-btn" id="quiz-joker" type="button">
-                                    🃏 Joker <span class="quiz-joker-sub">50:50</span>
-                                    <span class="quiz-joker-tag" id="quiz-joker-state">1× verfügbar</span>
+                            <div class="bvq-question" id="quiz-question">Frage wird geladen…</div>
+                            <div class="bvq-timer-row">
+                                <div class="bvq-timer"><div class="bvq-timer-fill" id="quiz-timer-bar"></div></div>
+                                <div class="bvq-timer-num" id="bvq-timer-num">13</div>
+                            </div>
+                        </div>
+
+                        <div class="bvq-answers" id="quiz-answers"></div>
+
+                        <div class="bvq-underrow">
+                            <div class="bvq-streak" id="quiz-streak"></div>
+                            <div class="bvq-lifelines" id="bvq-lifelines">
+                                <button class="bvq-life" type="button" data-life="fifty" title="Zwei falsche Antworten ausblenden">
+                                    <span class="bvq-life-icon">🃏</span><span class="bvq-life-txt">50:50</span><i class="bvq-life-count" id="bvq-life-fifty">1</i>
+                                </button>
+                                <button class="bvq-life" type="button" data-life="audience" title="Das Studiopublikum abstimmen lassen">
+                                    <span class="bvq-life-icon">👥</span><span class="bvq-life-txt">Publikum</span><i class="bvq-life-count" id="bvq-life-audience">1</i>
+                                </button>
+                                <button class="bvq-life" type="button" data-life="judge" title="Ein Jurymitglied gibt einen Hinweis">
+                                    <span class="bvq-life-icon">⚖️</span><span class="bvq-life-txt">Jury-Tipp</span><i class="bvq-life-count" id="bvq-life-judge">1</i>
                                 </button>
                             </div>
-                            <div class="quiz-feedback" id="quiz-feedback"></div>
                         </div>
+
+                        <div class="bvq-feedback" id="quiz-feedback"></div>
+                    </div>
+
+                    <!-- Publikumsstimmung -->
+                    <div class="bvq-crowd">
+                        <span class="bvq-crowd-label">Publikum</span>
+                        <div class="bvq-crowd-track"><div class="bvq-crowd-fill" id="bvq-crowd-fill"></div></div>
+                        <span class="bvq-crowd-val" id="bvq-crowd-val">50%</span>
                     </div>
                 </div>
-                <div class="quiz-end" id="quiz-end">
-                    <div class="quiz-end-card">
-                        <div class="quiz-end-icon" id="quiz-end-icon">🏆</div>
-                        <div class="quiz-end-title" id="quiz-end-title">Quiz beendet!</div>
-                        <div class="quiz-end-score" id="quiz-end-score">0/5 richtig</div>
-                        <div class="quiz-end-reward" id="quiz-end-reward">+0 Gold</div>
+
+                <!-- ===== INTRO ===== -->
+                <div class="bvq-intro" id="bvq-intro">
+                    <div class="bvq-intro-rays"></div>
+                    <div class="bvq-intro-inner">
+                        <div class="bvq-intro-kicker">BüroVersum präsentiert</div>
+                        <h1 class="bvq-intro-title">BÜRO<span>QUIZ</span></h1>
+                        <div class="bvq-intro-sub">Die große Büro-Show · 7 Fragen · 3 Joker · 3 Juroren</div>
+                        <div class="bvq-intro-contestant">
+                            <span class="bvq-intro-ava" id="bvq-intro-ava">🧑‍💼</span>
+                            <div class="bvq-intro-who"><b id="bvq-intro-name">Held</b><i>heute im Studio</i></div>
+                        </div>
+                        <div class="bvq-intro-count" id="bvq-intro-count">3</div>
+                        <div class="bvq-intro-hint">Klick oder Leertaste zum Starten</div>
+                    </div>
+                </div>
+
+                <!-- ===== FINALE ===== -->
+                <div class="bvq-finale" id="quiz-end">
+                    <div class="bvq-finale-card">
+                        <div class="bvq-finale-rays"></div>
+                        <div class="bvq-finale-icon" id="quiz-end-icon">🏆</div>
+                        <div class="bvq-finale-title" id="quiz-end-title">Show beendet!</div>
+                        <div class="bvq-finale-stars" id="bvq-finale-stars"></div>
+                        <div class="bvq-finale-score" id="quiz-end-score">0/7 richtig</div>
+                        <div class="bvq-finale-reward" id="quiz-end-reward">+0 🪙</div>
+                        <div class="bvq-finale-verdicts" id="bvq-finale-verdicts"></div>
+                        <div class="bvq-finale-actions">
+                            <button class="bvq-btn bvq-btn-primary" id="bvq-again" type="button">↻ Nochmal</button>
+                            <button class="bvq-btn" id="bvq-leave" type="button">Zurück ins Büro</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -19484,98 +19539,6 @@
         }
 
         /* ===== QUIZ SCENE ===== */
-        #rpg-quiz-screen { position: absolute; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #fff; }
-        .quiz-bg { position:absolute; inset:0; background:linear-gradient(135deg,#07111f,#102a44 42%,#150d31); overflow:hidden; }
-        .quiz-bg-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px); background-size:38px 38px; animation:quizGridMove 12s linear infinite; }
-        .quiz-bg-orb { position:absolute; width:260px; height:260px; border-radius:50%; filter:blur(45px); opacity:.38; }
-        .quiz-bg-orb.orb-1 { left:-70px; top:-60px; background:#4a9fff; animation:quizOrb1 7s ease-in-out infinite; }
-        .quiz-bg-orb.orb-2 { right:-80px; bottom:-80px; background:#a855f7; animation:quizOrb2 9s ease-in-out infinite; }
-        .quiz-stage { position:relative; z-index:2; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; box-sizing:border-box; }
-        .quiz-header { width:min(780px,94%); display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; animation:quizDropIn .5s cubic-bezier(.16,1,.3,1) both; }
-        .quiz-title { font-family:'Press Start 2P',monospace; font-size:1.35rem; text-shadow:0 0 18px rgba(74,159,255,.65); }
-        .quiz-progress { font-family:\'VT323\',monospace; font-size:1.6rem; padding:5px 14px; border-radius:999px; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.14); }
-        .quiz-main-card { width:min(780px,94%); display:grid; grid-template-columns:210px 1fr; gap:20px; padding:22px; border-radius:26px; background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(0,0,0,.18)); border:1px solid rgba(255,255,255,.16); box-shadow:0 22px 55px rgba(0,0,0,.35), inset 0 0 30px rgba(255,255,255,.04); animation:quizCardIn .55s cubic-bezier(.16,1,.3,1) .1s both; }
-        .quiz-player-card { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:280px; border-radius:22px; background:rgba(0,0,0,.24); border:1px solid rgba(255,255,255,.12); overflow:hidden; }
-        .quiz-player-glow { position:absolute; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle,rgba(74,159,255,.45),transparent 70%); animation:quizPulse 2s ease-in-out infinite; }
-        .quiz-player-icon { position:relative; font-size:4.4rem; line-height:1; animation:quizAvatarFloat 2.6s ease-in-out infinite; }
-        .quiz-player-name { position:relative; margin-top:12px; font-family:\'VT323\',monospace; font-size:1.45rem; color:#e0f2fe; }
-        .quiz-score-pill { position:relative; margin-top:10px; padding:6px 14px; border-radius:999px; background:rgba(34,197,94,.18); border:1px solid rgba(34,197,94,.35); color:#9cffc2; font-family:\'VT323\',monospace; font-size:1.25rem; }
-        .quiz-question-panel { min-height:280px; display:flex; flex-direction:column; }
-        .quiz-timer-wrap { height:12px; border-radius:999px; background:rgba(0,0,0,.35); overflow:hidden; border:1px solid rgba(255,255,255,.12); margin-bottom:14px; }
-        .quiz-timer-bar { height:100%; width:100%; background:linear-gradient(90deg,#22c55e,#facc15,#ef4444); transition:width .2s linear; box-shadow:0 0 18px rgba(250,204,21,.45); }
-        .quiz-category { font-family:\'VT323\',monospace; color:#93c5fd; font-size:1.25rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:7px; }
-        .quiz-question { min-height:70px; font-family:'Press Start 2P',monospace; font-size:1rem; line-height:1.55; text-shadow:0 3px 0 rgba(0,0,0,.45); animation:quizQuestionIn .35s ease-out both; }
-        .quiz-answers { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:auto; }
-        .quiz-answer-btn { position:relative; padding:13px 14px; border-radius:14px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.09); color:#fff; font-family:\'VT323\',monospace; font-size:1.25rem; cursor:pointer; transition:transform .18s, background .18s, border-color .18s; overflow:hidden; }
-        .quiz-answer-btn:hover { transform:translateY(-3px) scale(1.02); background:rgba(74,159,255,.22); border-color:rgba(74,159,255,.55); }
-        .quiz-answer-btn.correct { background:rgba(34,197,94,.3); border-color:#22c55e; animation:quizCorrect .45s ease-out both; }
-        .quiz-answer-btn.wrong { background:rgba(239,68,68,.28); border-color:#ef4444; animation:quizWrong .42s ease-out both; }
-        /* v7.10.18: Joker blendet zwei falsche Antworten aus */
-        .quiz-answer-btn.joker-out { opacity:.22; filter:grayscale(1); transform:scale(.97); border-style:dashed; cursor:not-allowed; }
-        .quiz-answer-btn.joker-out:hover { transform:scale(.97); background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.14); }
-        .quiz-header-right { display:flex; align-items:center; gap:10px; }
-        .quiz-gold-pill { font-family:\'VT323\',monospace; font-size:1.5rem; padding:5px 14px; border-radius:999px; background:linear-gradient(135deg,rgba(250,204,21,.26),rgba(180,120,20,.22)); border:1px solid rgba(250,204,21,.55); color:#ffec9e; text-shadow:0 0 12px rgba(250,204,21,.5); }
-        .quiz-gold-pill.bump { animation:quizGoldBump .5s cubic-bezier(.16,1,.3,1); }
-        .quiz-question-strip { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; min-height:38px; }
-        .quiz-streak { font-family:\'VT323\',monospace; font-size:1.2rem; color:#ffb86b; opacity:0; transition:opacity .2s; }
-        .quiz-streak.on { opacity:1; animation:quizStreakPulse 1s ease-in-out infinite; }
-        .quiz-joker-btn { font-family:\'VT323\',monospace; font-size:1.15rem; padding:7px 14px; border-radius:12px; cursor:pointer; color:#fff; border:1px solid rgba(168,85,247,.55); background:linear-gradient(135deg,rgba(168,85,247,.35),rgba(74,159,255,.24)); transition:transform .16s, filter .16s; }
-        .quiz-joker-btn:hover:not(:disabled) { transform:translateY(-2px); filter:brightness(1.15); }
-        .quiz-joker-btn:disabled { cursor:default; opacity:.45; filter:grayscale(.6); }
-        .quiz-joker-sub { font-size:.85rem; opacity:.8; }
-        .quiz-joker-tag { font-size:.9rem; opacity:.75; margin-left:6px; }
-        .quiz-fb-good { color:#8ef7b0; }
-        .quiz-fb-bad { color:#ff9b9b; }
-        .quiz-fb-joker { color:#d8b4fe; }
-        .quiz-fb-fact { font-size:.82em; opacity:.8; margin-top:2px; }
-        .quiz-end-sub { font-size:1.05rem; opacity:.85; margin-top:4px; font-family:\'VT323\',monospace; }
-        @keyframes quizGoldBump { 0% { transform:scale(1); } 45% { transform:scale(1.18); } 100% { transform:scale(1); } }
-        @keyframes quizStreakPulse { 50% { transform:scale(1.06); opacity:.85; } }
-        .quiz-feedback { min-height:32px; margin-top:10px; font-family:\'VT323\',monospace; font-size:1.35rem; text-align:center; color:#ffd54a; text-shadow:0 0 12px rgba(255,213,74,.42); }
-        .quiz-end { position:absolute; inset:0; z-index:5; display:none; align-items:center; justify-content:center; background:rgba(5,8,16,.46); }
-        .quiz-end.visible { display:flex; animation:quizEndFade .35s ease-out both; }
-        .quiz-end-card { text-align:center; padding:32px 44px; border-radius:28px; background:linear-gradient(145deg,rgba(12,20,36,.92),rgba(35,20,70,.88)); border:1px solid rgba(255,255,255,.18); box-shadow:0 24px 60px rgba(0,0,0,.45); animation:quizEndPop .62s cubic-bezier(.16,1,.3,1) both; }
-        .quiz-end-icon { font-size:4.2rem; animation:quizAvatarFloat 2s ease-in-out infinite; }
-        .quiz-end-title { font-family:'Press Start 2P',monospace; font-size:1.35rem; margin:12px 0; color:#ffd54a; }
-        .quiz-end-score,.quiz-end-reward { font-family:\'VT323\',monospace; font-size:1.55rem; margin-top:7px; }
-        @keyframes quizGridMove { to { transform:translate(38px,38px); } }
-        @keyframes quizOrb1 { 50% { transform:translate(80px,50px) scale(1.12); } }
-        @keyframes quizOrb2 { 50% { transform:translate(-80px,-40px) scale(1.08); } }
-        @keyframes quizDropIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes quizCardIn { from { opacity:0; transform:translateY(22px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes quizPulse { 50% { transform:scale(1.18); opacity:.72; } }
-        @keyframes quizAvatarFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
-        @keyframes quizQuestionIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes quizCorrect { 50% { transform:scale(1.06); box-shadow:0 0 24px rgba(34,197,94,.45); } }
-        @keyframes quizWrong { 20%,60% { transform:translateX(-8px); } 40%,80% { transform:translateX(8px); } }
-        @keyframes quizEndFade { from { opacity:0; } to { opacity:1; } }
-        @keyframes quizEndPop { from { opacity:0; transform:scale(.78) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
-        @media (max-width:760px), (max-height:620px) { .quiz-main-card{grid-template-columns:1fr; gap:12px; padding:16px;} .quiz-player-card{min-height:120px;} .quiz-player-icon{font-size:3rem;} .quiz-answers{grid-template-columns:1fr;} .quiz-question{font-size:.78rem;} .quiz-title{font-size:1rem;} }
-
-
-        /* ===== v4.2.2 Quiz Show Upgrade ===== */
-        .quiz-close-btn { position:absolute; top:16px; right:16px; z-index:20; width:42px; height:42px; border-radius:50%; border:2px solid rgba(255,255,255,.35); background:rgba(0,0,0,.45); color:#fff; font-size:1.3rem; cursor:pointer; box-shadow:0 0 18px rgba(0,0,0,.35); transition:.2s; }
-        .quiz-close-btn:hover { transform:scale(1.08) rotate(8deg); background:rgba(239,68,68,.55); }
-        .quiz-spotlight { position:absolute; top:-10%; width:35%; height:90%; background:linear-gradient(180deg, rgba(255,255,255,.22), transparent 72%); filter:blur(10px); opacity:.45; transform-origin:top; pointer-events:none; }
-        .quiz-spotlight.left { left:10%; transform:rotate(18deg); animation:quizSpotLeft 4s ease-in-out infinite; }
-        .quiz-spotlight.right { right:10%; transform:rotate(-18deg); animation:quizSpotRight 4.5s ease-in-out infinite; }
-        .quiz-audience { position:absolute; left:0; right:0; bottom:0; height:82px; display:flex; justify-content:center; gap:10px; align-items:flex-end; background:linear-gradient(180deg, transparent, rgba(0,0,0,.5)); z-index:1; }
-        .quiz-audience span { width:34px; height:48px; border-radius:18px 18px 5px 5px; background:linear-gradient(180deg, rgba(20,30,55,.9), rgba(5,8,18,.95)); box-shadow:0 -8px 20px rgba(74,159,255,.14); animation:audienceBob 1.8s ease-in-out infinite; animation-delay:calc(var(--i, 0) * .1s); }
-        .quiz-audience span:nth-child(odd){ height:58px; }
-        .quiz-audience span:nth-child(3n){ background:linear-gradient(180deg, rgba(65,35,85,.9), rgba(5,8,18,.95)); }
-        #rpg-quiz-screen.quiz-starting .quiz-stage { animation:quizShowStart .65s cubic-bezier(.16,1,.3,1) both; }
-        #rpg-quiz-screen.quiz-exiting .quiz-stage { animation:quizShowExit .45s ease-in forwards; }
-        #rpg-quiz-screen.quiz-exiting .quiz-bg { animation:quizBgExit .45s ease-in forwards; }
-        .quiz-main-card::before { content:''; position:absolute; inset:-2px; border-radius:28px; background:linear-gradient(90deg, transparent, rgba(255,215,90,.45), transparent); opacity:.45; pointer-events:none; animation:quizCardSheen 3s ease-in-out infinite; }
-        .quiz-main-card { position:relative; overflow:hidden; }
-        @keyframes quizSpotLeft { 50% { transform:rotate(8deg) translateX(20px); opacity:.6; } }
-        @keyframes quizSpotRight { 50% { transform:rotate(-8deg) translateX(-20px); opacity:.6; } }
-        @keyframes audienceBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
-        @keyframes quizShowStart { from { opacity:0; transform:translateY(26px) scale(.94); filter:brightness(.8); } to { opacity:1; transform:translateY(0) scale(1); filter:brightness(1); } }
-        @keyframes quizShowExit { to { opacity:0; transform:translateY(24px) scale(.96); filter:blur(3px); } }
-        @keyframes quizBgExit { to { opacity:0; filter:brightness(1.8); } }
-        @keyframes quizCardSheen { 0%,100% { transform:translateX(-75%); opacity:0; } 50% { transform:translateX(75%); opacity:.55; } }
-
         @media (prefers-reduced-motion: reduce) {
             #battle-enemy-sprite.collapse-death,
             .editor-preview-avatar,
@@ -29593,232 +29556,641 @@
                     return picked.slice(0, count).map(buildQuizQuestion);
                 }
 
+                // ==========================================================
+                //  BÜRO-QUIZ SHOW v2.0 – Bühne, Jury, Publikum, Joker, Ton
+                //  Screenscope: #rpg-quiz-screen (siehe Style-Block am Ende)
+                // ==========================================================
                 let quizState = null;
                 let quizTimerInterval = null;
+                let bvqIntroTimer = null;
+                let bvqTickTimer = null;
+                let bvqExitTimer = null;
+                let bvqExiting = false;
 
+                const BVQ_TOTAL_QUESTIONS = 7;
+                const BVQ_LIFELINE_BONUS = 15;   // pro nicht benutztem Joker am Ende
+
+                // ---- Jury: 3 von 5 werden pro Runde gezogen ----
+                const BVQ_JUDGES = [
+                    { id: 'buerokratie', name: 'Richterin Bürokratie', ava: '👩‍⚖️',
+                      ok: ['Formfehlerfrei!', 'Aktenlage eindeutig.', 'Dem stimme ich zu.'],
+                      bad: ['Das war nichts.', 'Bitte erneut prüfen.', 'Formfehler!'],
+                      tip: ['Achte auf Wörter wie NICHT oder NUR.', 'Zwei Antworten klingen ähnlich – eine ist es nicht.'],
+                      verdictOk: 'Ich hätte es nicht besser formulieren können.',
+                      verdictBad: 'Wir sehen uns im Widerspruchsverfahren.' },
+                    { id: 'it', name: 'IT-Judge', ava: '🧑‍💻',
+                      ok: ['Sauber deployed.', 'Kein Bug gefunden.', 'Merge approved.'],
+                      bad: ['Stacktrace sagt: falsch.', 'Bitte neu kompilieren.', 'Rollback!'],
+                      tip: ['Lies die Frage so genau wie eine Fehlermeldung.', 'Meist ist die unspektakuläre Antwort richtig.'],
+                      verdictOk: 'Code Review bestanden, keine Findings.',
+                      verdictBad: 'Ich empfehle einen Neustart des Gehirns.' },
+                    { id: 'kaffee', name: 'Kaffee-Sommelier', ava: '🧑‍🍳',
+                      ok: ['Cremig, volle Punktzahl.', 'Wie ein perfekter Espresso.', 'Keine Bitterstoffe.'],
+                      bad: ['Verbrennt im Abgang.', 'Zu wässrig.', 'Das schmeckt nach Kanne von gestern.'],
+                      tip: ['Nicht raten – ausschließen.', 'Prüfe die Details, nicht den Klang.'],
+                      verdictOk: 'Ein runder Jahrgang. Ich bin beeindruckt.',
+                      verdictBad: 'Der Satz ist noch nicht durchgelaufen.' },
+                    { id: 'hr', name: 'HR-Beauftragte', ava: '👩‍💼',
+                      ok: ['Vorbildlich.', 'Das notiere ich positiv.', 'Genau so im Leitfaden.'],
+                      bad: ['Das kommt in die Akte.', 'Bitte nachschulen.'],
+                      tip: ['Achte auf „immer“ und „nie“ – meist falsch.', 'Die längste Antwort ist selten die richtige.'],
+                      verdictOk: 'Sie sind eine Bereicherung für jede Abteilung.',
+                      verdictBad: 'Wir empfehlen ein Praktikum in der Poststelle.' },
+                    { id: 'azubi', name: 'Der Praktikant', ava: '🧑‍🎓',
+                      ok: ['Ehrenwort, richtig!', 'Hab ich auch gedacht!', 'Sogar ich wusste das.'],
+                      bad: ['Ups. Selbst ich wusste das.', 'Peinlich für uns beide.'],
+                      tip: ['Ich würde die längste Antwort nehmen. Oder auch nicht.', 'Frag mich lieber nicht.'],
+                      verdictOk: 'Ich will auch mal so klug werden.',
+                      verdictBad: 'Immerhin sind wir zusammen schlecht.' }
+                ];
+
+                // ---- Hilfsfunktionen ----
+                function bvqEl(id) { return document.getElementById(id); }
+                function bvqSet(id, val) { const el = bvqEl(id); if (el) el.textContent = val; }
+                function bvqPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+                function bvqShuffle(arr) { return shuffleArray(arr); }
+                function bvqIsLowSpec() {
+                    try { return isLowSpecMap(); } catch (e) { return false; }
+                }
+
+                // ---- Ton (kleiner Synth, keine Assets) ----
+                let bvqAudioCtx = null;
+                let bvqMuted = false;
+                try { bvqMuted = localStorage.getItem('bv_quiz_mute') === '1'; } catch (e) {}
+
+                function bvqAudio() {
+                    if (bvqMuted) return null;
+                    try {
+                        if (!bvqAudioCtx) {
+                            const Ctx = window.AudioContext || window.webkitAudioContext;
+                            if (!Ctx) return null;
+                            bvqAudioCtx = new Ctx();
+                        }
+                        if (bvqAudioCtx.state === 'suspended') bvqAudioCtx.resume();
+                        return bvqAudioCtx;
+                    } catch (e) { return null; }
+                }
+                function bvqTone(freq, dur, type, vol, endFreq) {
+                    const ctx = bvqAudio();
+                    if (!ctx) return;
+                    try {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = type || 'sine';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                        if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + dur);
+                        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(vol || 0.06, ctx.currentTime + 0.012);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+                        osc.connect(gain); gain.connect(ctx.destination);
+                        osc.start(); osc.stop(ctx.currentTime + dur + 0.02);
+                    } catch (e) {}
+                }
+                function bvqSfx(kind) {
+                    switch (kind) {
+                        case 'click': bvqTone(520, 0.07, 'triangle', 0.05); break;
+                        case 'good': bvqTone(620, 0.10, 'sine', 0.07, 780); setTimeout(() => bvqTone(930, 0.16, 'sine', 0.06), 95); break;
+                        case 'bad': bvqTone(240, 0.22, 'sawtooth', 0.05, 130); break;
+                        case 'tick': bvqTone(1200, 0.035, 'square', 0.028); break;
+                        case 'joker': bvqTone(760, 0.09, 'triangle', 0.06, 1180); break;
+                        case 'start': bvqTone(420, 0.12, 'triangle', 0.07, 640); setTimeout(() => bvqTone(880, 0.22, 'sine', 0.06), 130); break;
+                        case 'finale': [0, 130, 260, 420].forEach((d, i) => setTimeout(() => bvqTone([523, 659, 784, 1046][i], 0.28, 'sine', 0.06), d)); break;
+                        default: break;
+                    }
+                }
+                function bvqUpdateSoundBtn() {
+                    const btn = bvqEl('bvq-sound');
+                    if (!btn) return;
+                    btn.textContent = bvqMuted ? '🔇' : '🔊';
+                    btn.classList.toggle('muted', bvqMuted);
+                    btn.title = bvqMuted ? 'Ton einschalten' : 'Ton ausschalten';
+                }
+
+                // ---- Jury rendern ----
+                function bvqRenderJudges() {
+                    const host = bvqEl('bvq-judges');
+                    if (!host || !quizState) return;
+                    host.innerHTML = quizState.judges.map((j, i) =>
+                        '<div class="bvq-judge" data-judge="' + i + '">' +
+                            '<span class="bvq-judge-ava">' + j.ava + '</span>' +
+                            '<div class="bvq-judge-body">' +
+                                '<div class="bvq-judge-name">' + j.name + '</div>' +
+                                '<div class="bvq-judge-say">…</div>' +
+                            '</div>' +
+                            '<span class="bvq-judge-score" style="display:none">0</span>' +
+                        '</div>'
+                    ).join('');
+                    if (typeof parseEmojis === 'function') parseEmojis(host);
+                }
+
+                // Jury-Reaktion: alle drei sagen etwas (gut/schlecht), Score-Badge zählt mit.
+                function bvqJudgeReact(kind, hintText) {
+                    if (!quizState) return;
+                    const cards = document.querySelectorAll('#bvq-judges .bvq-judge');
+                    quizState.judges.forEach((j, i) => {
+                        const card = cards[i];
+                        if (!card) return;
+                        const say = card.querySelector('.bvq-judge-say');
+                        let text = '';
+                        if (kind === 'good') {
+                            text = bvqPick(j.ok);
+                            quizState.judgeScore[i] = (quizState.judgeScore[i] || 0) + 1;
+                        } else if (kind === 'bad') {
+                            text = bvqPick(j.bad);
+                        } else if (kind === 'tip') {
+                            text = i === quizState.tipJudge ? (hintText || bvqPick(j.tip)) : bvqPick(j.ok);
+                        }
+                        if (say) say.textContent = text;
+                        card.classList.remove('good', 'bad', 'tip', 'react');
+                        void card.offsetWidth;
+                        if (kind === 'good') card.classList.add('good', 'react');
+                        else if (kind === 'bad') card.classList.add('bad', 'react');
+                        else card.classList.add('tip', 'react');
+                        const badge = card.querySelector('.bvq-judge-score');
+                        if (badge && quizState.judgeScore[i]) { badge.textContent = quizState.judgeScore[i]; badge.style.display = 'grid'; }
+                        setTimeout(() => card.classList.remove('react'), 520);
+                    });
+                }
+
+                function bvqSetCrowd(value, animate) {
+                    if (!quizState) return;
+                    quizState.crowd = Math.max(5, Math.min(100, Math.round(value)));
+                    const fill = bvqEl('bvq-crowd-fill');
+                    const val = bvqEl('bvq-crowd-val');
+                    if (fill) fill.style.width = quizState.crowd + '%';
+                    if (val) val.textContent = quizState.crowd + '%';
+                    const aud = bvqEl('bvq-audience');
+                    if (aud && animate && !bvqIsLowSpec()) {
+                        aud.classList.add('cheer');
+                        setTimeout(() => aud.classList.remove('cheer'), 1200);
+                    }
+                }
+
+                function bvqFlashScreen() {
+                    const f = bvqEl('bvq-flash');
+                    if (!f) return;
+                    f.classList.remove('on');
+                    void f.offsetWidth;
+                    f.classList.add('on');
+                }
+
+                function bvqFloatGold(amount) {
+                    const board = bvqEl('bvq-board');
+                    if (!board) return;
+                    const el = document.createElement('span');
+                    el.className = 'bvq-float';
+                    el.textContent = '+' + amount + ' 🪙';
+                    board.appendChild(el);
+                    setTimeout(() => el.remove(), 1250);
+                }
+
+                // ---- Start der Show ----
                 function startQuizScene(npc) {
-                    // v7.10.18: Gold, Serie und Joker gehoeren zur Runde und
-                    // werden bei jedem neuen Quiz-Start zurueckgesetzt.
+                    if (bvqExitTimer) { clearTimeout(bvqExitTimer); bvqExitTimer = null; }
+                    bvqExiting = false;
+                    const judgePool = bvqShuffle(BVQ_JUDGES);
                     quizState = {
-                        npc, index: 0, score: 0, gold: 0, streak: 0, bestStreak: 0,
-                        jokerUsed: false, timeLimit: 12, answered: false,
-                        questions: prepareQuizQuestions(7)
+                        npc,
+                        index: 0,
+                        score: 0,
+                        gold: 0,
+                        streak: 0,
+                        bestStreak: 0,
+                        crowd: 50,
+                        answered: false,
+                        questions: prepareQuizQuestions(BVQ_TOTAL_QUESTIONS),
+                        lifelines: { fifty: 1, audience: 1, judge: 1 },
+                        judges: judgePool.slice(0, 3),
+                        judgeScore: [0, 0, 0],
+                        tipJudge: Math.floor(Math.random() * 3),
+                        timeLimit: 12
                     };
-                    if (interactionHint) interactionHint.classList.remove("visible");
+
+                    if (interactionHint) interactionHint.classList.remove('visible');
                     stopMoveLoop();
                     stopCameraLoop();
-                    showScreen("rpg-quiz-screen");
-                    const quizScreen = document.getElementById("rpg-quiz-screen");
-                    if (quizScreen) { quizScreen.classList.remove("quiz-exiting"); quizScreen.classList.add("quiz-starting"); setTimeout(() => quizScreen.classList.remove("quiz-starting"), 720); }
-                    gameState = "QUIZ";
-                    const end = document.getElementById("quiz-end");
-                    if (end) end.classList.remove("visible");
-                    const icon = document.getElementById("quiz-player-icon");
-                    const name = document.getElementById("quiz-player-name");
-                    if (icon) icon.innerText = player.sprite || "🧑‍💼";
-                    if (name) name.innerText = player.name || "Held";
-                    document.getElementById("quiz-total").innerText = quizState.questions.length;
-                    const goldReset = document.getElementById("quiz-gold");
-                    if (goldReset) goldReset.innerText = "0";
-                    const jokerBtn = document.getElementById("quiz-joker");
-                    if (jokerBtn && !jokerBtn.dataset.wired) {
-                        jokerBtn.dataset.wired = "1";
-                        jokerBtn.addEventListener("click", (e) => { e.preventDefault(); useQuizJoker(); });
+                    gameState = 'QUIZ';
+                    showScreen('rpg-quiz-screen');
+
+                    const screen = bvqEl('rpg-quiz-screen');
+                    if (screen) {
+                        screen.classList.remove('quiz-exiting', 'quiz-starting');
+                        screen.classList.toggle('bvq-lowspec', bvqIsLowSpec());
+                        void screen.offsetWidth;
+                        screen.classList.add('quiz-starting');
+                        setTimeout(() => screen.classList.remove('quiz-starting'), 700);
                     }
-                    updateQuizJokerButton();
-                    parseEmojis(document.getElementById("rpg-quiz-screen"));
+
+                    // Finale/Intro zurücksetzen
+                    bvqEl('quiz-end')?.classList.remove('visible');
+                    bvqSet('quiz-total', quizState.questions.length);
+                    bvqSet('quiz-gold', '0');
+                    bvqSet('quiz-current', '1');
+                    bvqSet('quiz-score', '0');
+                    bvqRenderJudges();
+                    bvqSetCrowd(50, false);
+                    bvqUpdateSoundBtn();
+                    bvqWireUi();
+                    bvqUpdateLifelines();
+                    bvqShowIntro();
+                }
+
+                // ---- Intro mit Countdown (überspringbar) ----
+                function bvqShowIntro() {
+                    const intro = bvqEl('bvq-intro');
+                    if (!intro) { bvqBeginQuestions(); return; }
+                    bvqSet('bvq-intro-ava', player.sprite || '🧑‍💼');
+                    bvqSet('bvq-intro-name', player.name || 'Held');
+                    intro.classList.remove('leaving');
+                    intro.classList.add('visible');
+                    if (typeof parseEmojis === 'function') parseEmojis(intro);
+
+                    let n = 3;
+                    const countEl = bvqEl('bvq-intro-count');
+                    if (countEl) { countEl.textContent = n; countEl.classList.add('tick'); }
+                    bvqSfx('start');
+
+                    clearInterval(bvqIntroTimer);
+                    bvqIntroTimer = setInterval(() => {
+                        n--;
+                        if (n > 0) {
+                            if (countEl) {
+                                countEl.textContent = n;
+                                countEl.classList.remove('tick'); void countEl.offsetWidth; countEl.classList.add('tick');
+                            }
+                            bvqSfx('tick');
+                        } else {
+                            clearInterval(bvqIntroTimer);
+                            bvqIntroTimer = null;
+                            if (countEl) countEl.textContent = 'LOS!';
+                            bvqSfx('good');
+                            setTimeout(() => bvqSkipIntro(), 420);
+                        }
+                    }, 700);
+                }
+
+                function bvqSkipIntro() {
+                    if (bvqIntroTimer) { clearInterval(bvqIntroTimer); bvqIntroTimer = null; }
+                    const intro = bvqEl('bvq-intro');
+                    if (!intro || !intro.classList.contains('visible')) return;
+                    intro.classList.add('leaving');
+                    setTimeout(() => intro.classList.remove('visible', 'leaving'), 380);
+                    bvqBeginQuestions();
+                }
+
+                function bvqBeginQuestions() {
+                    if (!quizState) return;
+                    quizState.index = 0;
                     showQuizQuestion();
                 }
 
+                // ---- Eine Frage präsentieren ----
                 function showQuizQuestion() {
                     if (!quizState) return;
+                    const q = quizState.questions[quizState.index];
+                    if (!q) { finishQuizScene(); return; }
+
                     quizState.answered = false;
-                    const q = quizState.questions[quizState.index];
-                    quizState.timeLimit = q.timeLimit || 12; // v7.10.18: pro Schwierigkeit
-                    const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-                    set("quiz-current", quizState.index + 1);
-                    set("quiz-score", quizState.score);
-                    set("quiz-gold", quizState.gold);
-                    set("quiz-category", q.cat + "  •  " + (q.gold || 20) + " 🪙");
-                    set("quiz-question", q.q);
-                    set("quiz-feedback", "");
-                    const streakEl = document.getElementById("quiz-streak");
-                    if (streakEl) {
-                        streakEl.innerText = quizState.streak >= 2 ? "🔥 " + quizState.streak + "er Serie" : "";
-                        streakEl.classList.toggle("on", quizState.streak >= 2);
-                    }
-                    updateQuizJokerButton();
-                    const answers = document.getElementById("quiz-answers");
-                    if (answers) {
-                        answers.innerHTML = q.a.map((text, i) => `<button class="quiz-answer-btn" data-index="${i}"><span>${String.fromCharCode(65+i)}.</span> ${text}</button>`).join("");
-                        answers.querySelectorAll(".quiz-answer-btn").forEach(btn => {
-                            btn.addEventListener("click", () => answerQuizQuestion(Number(btn.dataset.index)));
+                    quizState.timeLimit = q.timeLimit || 12;
+
+                    bvqSet('quiz-current', quizState.index + 1);
+                    bvqSet('quiz-gold', quizState.gold);
+                    bvqSet('quiz-category', q.cat);
+                    const stars = '★'.repeat(q.d) + '☆'.repeat(Math.max(0, 3 - q.d));
+                    bvqSet('bvq-stars', stars);
+                    bvqSet('bvq-value', (q.gold || 20) + ' 🪙');
+                    bvqSet('quiz-question', q.q);
+                    const fb = bvqEl('quiz-feedback');
+                    if (fb) fb.innerHTML = '';
+                    bvqUpdateStreak();
+
+                    // Fragekarte neu animieren
+                    const card = bvqEl('bvq-qcard');
+                    if (card) { card.classList.remove('in'); void card.offsetWidth; card.classList.add('in'); }
+
+                    // Antworten
+                    const host = bvqEl('quiz-answers');
+                    if (host) {
+                        host.innerHTML = q.a.map((text, i) =>
+                            '<button class="bvq-ans" type="button" data-k="' + (i + 1) + '" data-index="' + i + '">' +
+                                '<span class="bvq-ans-key">' + String.fromCharCode(65 + i) + '</span>' +
+                                '<span class="bvq-ans-txt">' + text + '</span>' +
+                                '<span class="bvq-vote"></span>' +
+                                '<span class="bvq-vote-num"></span>' +
+                            '</button>'
+                        ).join('');
+                        host.querySelectorAll('.bvq-ans').forEach((btn, i) => {
+                            btn.style.animationDelay = (i * 55) + 'ms';
+                            btn.classList.add('pop');
+                            btn.addEventListener('click', () => answerQuizQuestion(Number(btn.dataset.index)));
                         });
+                        if (typeof parseEmojis === 'function') parseEmojis(host);
                     }
-                    parseEmojis(answers);
+
+                    bvqUpdateLifelines();
                     startQuizTimer();
+                    bvqSfx('click');
                 }
 
-                // ===== v7.10.18: Joker (50:50) - einmal pro Quizrunde =====
-                function updateQuizJokerButton() {
-                    const btn = document.getElementById("quiz-joker");
-                    if (!btn) return;
-                    const used = !quizState || quizState.jokerUsed;
-                    btn.disabled = used;
-                    btn.classList.toggle("used", used);
-                    const tag = document.getElementById("quiz-joker-state");
-                    if (tag) tag.innerText = used ? "verbraucht" : "1× verfügbar";
+                function bvqUpdateStreak() {
+                    const el = bvqEl('quiz-streak');
+                    if (!el || !quizState) return;
+                    if (quizState.streak >= 2) {
+                        el.textContent = '🔥 ' + quizState.streak + 'er Serie';
+                        el.classList.add('on');
+                    } else {
+                        el.textContent = '';
+                        el.classList.remove('on');
+                    }
                 }
 
-                function useQuizJoker() {
-                    if (!quizState || quizState.jokerUsed || quizState.answered) return;
-                    const q = quizState.questions[quizState.index];
-                    if (!q) return;
-                    // Zwei FALSCHE Antworten ausblenden
-                    const buttons = [...document.querySelectorAll("#quiz-answers .quiz-answer-btn")];
-                    const wrongIdx = buttons.map((_, i) => i).filter(i => i !== q.correct);
-                    shuffleArray(wrongIdx).slice(0, 2).forEach(i => {
-                        buttons[i].classList.add("joker-out");
-                        buttons[i].disabled = true;
+                function bvqUpdateLifelines() {
+                    if (!quizState) return;
+                    ['fifty', 'audience', 'judge'].forEach(k => {
+                        const btn = document.querySelector('#bvq-lifelines .bvq-life[data-life="' + k + '"]');
+                        const cnt = bvqEl('bvq-life-' + k);
+                        const left = quizState.lifelines[k] || 0;
+                        if (cnt) cnt.textContent = left;
+                        if (btn) {
+                            btn.disabled = left <= 0 || quizState.answered;
+                            btn.classList.toggle('used', left <= 0);
+                        }
                     });
-                    quizState.jokerUsed = true;
-                    updateQuizJokerButton();
-                    const fb = document.getElementById("quiz-feedback");
-                    if (fb) fb.innerHTML = '<span class="quiz-fb-joker">🃏 Joker gesetzt - zwei Antworten sind raus.</span>';
                 }
 
+                // ---- Timer ----
                 function startQuizTimer() {
-                    if (quizTimerInterval) clearInterval(quizTimerInterval);
-                    const bar = document.getElementById("quiz-timer-bar");
+                    stopQuizTimer();
+                    const bar = bvqEl('quiz-timer-bar');
+                    const num = bvqEl('bvq-timer-num');
+                    const row = bar ? bar.closest('.bvq-timer-row') : null;
                     const start = Date.now();
-                    const limit = quizState.timeLimit * 1000;
-                    if (bar) { bar.style.transition = "none"; bar.style.width = "100%"; void bar.offsetWidth; bar.style.transition = "width .2s linear"; }
+                    const limit = (quizState.timeLimit || 12) * 1000;
+                    let lastSec = -1;
+
+                    if (bar) { bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)'; }
+                    if (row) row.classList.remove('urgent');
+
                     quizTimerInterval = setInterval(() => {
                         const elapsed = Date.now() - start;
-                        const pct = Math.max(0, 100 - (elapsed / limit) * 100);
-                        if (bar) bar.style.width = pct + "%";
-                        if (elapsed >= limit) {
-                            clearInterval(quizTimerInterval);
-                            answerQuizQuestion(-1);
+                        const remain = Math.max(0, limit - elapsed);
+                        const frac = remain / limit;
+                        if (bar) bar.style.transform = 'scaleX(' + frac.toFixed(3) + ')';
+                        const secs = Math.ceil(remain / 1000);
+                        if (secs !== lastSec) {
+                            lastSec = secs;
+                            if (num) num.textContent = secs;
+                            if (secs <= 3 && secs > 0) {
+                                if (row) row.classList.add('urgent');
+                                bvqSfx('tick');
+                            }
                         }
-                    }, 120);
+                        if (remain <= 0) {
+                            stopQuizTimer();
+                            if (!quizState.answered) answerQuizQuestion(-1);
+                        }
+                    }, 50);
+                }
+                function stopQuizTimer() {
+                    if (quizTimerInterval) { clearInterval(quizTimerInterval); quizTimerInterval = null; }
+                    const row = document.querySelector('#rpg-quiz-screen .bvq-timer-row');
+                    if (row) row.classList.remove('urgent');
                 }
 
+                // ---- Antwort auswerten ----
                 function answerQuizQuestion(index) {
                     if (!quizState || quizState.answered) return;
                     quizState.answered = true;
-                    if (quizTimerInterval) clearInterval(quizTimerInterval);
-                    // BUGFIX v7.10.18: vorher wurde QUIZ_QUESTIONS[quizState.index]
-                    // gelesen - also die ungemischte Frage an dieser Position. Die
-                    // markierte "richtige" Antwort gehoerte damit zu einer anderen
-                    // Frage. Jetzt zaehlt ausschliesslich die gespielte Frage.
+                    stopQuizTimer();
+
                     const q = quizState.questions[quizState.index];
-                    const buttons = document.querySelectorAll("#quiz-answers .quiz-answer-btn");
+                    const buttons = [...document.querySelectorAll('#quiz-answers .bvq-ans')];
                     buttons.forEach((btn, i) => {
                         btn.disabled = true;
-                        if (i === q.correct) btn.classList.add("correct");
-                        else if (i === index) btn.classList.add("wrong");
+                        if (i === q.correct) btn.classList.add('correct');
+                        else if (i === index) btn.classList.add('wrong');
                     });
-                    const feedback = document.getElementById("quiz-feedback");
+                    bvqUpdateLifelines();
+
+                    const fb = bvqEl('quiz-feedback');
+                    let gained = 0;
+
                     if (index === q.correct) {
                         quizState.score++;
                         quizState.streak++;
                         quizState.bestStreak = Math.max(quizState.bestStreak, quizState.streak);
-                        // Gold: Basiswert der Frage + Serien-Bonus
                         const bonus = quizState.streak >= 5 ? 30 : (quizState.streak >= 3 ? 15 : 0);
-                        const gain = (q.gold || 20) + bonus;
-                        quizState.gold += gain;
-                        if (feedback) {
-                            feedback.innerHTML = '<span class="quiz-fb-good">✅ Richtig! +' + gain + ' 🪙' +
-                                (bonus ? ' <b>Serien-Bonus +' + bonus + '</b>' : '') + '</span>' +
-                                (q.fact ? '<div class="quiz-fb-fact">' + q.fact + '</div>' : '');
+                        gained = (q.gold || 20) + bonus;
+                        quizState.gold += gained;
+
+                        if (fb) {
+                            fb.innerHTML = '<span class="bvq-fb-good">✅ Richtig! +' + gained + ' 🪙' +
+                                (bonus ? ' · Serien-Bonus +' + bonus : '') + '</span>' +
+                                (q.fact ? '<span class="bvq-fb-fact">' + q.fact + '</span>' : '');
                         }
-                        spawnQuizBurst(true);
+                        bvqSfx('good');
+                        bvqFlashScreen();
+                        bvqFloatGold(gained);
+                        bvqJudgeReact('good');
+                        bvqSetCrowd(quizState.crowd + 9 + bonus / 5, true);
+                        const chip = bvqEl('bvq-gold-chip');
+                        if (chip) { chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump'); }
                     } else {
                         quizState.streak = 0;
-                        if (feedback) {
-                            feedback.innerHTML = '<span class="quiz-fb-bad">' + (index < 0 ? '⏰ Zeit abgelaufen!' : '❌ Falsch!') +
-                                '</span>' + (q.fact ? '<div class="quiz-fb-fact">' + q.fact + '</div>' : '');
+                        if (fb) {
+                            fb.innerHTML = '<span class="bvq-fb-bad">' +
+                                (index < 0 ? '⏰ Zeit abgelaufen!' : '❌ Falsch!') + '</span>' +
+                                (q.fact ? '<span class="bvq-fb-fact">' + q.fact + '</span>' : '');
                         }
-                        spawnQuizBurst(false);
+                        bvqSfx('bad');
+                        bvqJudgeReact('bad');
+                        bvqSetCrowd(quizState.crowd - 11, false);
                     }
-                    document.getElementById("quiz-score").innerText = quizState.score;
-                    const goldEl = document.getElementById("quiz-gold");
-                    if (goldEl) goldEl.innerText = quizState.gold;
-                    const goldPill = document.querySelector(".quiz-gold-pill");
-                    if (goldPill && index === q.correct) {
-                        goldPill.classList.remove("bump");
-                        void goldPill.offsetWidth;
-                        goldPill.classList.add("bump");
-                    }
-                    updateQuizJokerButton();
+
+                    bvqSet('quiz-score', quizState.score);
+                    bvqSet('quiz-gold', quizState.gold);
+                    bvqUpdateStreak();
+
                     setTimeout(() => {
+                        if (!quizState) return;
                         quizState.index++;
                         if (quizState.index >= quizState.questions.length) finishQuizScene();
                         else showQuizQuestion();
-                    }, 1100);
+                    }, 1750);
                 }
 
-                function spawnQuizBurst(good) {
-                    const card = document.querySelector(".quiz-main-card");
-                    if (!card) return;
-                    card.animate([
-                        { transform: "scale(1)", filter: "brightness(1)" },
-                        { transform: good ? "scale(1.025)" : "translateX(-8px)", filter: good ? "brightness(1.25)" : "brightness(.9)" },
-                        { transform: "scale(1)", filter: "brightness(1)" }
-                    ], { duration: 420, easing: "ease-out" });
+                // ---- Joker ----
+                function bvqUseLifeline(kind) {
+                    if (!quizState || quizState.answered) return;
+                    if (!quizState.lifelines[kind]) return;
+                    const q = quizState.questions[quizState.index];
+                    if (!q) return;
+                    const buttons = [...document.querySelectorAll('#quiz-answers .bvq-ans')];
+                    const fb = bvqEl('quiz-feedback');
+
+                    if (kind === 'fifty') {
+                        const wrong = buttons.map((_, i) => i).filter(i => i !== q.correct);
+                        bvqShuffle(wrong).slice(0, 2).forEach(i => {
+                            if (!buttons[i]) return;
+                            buttons[i].classList.add('joker-out');
+                            buttons[i].disabled = true;
+                        });
+                        if (fb) fb.innerHTML = '<span class="bvq-fb-tip">🃏 50:50 – zwei Antworten sind raus.</span>';
+                    } else if (kind === 'audience') {
+                        // Publikum stimmt ab: deutlich, aber nicht sicher für die richtige Antwort
+                        const correctPct = 52 + Math.floor(Math.random() * 22);
+                        const rest = 100 - correctPct;
+                        const a = Math.floor(Math.random() * rest);
+                        const b = Math.floor(Math.random() * (rest - a));
+                        const c = rest - a - b;
+                        const parts = bvqShuffle([a, b, c]);
+                        buttons.forEach((btn, i) => {
+                            const pct = i === q.correct ? correctPct : parts.pop();
+                            btn.classList.add('voted');
+                            const bar = btn.querySelector('.bvq-vote');
+                            const numEl = btn.querySelector('.bvq-vote-num');
+                            if (bar) bar.style.width = pct + '%';
+                            if (numEl) numEl.textContent = pct + '%';
+                        });
+                        if (fb) fb.innerHTML = '<span class="bvq-fb-tip">👥 Das Publikum hat abgestimmt – 100 % sind es nie.</span>';
+                    } else if (kind === 'judge') {
+                        const judge = quizState.judges[quizState.tipJudge] || quizState.judges[0];
+                        const hint = q.fact || bvqPick(judge.tip);
+                        if (fb) fb.innerHTML = '<span class="bvq-fb-tip">⚖️ ' + judge.name + ': „' + hint + '“</span>';
+                        bvqJudgeReact('tip', hint);
+                    }
+
+                    quizState.lifelines[kind] = 0;
+                    bvqUpdateLifelines();
+                    bvqSfx('joker');
                 }
 
+                // ---- Finale ----
+                function finishQuizScene() {
+                    stopQuizTimer();
+                    if (!quizState) return;
+                    if (quizState.finished) return;
+                    quizState.finished = true;
+                    const total = quizState.questions.length;
+                    const perfect = quizState.score === total;
+                    const unused = ['fifty', 'audience', 'judge'].filter(k => quizState.lifelines[k] > 0).length;
+                    const reward = quizState.gold + unused * BVQ_LIFELINE_BONUS;
+
+                    player.gold += reward;
+                    try { updateHUD(); } catch (e) {}
+                    try { window.saveGame?.(); } catch (e) {}
+
+                    bvqSet('quiz-end-icon', perfect ? '👑' : (quizState.score >= Math.ceil(total / 2) ? '🏆' : '📚'));
+                    bvqSet('quiz-end-title', perfect ? 'PERFEKTE SHOW!' : (quizState.score >= Math.ceil(total / 2) ? 'Starke Show!' : 'Mutige Show!'));
+                    bvqSet('quiz-end-score', quizState.score + '/' + total + ' richtig' +
+                        (quizState.bestStreak >= 3 ? ' · 🔥 beste Serie ' + quizState.bestStreak : ''));
+                    bvqSet('quiz-end-reward', '+' + reward + ' 🪙');
+
+                    const starsEl = bvqEl('bvq-finale-stars');
+                    if (starsEl) {
+                        const filled = Math.max(1, Math.round((quizState.score / total) * 5));
+                        starsEl.innerHTML = Array.from({ length: 5 }, (_, i) =>
+                            '<span class="' + (i < filled ? '' : 'off') + '">★</span>').join('');
+                    }
+
+                    const verdicts = bvqEl('bvq-finale-verdicts');
+                    if (verdicts) {
+                        const goodRun = quizState.score >= Math.ceil(total / 2);
+                        verdicts.innerHTML = quizState.judges.map(j =>
+                            '<div><span>' + j.ava + '</span><span><b>' + j.name + ':</b> ' +
+                            (goodRun ? j.verdictOk : j.verdictBad) + '</span></div>'
+                        ).join('') +
+                        (unused ? '<div><span>🎁</span><span><b>Joker-Bonus:</b> ' + unused + ' × ' + BVQ_LIFELINE_BONUS + ' 🪙 für nicht verbrauchte Joker</span></div>' : '');
+                        if (typeof parseEmojis === 'function') parseEmojis(verdicts);
+                    }
+
+                    bvqSfx('finale');
+                    bvqSetCrowd(perfect ? 100 : quizState.crowd, true);
+                    bvqEl('quiz-end')?.classList.add('visible');
+                    if (typeof parseEmojis === 'function') parseEmojis(bvqEl('quiz-end'));
+                }
+
+                // ---- Aufräumen / Verlassen ----
                 function resetQuizScene() {
-                    if (quizTimerInterval) clearInterval(quizTimerInterval);
-                    quizTimerInterval = null;
+                    stopQuizTimer();
+                    if (bvqExitTimer) { clearTimeout(bvqExitTimer); bvqExitTimer = null; }
+                    bvqExiting = false;
+                    if (bvqIntroTimer) { clearInterval(bvqIntroTimer); bvqIntroTimer = null; }
+                    if (bvqTickTimer) { clearInterval(bvqTickTimer); bvqTickTimer = null; }
                     quizState = null;
-                    const screen = document.getElementById("rpg-quiz-screen");
-                    if (screen) screen.classList.remove("quiz-starting", "quiz-exiting", "active");
-                    document.getElementById("quiz-end")?.classList.remove("visible");
+                    const screen = bvqEl('rpg-quiz-screen');
+                    if (screen) screen.classList.remove('quiz-starting', 'quiz-exiting', 'active');
+                    bvqEl('quiz-end')?.classList.remove('visible');
+                    bvqEl('bvq-intro')?.classList.remove('visible', 'leaving');
+                    const aud = bvqEl('bvq-audience');
+                    if (aud) aud.classList.remove('cheer');
                 }
 
                 function exitQuizScene(manual = false) {
-                    if (quizTimerInterval) clearInterval(quizTimerInterval);
-                    const screen = document.getElementById("rpg-quiz-screen");
-                    if (screen) screen.classList.add("quiz-exiting");
-                    setTimeout(() => {
+                    if (bvqExiting) return;
+                    bvqExiting = true;
+                    stopQuizTimer();
+                    if (bvqIntroTimer) { clearInterval(bvqIntroTimer); bvqIntroTimer = null; }
+                    const screen = bvqEl('rpg-quiz-screen');
+                    if (screen) screen.classList.add('quiz-exiting');
+                    if (bvqExitTimer) { clearTimeout(bvqExitTimer); bvqExitTimer = null; }
+                    bvqExitTimer = setTimeout(() => {
+                        bvqExitTimer = null;
+                        bvqExiting = false;
                         resetQuizScene();
-                        showScreen("rpg-game-screen");
-                        gameState = "MAP";
+                        showScreen('rpg-game-screen');
+                        gameState = 'MAP';
                         startCameraLoop();
                         startMoveLoop();
                         checkNearbyInteractables();
-                        if (manual) showMessage("Quiz beendet. Du kannst jederzeit wiederkommen!", "Quiz-Kai", "🧠");
-                    }, 460);
+                        if (manual) showMessage('Show beendet. Du kannst jederzeit wiederkommen!', 'Quiz-Kai', '🧠');
+                    }, 420);
                 }
 
-                function finishQuizScene() {
-                    if (quizTimerInterval) clearInterval(quizTimerInterval);
-                    // v7.10.18: Gold kommt jetzt aus den Antworten (Basis + Serie).
-                    // Ein nicht benutzter Joker bringt einen Bonus.
-                    const jokerBonus = quizState.jokerUsed ? 0 : 40;
-                    const reward = quizState.gold + jokerBonus;
-                    player.gold += reward;
-                    updateHUD();
-                    try { window.saveGame?.(); } catch (e) {}
-                    const total = quizState.questions.length;
-                    const perfect = quizState.score === total;
-                    const icon = document.getElementById("quiz-end-icon");
-                    const title = document.getElementById("quiz-end-title");
-                    if (icon) icon.innerText = perfect ? "👑" : (quizState.score >= Math.ceil(total / 2) ? "🏆" : "📚");
-                    if (title) title.innerText = perfect ? "Perfekte Runde!" : (quizState.score >= Math.ceil(total / 2) ? "Starkes Quiz!" : "Weiter üben!");
-                    const scoreEl = document.getElementById("quiz-end-score");
-                    if (scoreEl) scoreEl.innerText = `${quizState.score}/${total} richtig`;
-                    const rewardEl = document.getElementById("quiz-end-reward");
-                    if (rewardEl) {
-                        rewardEl.innerHTML = `+${reward} 🪙` +
-                            (quizState.bestStreak >= 3 ? `<div class="quiz-end-sub">🔥 Beste Serie: ${quizState.bestStreak}</div>` : '') +
-                            `<div class="quiz-end-sub">${jokerBonus ? '🃏 Joker aufgehoben: +' + jokerBonus + ' 🪙' : '🃏 Joker verbraucht'}</div>`;
-                    }
-                    document.getElementById("quiz-end")?.classList.add("visible");
-                    parseEmojis(document.getElementById("quiz-end"));
-                    setTimeout(() => exitQuizScene(false), 3200);
+                // ---- UI-Verdrahtung (einmalig) ----
+                let bvqUiWired = false;
+                function bvqWireUi() {
+                    if (bvqUiWired) return;
+                    bvqUiWired = true;
+
+                    document.querySelectorAll('#bvq-lifelines .bvq-life').forEach(btn => {
+                        btn.addEventListener('click', () => bvqUseLifeline(btn.dataset.life));
+                    });
+
+                    bvqEl('bvq-sound')?.addEventListener('click', () => {
+                        bvqMuted = !bvqMuted;
+                        try { localStorage.setItem('bv_quiz_mute', bvqMuted ? '1' : '0'); } catch (e) {}
+                        bvqUpdateSoundBtn();
+                        if (!bvqMuted) bvqSfx('click');
+                    });
+
+                    bvqEl('bvq-intro')?.addEventListener('click', bvqSkipIntro);
+                    bvqEl('bvq-again')?.addEventListener('click', () => {
+                        bvqEl('quiz-end')?.classList.remove('visible');
+                        startQuizScene(quizState ? quizState.npc : null);
+                    });
+                    bvqEl('bvq-leave')?.addEventListener('click', () => exitQuizScene(false));
+
+                    // Tastatur: 1-4 antworten, Leertaste Intro überspringen, J = Joker
+                    document.addEventListener('keydown', (e) => {
+                        if (gameState !== 'QUIZ' || bvqExiting) return;
+                        const intro = bvqEl('bvq-intro');
+                        if (intro && intro.classList.contains('visible') && (e.code === 'Space' || e.code === 'Enter')) {
+                            e.preventDefault(); e.stopPropagation();
+                            bvqSkipIntro();
+                            return;
+                        }
+                        if (!quizState || quizState.answered) return;
+                        if (/^[1-4]$/.test(e.key)) {
+                            e.preventDefault(); e.stopPropagation();
+                            answerQuizQuestion(Number(e.key) - 1);
+                        } else if (e.key === 'j' || e.key === 'J') {
+                            e.preventDefault();
+                            if (quizState.lifelines.fifty) bvqUseLifeline('fifty');
+                            else if (quizState.lifelines.audience) bvqUseLifeline('audience');
+                            else bvqUseLifeline('judge');
+                        }
+                    }, true);
                 }
 
                 function openArchivQuestChoice(npc) {
@@ -54849,3 +55221,346 @@ body.bv-settings-particles-off .title-canvas-bg {
     window.BVPlayStoryCinematic = play;
 })();
 </script>
+
+<style>
+/* BÜRO-QUIZ SHOW v2.0 */
+/* ============================================================
+   BÜRO-QUIZ SHOW v2.0 – komplett neues Design (Screenscope #rpg-quiz-screen)
+   Performance: nur transform/opacity-Animationen, keine Layout-Reads im JS.
+   Low-Spec:      #rpg-quiz-screen.bvq-lowspec  -> Haze/Spots/Audience ruhig
+   Reduced Motion: @media (prefers-reduced-motion) -> Animationen aus
+   ============================================================ */
+#rpg-quiz-screen {
+    display: none;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    color: #eef4ff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #05070f;
+    -webkit-font-smoothing: antialiased;
+}
+#rpg-quiz-screen.active { display: block; }
+#rpg-quiz-screen * { box-sizing: border-box; }
+
+/* ---------------- Bühnenraum ---------------- */
+.bvq-room { position: absolute; inset: 0; overflow: hidden; background:
+    radial-gradient(ellipse 90% 60% at 50% 0%, #17264a 0%, #0a1022 45%, #05070f 100%); }
+.bvq-ceiling { position: absolute; top: 0; left: 0; right: 0; height: 58px; display: flex; justify-content: space-around; align-items: flex-start; padding: 0 6%; opacity: .9; }
+.bvq-ceiling i { display: block; width: 8%; max-width: 60px; height: 7px; border-radius: 0 0 8px 8px;
+    background: linear-gradient(180deg, #ffe9a8, #ffb020); box-shadow: 0 6px 26px rgba(255,190,60,.55); }
+.bvq-spot { position: absolute; top: -10%; width: 46%; height: 130%; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0%, rgba(120,190,255,.20) 0%, rgba(120,190,255,.07) 32%, transparent 62%);
+    filter: blur(6px); transform-origin: 50% 0; }
+.bvq-spot.s1 { left: -8%; animation: bvqSway 9s ease-in-out infinite; }
+.bvq-spot.s2 { right: -8%; animation: bvqSway 11s ease-in-out infinite reverse; }
+.bvq-spot.s3 { left: 34%; width: 32%; opacity: .7; background: radial-gradient(ellipse at 50% 0%, rgba(190,120,255,.22), transparent 60%); animation: bvqSway 13s ease-in-out infinite; }
+@keyframes bvqSway { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+
+.bvq-floor { position: absolute; left: -30%; right: -30%; bottom: -6%; height: 42%; pointer-events: none;
+    background-image: linear-gradient(rgba(90,150,255,.20) 1px, transparent 1px), linear-gradient(90deg, rgba(90,150,255,.16) 1px, transparent 1px);
+    background-size: 64px 44px;
+    transform: perspective(420px) rotateX(64deg);
+    transform-origin: 50% 100%;
+    mask-image: linear-gradient(to top, #000 10%, transparent 78%);
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 78%);
+    animation: bvqFloorScroll 6s linear infinite; }
+@keyframes bvqFloorScroll { to { background-position: 0 44px, 0 0; } }
+
+.bvq-haze { position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background: radial-gradient(ellipse at 50% 82%, rgba(120,170,255,.16), transparent 58%);
+    animation: bvqHaze 7s ease-in-out infinite; }
+@keyframes bvqHaze { 50% { opacity: .8; } }
+
+.bvq-audience { position: absolute; left: 0; right: 0; bottom: 0; height: 78px; display: flex; align-items: flex-end;
+    justify-content: space-around; padding: 0 2%; pointer-events: none; }
+.bvq-audience span { display: block; width: 30px; height: 46px; border-radius: 16px 16px 4px 4px;
+    background: linear-gradient(180deg, #1b2a46, #0b1222);
+    box-shadow: inset 0 12px 0 rgba(120,170,255,.10);
+    animation: bvqBob 1.6s ease-in-out infinite; }
+.bvq-audience span:nth-child(2n) { animation-duration: 2.1s; height: 40px; }
+.bvq-audience span:nth-child(3n) { animation-duration: 1.3s; height: 52px; }
+.bvq-audience span:nth-child(5n) { animation-delay: -.5s; }
+@keyframes bvqBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.bvq-audience.cheer span { animation-duration: .5s; background: linear-gradient(180deg, #2a4a7a, #12203a); }
+
+.bvq-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.55), transparent 62%); }
+.bvq-flash.on { animation: bvqFlash .5s ease-out; }
+@keyframes bvqFlash { 0% { opacity: .85; } 100% { opacity: 0; } }
+
+/* ---------------- Schließen ---------------- */
+.bvq-close { position: absolute; top: 14px; right: 14px; z-index: 30; width: 38px; height: 38px;
+    border-radius: 50%; cursor: pointer; color: #fff; font-size: 1rem; line-height: 1;
+    border: 1px solid rgba(255,255,255,.25); background: rgba(8,14,26,.6); backdrop-filter: blur(6px);
+    transition: transform .18s ease, background .18s ease; }
+.bvq-close:hover { transform: scale(1.1) rotate(90deg); background: rgba(239,68,68,.6); }
+
+/* ---------------- Bühne / Layout ---------------- */
+.bvq-stage { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; padding: 18px 22px 26px; }
+#rpg-quiz-screen.quiz-starting .bvq-stage { animation: bvqStageIn .6s cubic-bezier(.16,1,.3,1) both; }
+#rpg-quiz-screen.quiz-exiting .bvq-stage { animation: bvqStageOut .4s ease-in forwards; }
+@keyframes bvqStageIn { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+@keyframes bvqStageOut { to { opacity: 0; transform: translateY(-10px) scale(.99); } }
+
+.bvq-topbar { width: min(1080px, 100%); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bvq-logo { font-family: 'Press Start 2P', monospace; font-size: clamp(13px, 1.5vw, 19px); letter-spacing: 1px;
+    color: #fff; text-shadow: 0 0 22px rgba(90,160,255,.6); display: flex; align-items: baseline; gap: 4px; }
+.bvq-logo span { color: #ffd45e; text-shadow: 0 0 22px rgba(255,200,60,.7); }
+.bvq-logo small { font-family: 'VT323', monospace; font-size: .62em; letter-spacing: 4px; color: rgba(180,210,255,.75); margin-left: 6px; }
+.bvq-hud { display: flex; align-items: center; gap: 8px; }
+.bvq-chip { font-family: 'VT323', monospace; font-size: 1.15rem; padding: 5px 13px; border-radius: 999px;
+    background: rgba(10,20,38,.72); border: 1px solid rgba(140,190,255,.28); color: #dbe9ff;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.bvq-chip i { opacity: .5; font-style: normal; }
+.bvq-chip b { color: #fff; }
+.bvq-chip-gold { border-color: rgba(250,204,21,.5); background: linear-gradient(135deg, rgba(250,204,21,.20), rgba(120,80,10,.22)); color: #ffe9a8; }
+.bvq-chip-gold.bump { animation: bvqGoldBump .55s cubic-bezier(.16,1,.3,1); }
+@keyframes bvqGoldBump { 0%,100% { transform: scale(1); } 40% { transform: scale(1.16); } }
+.bvq-sound { cursor: pointer; font-size: 1rem; padding: 5px 11px; }
+.bvq-sound.muted { opacity: .5; }
+
+/* ---------------- Jury ---------------- */
+.bvq-judges { width: min(1080px, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.bvq-judge { position: relative; display: flex; align-items: center; gap: 9px; padding: 8px 11px; min-width: 0;
+    border-radius: 14px; background: linear-gradient(150deg, rgba(28,44,78,.85), rgba(10,18,34,.9));
+    border: 1px solid rgba(130,180,255,.20); box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    transition: border-color .2s ease, transform .2s ease, background .2s ease; }
+.bvq-judge-ava { font-size: 1.5rem; line-height: 1; flex: 0 0 auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+.bvq-judge-body { min-width: 0; }
+.bvq-judge-name { font-family: 'VT323', monospace; font-size: 1rem; color: #cfe2ff; letter-spacing: .4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bvq-judge-say { font-family: 'VT323', monospace; font-size: .92rem; color: rgba(200,220,255,.6); line-height: 1.15;
+    min-height: 1.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bvq-judge.good { border-color: rgba(74,222,128,.6); background: linear-gradient(150deg, rgba(22,70,44,.85), rgba(10,28,20,.9)); }
+.bvq-judge.bad { border-color: rgba(248,113,113,.55); background: linear-gradient(150deg, rgba(78,26,30,.85), rgba(30,10,14,.9)); }
+.bvq-judge.tip { border-color: rgba(168,85,247,.6); }
+.bvq-judge.react { animation: bvqJudgePop .5s cubic-bezier(.16,1,.3,1); }
+@keyframes bvqJudgePop { 0% { transform: scale(1); } 45% { transform: scale(1.05) translateY(-2px); } 100% { transform: scale(1); } }
+.bvq-judge .bvq-judge-score { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px;
+    border-radius: 999px; font-family: 'VT323', monospace; font-size: .8rem; display: grid; place-items: center;
+    background: #1d4ed8; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
+
+/* ---------------- Spielbrett ---------------- */
+.bvq-board { position: relative; width: min(1080px, 100%); padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 12px;
+    border-radius: 22px; background: linear-gradient(155deg, rgba(18,32,58,.92), rgba(8,14,28,.95));
+    border: 1px solid rgba(130,180,255,.22);
+    box-shadow: 0 26px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+    overflow: hidden; }
+.bvq-board-rail { position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(180deg, #5aa0ff, #a855f7 55%, #ffd45e); box-shadow: 0 0 18px rgba(90,160,255,.6); }
+
+.bvq-qcard { display: flex; flex-direction: column; gap: 8px; }
+.bvq-qcard.in { animation: bvqQIn .38s cubic-bezier(.16,1,.3,1) both; }
+@keyframes bvqQIn { from { opacity: 0; transform: translateY(10px); } }
+.bvq-qmeta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bvq-cat { font-family: 'VT323', monospace; font-size: 1.05rem; letter-spacing: 1.4px; text-transform: uppercase;
+    color: #8ab6ff; padding: 2px 10px; border-radius: 999px; background: rgba(90,160,255,.12);
+    border: 1px solid rgba(90,160,255,.28); }
+.bvq-stars { font-size: .95rem; letter-spacing: 2px; color: #ffd45e; text-shadow: 0 0 10px rgba(255,200,60,.5); }
+.bvq-value { margin-left: auto; font-family: 'VT323', monospace; font-size: 1.15rem; color: #ffe9a8; }
+.bvq-question { font-family: 'Press Start 2P', monospace; font-size: clamp(11px, 1.25vw, 16px); line-height: 1.62;
+    color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.45); min-height: 2.6em; }
+
+.bvq-timer-row { display: flex; align-items: center; gap: 10px; }
+.bvq-timer { flex: 1; height: 9px; border-radius: 999px; overflow: hidden; background: rgba(0,0,0,.45);
+    border: 1px solid rgba(255,255,255,.10); }
+.bvq-timer-fill { height: 100%; width: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, #22c55e, #facc15 62%, #ef4444);
+    box-shadow: 0 0 12px rgba(250,204,21,.4); transform-origin: left center; }
+.bvq-timer-num { font-family: 'VT323', monospace; font-size: 1.25rem; min-width: 2.2ch; text-align: right; color: #cfe2ff; }
+.bvq-timer-row.urgent .bvq-timer-num { color: #ff8a8a; animation: bvqUrgent .5s ease-in-out infinite; }
+.bvq-timer-row.urgent .bvq-timer-fill { box-shadow: 0 0 16px rgba(239,68,68,.75); }
+@keyframes bvqUrgent { 50% { opacity: .45; } }
+
+/* ---------------- Antworten ---------------- */
+.bvq-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bvq-ans { position: relative; display: flex; align-items: center; gap: 11px; width: 100%;
+    padding: 13px 14px; border-radius: 15px; cursor: pointer; text-align: left;
+    font-family: 'VT323', monospace; font-size: 1.22rem; line-height: 1.2; color: #f2f7ff;
+    background: linear-gradient(150deg, rgba(38,58,98,.75), rgba(14,24,44,.85));
+    border: 1px solid rgba(130,180,255,.24); box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+    transition: transform .14s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+    overflow: hidden; }
+.bvq-ans:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(140,200,255,.7);
+    box-shadow: 0 10px 26px rgba(20,60,130,.45), inset 0 1px 0 rgba(255,255,255,.1); }
+.bvq-ans:active:not(:disabled) { transform: translateY(0) scale(.99); }
+.bvq-ans .bvq-ans-key { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    font-family: 'Press Start 2P', monospace; font-size: .68rem; color: #0a1020;
+    background: linear-gradient(160deg, #cfe4ff, #8fb8ee); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.bvq-ans[data-k="1"] .bvq-ans-key { background: linear-gradient(160deg, #b9d8ff, #6fa8f0); }
+.bvq-ans[data-k="2"] .bvq-ans-key { background: linear-gradient(160deg, #d9c8ff, #9b7cf0); }
+.bvq-ans[data-k="3"] .bvq-ans-key { background: linear-gradient(160deg, #ffe3a8, #f0b64a); }
+.bvq-ans[data-k="4"] .bvq-ans-key { background: linear-gradient(160deg, #b7f0e2, #48c4a8); }
+.bvq-ans .bvq-ans-txt { flex: 1; min-width: 0; }
+.bvq-ans.pop { animation: bvqAnsIn .34s cubic-bezier(.16,1,.3,1) both; }
+@keyframes bvqAnsIn { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+
+.bvq-ans.correct { border-color: #22c55e; background: linear-gradient(150deg, rgba(24,90,52,.95), rgba(10,40,24,.95));
+    box-shadow: 0 0 0 2px rgba(34,197,94,.35), 0 0 34px rgba(34,197,94,.45); animation: bvqCorrect .55s ease-out; }
+.bvq-ans.wrong { border-color: #ef4444; background: linear-gradient(150deg, rgba(96,26,32,.95), rgba(40,10,16,.95));
+    animation: bvqWrong .45s ease-out; }
+.bvq-ans.joker-out { opacity: .22; filter: grayscale(1); transform: scale(.97); cursor: not-allowed; border-style: dashed; }
+.bvq-ans.joker-out:hover { transform: scale(.97); box-shadow: none; }
+.bvq-ans:disabled { cursor: default; }
+@keyframes bvqCorrect { 0% { transform: scale(1); } 40% { transform: scale(1.035); } 100% { transform: scale(1); } }
+@keyframes bvqWrong { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 60% { transform: translateX(6px); } }
+.bvq-ans .bvq-vote { position: absolute; left: 0; bottom: 0; height: 3px; width: 0;
+    background: linear-gradient(90deg, #5aa0ff, #a855f7); transition: width .45s ease; }
+.bvq-ans .bvq-vote-num { position: absolute; right: 10px; bottom: 6px; font-size: .82rem; color: #9fc0ff; opacity: 0;
+    transition: opacity .3s ease; }
+.bvq-ans.voted .bvq-vote-num { opacity: 1; }
+
+/* ---------------- Untere Reihe ---------------- */
+.bvq-underrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bvq-streak { font-family: 'VT323', monospace; font-size: 1.15rem; color: #ffb86b; opacity: 0; transition: opacity .2s ease; }
+.bvq-streak.on { opacity: 1; animation: bvqStreak 1.1s ease-in-out infinite; }
+@keyframes bvqStreak { 50% { transform: scale(1.06); opacity: .85; } }
+.bvq-lifelines { display: flex; gap: 8px; margin-left: auto; }
+.bvq-life { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px 8px 12px;
+    border-radius: 12px; cursor: pointer; font-family: 'VT323', monospace; font-size: 1.08rem; color: #f0e6ff;
+    background: linear-gradient(150deg, rgba(120,70,200,.35), rgba(40,24,80,.6));
+    border: 1px solid rgba(168,85,247,.5);
+    transition: transform .15s ease, filter .15s ease, opacity .15s ease; }
+.bvq-life:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.18); }
+.bvq-life:disabled { cursor: default; opacity: .38; filter: grayscale(.7); }
+.bvq-life-icon { font-size: 1.05rem; }
+.bvq-life-count { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px;
+    border-radius: 999px; display: grid; place-items: center; font-size: .78rem; font-style: normal;
+    background: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.45); }
+.bvq-life.used .bvq-life-count { background: #475569; }
+
+.bvq-feedback { min-height: 34px; font-family: 'VT323', monospace; font-size: 1.2rem; text-align: center;
+    color: #ffd45e; line-height: 1.25; }
+.bvq-fb-good { color: #8ef7b0; }
+.bvq-fb-bad { color: #ffa0a0; }
+.bvq-fb-tip { color: #d8b4fe; }
+.bvq-fb-fact { display: block; font-size: .82em; color: rgba(210,228,255,.75); margin-top: 3px; }
+
+.bvq-float { position: absolute; right: 26px; top: 54px; z-index: 8; pointer-events: none;
+    font-family: 'VT323', monospace; font-size: 1.7rem; color: #ffe9a8; text-shadow: 0 0 16px rgba(255,200,60,.8);
+    animation: bvqFloat 1.15s ease-out forwards; }
+@keyframes bvqFloat { 0% { opacity: 0; transform: translateY(10px) scale(.8); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-46px) scale(1.12); } }
+
+/* ---------------- Publikumsmeter ---------------- */
+.bvq-crowd { width: min(1080px, 100%); display: flex; align-items: center; gap: 10px; }
+.bvq-crowd-label, .bvq-crowd-val { font-family: 'VT323', monospace; font-size: .95rem; color: rgba(190,215,255,.6); }
+.bvq-crowd-track { flex: 1; height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bvq-crowd-fill { height: 100%; width: 50%; border-radius: 999px;
+    background: linear-gradient(90deg, #ef4444, #facc15 45%, #22c55e);
+    transition: width .5s cubic-bezier(.16,1,.3,1); }
+
+/* ---------------- Intro ---------------- */
+.bvq-intro { position: absolute; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(20,40,90,.92), rgba(3,6,14,.97)); }
+.bvq-intro.visible { display: flex; animation: bvqFadeIn .4s ease-out both; }
+.bvq-intro.leaving { animation: bvqFadeOut .4s ease-in forwards; }
+.bvq-intro-rays { position: absolute; width: 160vmax; height: 160vmax; pointer-events: none; opacity: .16;
+    background: conic-gradient(from 0deg, transparent 0 8deg, rgba(140,200,255,.9) 8deg 10deg, transparent 10deg 20deg);
+    animation: bvqSpin 26s linear infinite; }
+@keyframes bvqSpin { to { transform: rotate(360deg); } }
+.bvq-intro-inner { position: relative; text-align: center; padding: 24px; }
+.bvq-intro-kicker { font-family: 'VT323', monospace; font-size: 1.1rem; letter-spacing: 5px; text-transform: uppercase;
+    color: rgba(180,210,255,.7); }
+.bvq-intro-title { margin: 8px 0 0; font-family: 'Press Start 2P', monospace; font-size: clamp(26px, 5.4vw, 60px);
+    letter-spacing: 2px; color: #fff; text-shadow: 0 0 40px rgba(90,160,255,.7), 0 8px 0 rgba(0,0,0,.35); }
+.bvq-intro-title span { color: #ffd45e; text-shadow: 0 0 44px rgba(255,200,60,.8), 0 8px 0 rgba(0,0,0,.35); }
+.bvq-intro-sub { margin-top: 10px; font-family: 'VT323', monospace; font-size: 1.15rem; color: rgba(200,220,255,.8); }
+.bvq-intro-contestant { margin: 20px auto 0; display: inline-flex; align-items: center; gap: 12px;
+    padding: 9px 18px 9px 10px; border-radius: 999px; background: rgba(255,255,255,.06);
+    border: 1px solid rgba(140,190,255,.28); }
+.bvq-intro-ava { font-size: 2rem; line-height: 1; }
+.bvq-intro-who { text-align: left; font-family: 'VT323', monospace; }
+.bvq-intro-who b { display: block; font-size: 1.3rem; color: #fff; }
+.bvq-intro-who i { font-style: normal; font-size: .92rem; color: rgba(190,215,255,.65); }
+.bvq-intro-count { margin-top: 16px; font-family: 'Press Start 2P', monospace; font-size: clamp(34px, 7vw, 76px);
+    color: #fff; text-shadow: 0 0 46px rgba(120,190,255,.9); }
+.bvq-intro-count.tick { animation: bvqCount .55s cubic-bezier(.16,1,.3,1); }
+@keyframes bvqCount { 0% { transform: scale(1.5); opacity: .2; } 60% { transform: scale(.96); opacity: 1; } 100% { transform: scale(1); } }
+.bvq-intro-hint { margin-top: 10px; font-family: 'VT323', monospace; font-size: .98rem; color: rgba(160,190,230,.55); }
+@keyframes bvqFadeIn { from { opacity: 0; } }
+@keyframes bvqFadeOut { to { opacity: 0; } }
+
+/* ---------------- Finale ---------------- */
+.bvq-finale { position: absolute; inset: 0; z-index: 22; display: none; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 45%, rgba(12,26,54,.9), rgba(2,4,10,.96)); padding: 18px; }
+.bvq-finale.visible { display: flex; animation: bvqFadeIn .35s ease-out both; }
+.bvq-finale-card { position: relative; overflow: hidden; text-align: center; width: min(560px, 100%);
+    padding: 26px 30px 22px; border-radius: 26px;
+    background: linear-gradient(155deg, rgba(22,36,66,.97), rgba(30,18,58,.96));
+    border: 1px solid rgba(140,190,255,.32);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.1);
+    animation: bvqFinalePop .6s cubic-bezier(.16,1,.3,1) both; }
+@keyframes bvqFinalePop { from { opacity: 0; transform: translateY(24px) scale(.95); } }
+.bvq-finale-rays { position: absolute; left: 50%; top: -60%; width: 120%; height: 160%; transform: translateX(-50%);
+    background: conic-gradient(from 90deg at 50% 50%, transparent 0 12deg, rgba(255,220,120,.14) 12deg 15deg, transparent 15deg 30deg);
+    animation: bvqSpin 22s linear infinite; pointer-events: none; }
+.bvq-finale-icon { position: relative; font-size: 3.6rem; line-height: 1; animation: bvqFloatSlow 2.6s ease-in-out infinite; }
+@keyframes bvqFloatSlow { 50% { transform: translateY(-8px); } }
+.bvq-finale-title { position: relative; margin-top: 8px; font-family: 'Press Start 2P', monospace;
+    font-size: clamp(14px, 2vw, 20px); color: #ffd45e; text-shadow: 0 0 26px rgba(255,200,60,.5); }
+.bvq-finale-stars { position: relative; margin-top: 10px; font-size: 1.6rem; letter-spacing: 6px; color: #ffd45e; }
+.bvq-finale-stars .off { color: rgba(255,255,255,.14); }
+.bvq-finale-score { position: relative; margin-top: 8px; font-family: 'VT323', monospace; font-size: 1.5rem; color: #dbe9ff; }
+.bvq-finale-reward { position: relative; margin-top: 4px; font-family: 'VT323', monospace; font-size: 1.9rem; color: #ffe9a8; }
+.bvq-finale-verdicts { position: relative; margin-top: 14px; display: grid; gap: 6px; text-align: left; }
+.bvq-finale-verdicts div { display: flex; gap: 8px; align-items: baseline; font-family: 'VT323', monospace;
+    font-size: 1rem; color: rgba(214,232,255,.85); padding: 6px 10px; border-radius: 10px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(140,190,255,.16); }
+.bvq-finale-actions { position: relative; margin-top: 16px; display: flex; gap: 10px; justify-content: center; }
+.bvq-btn { font-family: 'VT323', monospace; font-size: 1.16rem; padding: 10px 22px; border-radius: 13px; cursor: pointer;
+    color: #eaf2ff; background: linear-gradient(150deg, rgba(80,120,190,.5), rgba(22,36,66,.8));
+    border: 1px solid rgba(140,190,255,.38); transition: transform .15s ease, filter .15s ease; }
+.bvq-btn:hover { transform: translateY(-2px); filter: brightness(1.15); }
+.bvq-btn-primary { background: linear-gradient(150deg, #3b82f6, #7c3aed); border-color: rgba(160,200,255,.7); color: #fff;
+    box-shadow: 0 10px 26px rgba(60,120,240,.4); }
+
+/* ---------------- Low-Spec ---------------- */
+#rpg-quiz-screen.bvq-lowspec .bvq-haze,
+#rpg-quiz-screen.bvq-lowspec .bvq-spot.s3,
+#rpg-quiz-screen.bvq-lowspec .bvq-ceiling { display: none; }
+#rpg-quiz-screen.bvq-lowspec .bvq-floor { animation: none; }
+#rpg-quiz-screen.bvq-lowspec .bvq-audience span { animation: none; }
+#rpg-quiz-screen.bvq-lowspec .bvq-flash { display: none; }
+#rpg-quiz-screen.bvq-lowspec .bvq-intro-rays,
+#rpg-quiz-screen.bvq-lowspec .bvq-finale-rays { display: none; }
+
+/* ---------------- Reduced Motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+    #rpg-quiz-screen .bvq-spot,
+    #rpg-quiz-screen .bvq-floor,
+    #rpg-quiz-screen .bvq-haze,
+    #rpg-quiz-screen .bvq-audience span,
+    #rpg-quiz-screen .bvq-intro-rays,
+    #rpg-quiz-screen .bvq-finale-rays,
+    #rpg-quiz-screen .bvq-finale-icon,
+    #rpg-quiz-screen .bvq-streak.on,
+    #rpg-quiz-screen .bvq-timer-row.urgent .bvq-timer-num { animation: none !important; }
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 860px) {
+    .bvq-stage { padding: 12px 12px 20px; gap: 9px; }
+    .bvq-judges { gap: 6px; }
+    .bvq-judge { padding: 6px 8px; }
+    .bvq-judge-name { font-size: .92rem; }
+    .bvq-judge-say { display: none; }
+    .bvq-answers { grid-template-columns: 1fr; gap: 8px; }
+    .bvq-question { font-size: clamp(10px, 2.4vw, 13px); }
+    .bvq-ans { font-size: 1.1rem; padding: 11px 12px; }
+    .bvq-life .bvq-life-txt { display: none; }
+    .bvq-logo small { display: none; }
+    .bvq-audience { height: 54px; }
+    .bvq-audience span { width: 22px; height: 34px; }
+}
+@media (max-height: 640px) {
+    .bvq-judges { display: none; }
+    .bvq-qcard { gap: 5px; }
+    .bvq-question { min-height: 0; }
+    .bvq-board { padding: 11px 13px; gap: 8px; }
+    .bvq-answers { gap: 7px; }
+    .bvq-ans { padding: 9px 11px; }
+    .bvq-audience { display: none; }
+}
+</style>
