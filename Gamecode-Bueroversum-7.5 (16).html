@@ -1082,9 +1082,10 @@
                     <div class="bvq-floor"></div>
                     <div class="bvq-haze"></div>
                     <div class="bvq-audience" id="bvq-audience" aria-hidden="true">
-                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-                        <span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
                     </div>
                     <div class="bvq-flash" id="bvq-flash"></div>
                 </div>
@@ -1098,7 +1099,7 @@
                         <div class="bvq-hud">
                             <div class="bvq-chip bvq-chip-gold" id="bvq-gold-chip">🪙 <b id="quiz-gold">0</b></div>
                             <div class="bvq-chip">Frage <b id="quiz-current">1</b><i>/</i><b id="quiz-total">7</b></div>
-                            <button class="bvq-chip bvq-sound" id="bvq-sound" type="button" title="Ton an/aus">🔊</button>
+                            <div class="bvq-chip bvq-chip-diff diff-normal" id="bvq-diff" title="Schwierigkeitsstufe">🟢 <b>Normal</b></div>
                         </div>
                     </div>
 
@@ -1155,13 +1156,18 @@
                     <div class="bvq-intro-inner">
                         <div class="bvq-intro-kicker">BüroVersum präsentiert</div>
                         <h1 class="bvq-intro-title">BÜRO<span>QUIZ</span></h1>
-                        <div class="bvq-intro-sub">Die große Büro-Show · 7 Fragen · 3 Joker · 3 Juroren</div>
+                        <div class="bvq-intro-sub">Die große Büro-Show · 3 Joker · 3 Juroren · 3 Stufen</div>
                         <div class="bvq-intro-contestant">
                             <span class="bvq-intro-ava" id="bvq-intro-ava">🧑‍💼</span>
                             <div class="bvq-intro-who"><b id="bvq-intro-name">Held</b><i>heute im Studio</i></div>
                         </div>
-                        <div class="bvq-intro-count" id="bvq-intro-count">3</div>
-                        <div class="bvq-intro-hint">Klick oder Leertaste zum Starten</div>
+                        <div class="bvq-intro-diff" id="bvq-intro-diff">
+                            <button class="bvq-diff-btn" data-diff="easy" type="button"><b>Leicht</b><i>6 Fragen · mehr Zeit</i></button>
+                            <button class="bvq-diff-btn sel" data-diff="normal" type="button"><b>Normal</b><i>7 Fragen · Standard</i></button>
+                            <button class="bvq-diff-btn" data-diff="hard" type="button"><b>Schwer</b><i>8 Fragen · mehr Gold</i></button>
+                        </div>
+                        <div class="bvq-intro-count" id="bvq-intro-count"></div>
+                        <div class="bvq-intro-hint" id="bvq-intro-hint">Stufe wählen – Leertaste startet mit der Auswahl</div>
                     </div>
                 </div>
 
@@ -1179,6 +1185,20 @@
                             <button class="bvq-btn bvq-btn-primary" id="bvq-again" type="button">↻ Nochmal</button>
                             <button class="bvq-btn" id="bvq-leave" type="button">Zurück ins Büro</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ===== KONFETTI ===== -->
+                <div class="bvq-confetti" id="bvq-confetti" aria-hidden="true"></div>
+
+                <!-- ===== VERLASSEN-ÜBERGANG ===== -->
+                <div class="bvq-exit" id="bvq-exit" aria-hidden="true">
+                    <div class="bvq-exit-bar"></div>
+                    <div class="bvq-exit-bar bottom"></div>
+                    <div class="bvq-exit-inner">
+                        <div class="bvq-exit-kicker">BüroVersum</div>
+                        <div class="bvq-exit-title">SENDUNG BEENDET</div>
+                        <div class="bvq-exit-sub" id="bvq-exit-sub">Bis zur nächsten Runde!</div>
                     </div>
                 </div>
             </div>
@@ -29514,7 +29534,45 @@
                     { cat: 'BüroVersum', d: 3, q: 'Wo findest du Quiz-Kai?',
                       answer: 'Im Hauptbüro-Einkauf', wrong: ['Auf der Dachterrasse', 'Im Serverraum', 'Im Chefbüro'], fact: 'Er steht fast immer in der Nähe der Teppiche.' },
                     { cat: 'Kopfrechnen', d: 3, q: 'Du sparst 15 % auf einen Ordner für 40 €. Was zahlst du?',
-                      answer: '34,00 €', wrong: ['36,00 €', '32,00 €', '25,00 €'] }
+                      answer: '34,00 €', wrong: ['36,00 €', '32,00 €', '25,00 €'] },
+
+                    { cat: 'Büro-Knigge', d: 1, q: 'Du niest im Großraumbüro. Was ist richtig?',
+                      answer: 'In die Armbeuge niesen und kurz entschuldigen', wrong: ['Möglichst laut niesen, das ist natürlich', 'Nichts sagen und weitertippen', 'Den Raum verlassen und nie wiederkommen'],
+                      fact: 'Armbeuge statt Hand – so verteilst du keine Keime an Tastatur und Maus.' },
+                    { cat: 'Allgemeinwissen', d: 1, q: 'Welcher Tag folgt auf Mittwoch?',
+                      answer: 'Donnerstag', wrong: ['Dienstag', 'Freitag', 'Montag'] },
+                    { cat: 'Formulierung', d: 1, q: 'Welche Anrede passt in eine interne Mail an das ganze Team?',
+                      answer: 'Hallo zusammen,', wrong: ['Sehr geehrte Damen und Herren,', 'Heyyyyy,', 'An alle Menschen da draußen,'] },
+                    { cat: 'Kopfrechnen', d: 1, q: 'Zwei Kaffee à 2,50 € und ein Croissant für 1,80 €. Was zahlst du?',
+                      answer: '6,80 €', wrong: ['5,80 €', '7,20 €', '6,30 €'], fact: '2 × 2,50 € = 5,00 € plus 1,80 € = 6,80 €.' },
+                    { cat: 'Büro-Alltag', d: 1, q: 'Eine Kollegin ist krank gemeldet. Was ist richtig?',
+                      answer: 'Kurze Genesungswünsche schicken', wrong: ['Ihre Aufgaben kommentarlos übernehmen', 'Die Krankmeldung im Firmenchat posten', 'Ihr Postfach löschen'],
+                      fact: 'Kleine Gesten kosten nichts und kommen gut an.' },
+
+                    { cat: 'Büro-Wissen', d: 2, q: 'Wofür steht die Abkürzung „PDF“?',
+                      answer: 'Portable Document Format', wrong: ['Personal Data File', 'Print Document Form', 'Public Data Format'] },
+                    { cat: 'Technik', d: 2, q: 'Wofür steht „USB“?',
+                      answer: 'Universal Serial Bus', wrong: ['Unified System Backup', 'Universal Storage Base', 'User Serial Bridge'] },
+                    { cat: 'Büro-Alltag', d: 2, q: 'Du hast eine E-Mail an den falschen Empfänger geschickt. Was tust du?',
+                      answer: 'Sofort informieren und um Löschung bitten', wrong: ['Abwarten und hoffen', 'Den Posteingang leeren', 'Den Rechner neu starten'],
+                      fact: 'Schnell nachfragen ist professionell – Schweigen ist es nicht.' },
+                    { cat: 'Formulierung', d: 2, q: 'Was bedeutet „FYI“ in einer Mail?',
+                      answer: 'For your information', wrong: ['For your interest', 'Final yearly invoice', 'Follow your instinct'] },
+                    { cat: 'Logik', d: 2, q: 'Welche Zahl fehlt: 2, 4, 8, 16, …?',
+                      answer: '32', wrong: ['24', '20', '36'], fact: 'Jede Zahl ist das Doppelte der vorherigen.' },
+                    { cat: 'Kopfrechnen', d: 2, q: 'Ein Meeting dauert 45 Minuten. Wie viele passen in 3 Stunden?',
+                      answer: '4', wrong: ['3', '5', '6'], fact: '180 Minuten geteilt durch 45 sind genau 4.' },
+
+                    { cat: 'Logik', d: 3, q: 'Ein Ordner kostet 12 €. Du bekommst 25 % Rabatt und zahlst mit 50 €. Wie viel Wechselgeld bekommst du?',
+                      answer: '41 €', wrong: ['38 €', '42 €', '44 €'], fact: '12 € minus 25 % sind 9 € – also 41 € zurück.' },
+                    { cat: 'Allgemeinwissen', d: 3, q: 'Wie viele Bytes hat ein Kibibyte (KiB)?',
+                      answer: '1024', wrong: ['1000', '512', '2048'], fact: 'Kibibyte rechnet binär, Kilobyte dezimal mit 1000.' },
+                    { cat: 'Büro-Wissen', d: 3, q: 'Wofür steht „KPI“?',
+                      answer: 'Key Performance Indicator', wrong: ['Kaffee-Pro-Kopf-Index', 'Kritischer Prozessablauf', 'Kunden-Prioritäts-Liste'] },
+                    { cat: 'Technik', d: 3, q: 'Welches Protokoll verschlüsselt den Besuch einer Webseite?',
+                      answer: 'HTTPS', wrong: ['FTP', 'HTTP', 'SMTP'], fact: 'Das S steht für Secure.' },
+                    { cat: 'Kopfrechnen', d: 3, q: 'Drei Kollegen zahlen je 8,50 € für Pizza, einer 11 €. Was kostet alles zusammen?',
+                      answer: '36,50 €', wrong: ['34,50 €', '38,00 €', '33,50 €'], fact: '3 × 8,50 € = 25,50 € plus 11 € = 36,50 €.' }
                 ];
 
                 function shuffleArray(arr) {
@@ -29528,32 +29586,37 @@
 
                 // Baut die Antwortliste (4 Optionen) aus answer + wrong und
                 // berechnet den Index der richtigen Antwort NACH dem Mischen.
-                function buildQuizQuestion(q) {
+                function buildQuizQuestion(q, diffKey) {
+                    const cfg = BVQ_DIFF[diffKey] || BVQ_DIFF.normal;
                     const options = shuffleArray([q.answer, ...q.wrong]);
+                    const baseGold = QUIZ_GOLD[q.d] || QUIZ_GOLD[1];
+                    const baseTime = q.d === 3 ? 9 : (q.d === 2 ? 11 : 13);
                     return {
                         cat: q.cat, q: q.q, d: q.d || 1, fact: q.fact || '',
                         a: options,
                         correct: options.indexOf(q.answer),
-                        gold: QUIZ_GOLD[q.d] || QUIZ_GOLD[1],
-                        timeLimit: q.d === 3 ? 9 : (q.d === 2 ? 11 : 13)
+                        gold: Math.max(5, Math.round(baseGold * cfg.gold / 5) * 5),
+                        timeLimit: Math.max(5, Math.round(baseTime * cfg.time))
                     };
                 }
 
-                function prepareQuizQuestions(count = 7) {
+                function prepareQuizQuestions(count, diffKey) {
                     // Leicht -> mittel -> schwer aufbauen (Gameshow-Spannung),
                     // innerhalb einer Stufe zufaellig.
+                    const cfg = BVQ_DIFF[diffKey] || BVQ_DIFF.normal;
+                    const total = count || cfg.count || 7;
                     const pools = { 1: [], 2: [], 3: [] };
                     QUIZ_QUESTIONS.forEach(q => { (pools[q.d || 1] || pools[1]).push(q); });
-                    const plan = [1, 1, 2, 2, 2, 3, 3];
+                    const plan = cfg.plan || [1, 1, 2, 2, 2, 3, 3];
                     const picked = [];
-                    for (let i = 0; i < count; i++) {
+                    for (let i = 0; i < total; i++) {
                         const wantLevel = plan[i] || 2;
                         let pool = shuffleArray(pools[wantLevel] || []);
                         if (!pool.length) pool = shuffleArray(pools[2].concat(pools[1], pools[3]));
                         const q = pool.find(x => !picked.includes(x));
                         if (q) picked.push(q);
                     }
-                    return picked.slice(0, count).map(buildQuizQuestion);
+                    return picked.slice(0, total).map(q => buildQuizQuestion(q, diffKey));
                 }
 
                 // ==========================================================
@@ -29570,38 +29633,96 @@
                 const BVQ_TOTAL_QUESTIONS = 7;
                 const BVQ_LIFELINE_BONUS = 15;   // pro nicht benutztem Joker am Ende
 
-                // ---- Jury: 3 von 5 werden pro Runde gezogen ----
+                // ---- Schwierigkeitsstufen ----
+                // count = Fragen pro Runde, time = Zeitfaktor, gold = Goldfaktor,
+                // crowd = Startstimmung im Publikum
+                const BVQ_DIFF = {
+                    easy:   { label: 'Leicht', icon: '🟢', count: 6, time: 1.30, gold: 0.9, crowd: 62,
+                              plan: [1, 1, 1, 2, 2, 2] },
+                    normal: { label: 'Normal', icon: '🎚', count: 7, time: 1.00, gold: 1.0, crowd: 50,
+                              plan: [1, 1, 2, 2, 2, 3, 3] },
+                    hard:   { label: 'Schwer', icon: '🔴', count: 8, time: 0.72, gold: 1.6, crowd: 38,
+                              plan: [2, 2, 2, 3, 3, 3, 2, 3] }
+                };
+                let bvqDiffKey = 'normal';
+                try {
+                    const bvqSavedDiff = localStorage.getItem('bv_quiz_diff');
+                    if (bvqSavedDiff && BVQ_DIFF[bvqSavedDiff]) bvqDiffKey = bvqSavedDiff;
+                } catch (e) {}
+
+                // ---- Showmaster-Sprüche (mehr Text, mehr Show) ----
+                const BVQ_HOST = {
+                    good: ['Das sitzt!', 'Saubere Antwort!', 'Die Jury nickt anerkennend.', 'Bürowissen auf Abruf!',
+                           'Klasse – weiter so!', 'Genau so macht man das.'],
+                    bad: ['Knapp daneben.', 'Ups – die nächste Frage zählt.', 'Kopf hoch, Büro ist Geduldssport.',
+                          'Die Jury schweigt betreten.', 'Das war eine Falle, oder?'],
+                    timeout: ['Die Uhr war schneller.', 'Zeit abgelaufen – schade!', 'Zu lange überlegt.'],
+                    streak: ['Serie! Die Halle kocht.', 'Unaufhaltsam!', 'Das Publikum steht schon.'],
+                    last: ['Letzte Frage – alles oder nichts!', 'Jetzt zählt jede Antwort!']
+                };
+
+                // ---- Publikum: Gesichter aus der Büro-Welt (gleiche Twemoji-Optik wie auf der Map) ----
+                const BVQ_AUDIENCE_FACES = ['👨‍💻', '👩‍💼', '👨‍💼', '👷', '👨‍🦱', '👨‍🏫', '🧑‍💼',
+                                            '👩‍💻', '🧑‍🎓', '👩‍🏭', '🧔', '👩‍🔧', '👨‍🍳', '🧑‍🔬'];
+                const BVQ_CHEER_FACES = ['🙌', '🎉', '👏', '🤩', '🥳'];
+                const BVQ_CONFETTI_COLORS = ['#ffd54a', '#4a9fff', '#a855f7', '#22c55e', '#ff6b9d', '#ffffff', '#ffb020'];
+
+                // ---- Jury: 3 von 9 werden pro Runde gezogen (nie zweimal dieselbe Truppe) ----
                 const BVQ_JUDGES = [
                     { id: 'buerokratie', name: 'Richterin Bürokratie', ava: '👩‍⚖️',
-                      ok: ['Formfehlerfrei!', 'Aktenlage eindeutig.', 'Dem stimme ich zu.'],
-                      bad: ['Das war nichts.', 'Bitte erneut prüfen.', 'Formfehler!'],
-                      tip: ['Achte auf Wörter wie NICHT oder NUR.', 'Zwei Antworten klingen ähnlich – eine ist es nicht.'],
-                      verdictOk: 'Ich hätte es nicht besser formulieren können.',
-                      verdictBad: 'Wir sehen uns im Widerspruchsverfahren.' },
+                      ok: ['Formfehlerfrei!', 'Aktenlage eindeutig.', 'Dem stimme ich zu.', 'Ordnungsgemäß abgelegt.', 'Kein Einspruch.'],
+                      bad: ['Das war nichts.', 'Bitte erneut prüfen.', 'Formfehler!', 'Das kommt in die Akte.'],
+                      tip: ['Achte auf Wörter wie NICHT oder NUR.', 'Zwei Antworten klingen ähnlich – eine ist es nicht.', 'Prüfe zuerst die formale Richtigkeit.'],
+                      verdictOk: ['Ich hätte es nicht besser formulieren können.', 'Sauber dokumentiert. Weiter so.'],
+                      verdictBad: ['Wir sehen uns im Widerspruchsverfahren.', 'Bitte den Vorgang neu aufsetzen.'] },
                     { id: 'it', name: 'IT-Judge', ava: '🧑‍💻',
-                      ok: ['Sauber deployed.', 'Kein Bug gefunden.', 'Merge approved.'],
-                      bad: ['Stacktrace sagt: falsch.', 'Bitte neu kompilieren.', 'Rollback!'],
-                      tip: ['Lies die Frage so genau wie eine Fehlermeldung.', 'Meist ist die unspektakuläre Antwort richtig.'],
-                      verdictOk: 'Code Review bestanden, keine Findings.',
-                      verdictBad: 'Ich empfehle einen Neustart des Gehirns.' },
+                      ok: ['Sauber deployed.', 'Kein Bug gefunden.', 'Merge approved.', 'Läuft stabil.', 'Tests grün.'],
+                      bad: ['Stacktrace sagt: falsch.', 'Bitte neu kompilieren.', 'Rollback!', 'Reproduzierbar daneben.'],
+                      tip: ['Lies die Frage so genau wie eine Fehlermeldung.', 'Meist ist die unspektakuläre Antwort richtig.', 'Schließe erst die offensichtlich falschen aus.'],
+                      verdictOk: ['Code Review bestanden, keine Findings.', 'Deploy freigegeben.'],
+                      verdictBad: ['Ich empfehle einen Neustart des Gehirns.', 'Ticket an die Fachabteilung.'] },
                     { id: 'kaffee', name: 'Kaffee-Sommelier', ava: '🧑‍🍳',
-                      ok: ['Cremig, volle Punktzahl.', 'Wie ein perfekter Espresso.', 'Keine Bitterstoffe.'],
-                      bad: ['Verbrennt im Abgang.', 'Zu wässrig.', 'Das schmeckt nach Kanne von gestern.'],
-                      tip: ['Nicht raten – ausschließen.', 'Prüfe die Details, nicht den Klang.'],
-                      verdictOk: 'Ein runder Jahrgang. Ich bin beeindruckt.',
-                      verdictBad: 'Der Satz ist noch nicht durchgelaufen.' },
+                      ok: ['Cremig, volle Punktzahl.', 'Wie ein perfekter Espresso.', 'Keine Bitterstoffe.', 'Runde Sache.', 'Das hat Körper.'],
+                      bad: ['Verbrennt im Abgang.', 'Zu wässrig.', 'Das schmeckt nach Kanne von gestern.', 'Bitter. Sehr bitter.'],
+                      tip: ['Nicht raten – ausschließen.', 'Prüfe die Details, nicht den Klang.', 'Die einfache Antwort ist meist die frischeste.'],
+                      verdictOk: ['Ein runder Jahrgang. Ich bin beeindruckt.', 'Dafür gibt es einen zweiten Espresso.'],
+                      verdictBad: ['Der Satz ist noch nicht durchgelaufen.', 'Wir sollten das noch einmal aufbrühen.'] },
                     { id: 'hr', name: 'HR-Beauftragte', ava: '👩‍💼',
-                      ok: ['Vorbildlich.', 'Das notiere ich positiv.', 'Genau so im Leitfaden.'],
-                      bad: ['Das kommt in die Akte.', 'Bitte nachschulen.'],
-                      tip: ['Achte auf „immer“ und „nie“ – meist falsch.', 'Die längste Antwort ist selten die richtige.'],
-                      verdictOk: 'Sie sind eine Bereicherung für jede Abteilung.',
-                      verdictBad: 'Wir empfehlen ein Praktikum in der Poststelle.' },
+                      ok: ['Vorbildlich.', 'Das notiere ich positiv.', 'Genau so im Leitfaden.', 'Damit wären alle einverstanden.', 'Gute Personalentscheidung.'],
+                      bad: ['Das kommt in die Akte.', 'Bitte nachschulen.', 'Da fehlt die Unterschrift.', 'Nicht ganz leitlinienkonform.'],
+                      tip: ['Achte auf „immer“ und „nie“ – meist falsch.', 'Die längste Antwort ist selten die richtige.', 'Wer zu absolut formuliert, irrt oft.'],
+                      verdictOk: ['Sie sind eine Bereicherung für jede Abteilung.', 'Beförderung notiert.'],
+                      verdictBad: ['Wir empfehlen ein Praktikum in der Poststelle.', 'Bitte zum Feedbackgespräch vorbeikommen.'] },
                     { id: 'azubi', name: 'Der Praktikant', ava: '🧑‍🎓',
-                      ok: ['Ehrenwort, richtig!', 'Hab ich auch gedacht!', 'Sogar ich wusste das.'],
-                      bad: ['Ups. Selbst ich wusste das.', 'Peinlich für uns beide.'],
-                      tip: ['Ich würde die längste Antwort nehmen. Oder auch nicht.', 'Frag mich lieber nicht.'],
-                      verdictOk: 'Ich will auch mal so klug werden.',
-                      verdictBad: 'Immerhin sind wir zusammen schlecht.' }
+                      ok: ['Ehrenwort, richtig!', 'Hab ich auch gedacht!', 'Sogar ich wusste das.', 'Stark!', 'Notiere ich für die Prüfung.'],
+                      bad: ['Ups. Selbst ich wusste das.', 'Peinlich für uns beide.', 'Ich sag nichts dazu.', 'Das war mein erster Tag auch.'],
+                      tip: ['Ich würde die längste Antwort nehmen. Oder auch nicht.', 'Frag mich lieber nicht.', 'Ich rate auch nur.'],
+                      verdictOk: ['Ich will auch mal so klug werden.', 'Bitte nimm mich als Azubi!'],
+                      verdictBad: ['Immerhin sind wir zusammen schlecht.', 'Ich frage mal meinen Ausbilder.'] },
+                    { id: 'betriebsrat', name: 'Betriebsrat Bernd', ava: '🧔',
+                      ok: ['Mitbestimmung: ja!', 'Das sehen wir genauso.', 'Klare Zustimmung.', 'Gute Basis für die nächste Sitzung.', 'Einverstanden.'],
+                      bad: ['Da fehlt die Zustimmung.', 'Das müssen wir aushandeln.', 'Ich lege Einspruch ein.', 'So nicht, Kollege.'],
+                      tip: ['Denk an die Interessen aller – nicht nur an eine Antwort.', 'Wer alle mitnimmt, liegt meist richtig.'],
+                      verdictOk: ['Von der Belegschaft bestätigt.', 'Das tragen wir einstimmig mit.'],
+                      verdictBad: ['Wir fordern eine Nachverhandlung.', 'Das diskutieren wir in der nächsten Sitzung.'] },
+                    { id: 'wachdienst', name: 'Wachdienst Willi', ava: '🕵️',
+                      ok: ['Alles im grünen Bereich.', 'Kein Verdacht.', 'Kontrolle bestanden.', 'Sauber, kein Zutritt für Fehler.', 'Weitermachen.'],
+                      bad: ['Da stimmt was nicht.', 'Ich habe da etwas gesehen.', 'Ausweis bitte nochmal prüfen.', 'Verdächtig.'],
+                      tip: ['Trau der Antwort, die kontrollierbar ist.', 'Prüfe, was wirklich dasteht – nicht, was du erwartest.'],
+                      verdictOk: ['Sie kommen auf die Liste der Vertrauenspersonen.', 'Kein Sicherheitsrisiko feststellbar.'],
+                      verdictBad: ['Ich muss das melden.', 'Bitte einmal zum Pförtner.'] },
+                    { id: 'automat', name: 'Kaffee-Automat 3000', ava: '🤖',
+                      ok: ['BEEP. Korrekt.', 'Antwort akzeptiert. Kaffee wird ausgegeben.', 'System: zufrieden.', 'Punktzahl erhöht.', 'Datenbank sagt: richtig.'],
+                      bad: ['ERROR 404: Wissen nicht gefunden.', 'BEEP. Bitte Münze nachwerfen.', 'Antwort verweigert.', 'Systemneustart empfohlen.'],
+                      tip: ['01. Scanne die Antworten. 02. Wähle die plausibelste.', 'Meine Datenbank bevorzugt sachliche Antworten.'],
+                      verdictOk: ['INITIALISIERE: Bewunderung.', 'Sie sind kompatibel mit diesem Büro.'],
+                      verdictBad: ['WARTUNG. BITTE. WARTEN.', 'Bitte Bedienungsanleitung lesen.'] },
+                    { id: 'controlling', name: 'Controlling', ava: '📊',
+                      ok: ['Im Budget.', 'Kennzahl stimmt.', 'Das trägt zur Zielerreichung bei.', 'Effizient gelöst.', 'Quartalsziel: on track.'],
+                      bad: ['Budget überschritten.', 'Das passt nicht in die Planung.', 'Kennzahl negativ.', 'Bitte nachkalkulieren.'],
+                      tip: ['Die Antwort mit dem klarsten Zahlenbezug ist meist richtig.', 'Rechne kurz nach, bevor du klickst.'],
+                      verdictOk: ['Die Zahlen sprechen für Sie.', 'Wir nehmen Sie in den Quartalsbericht auf.'],
+                      verdictBad: ['Das landet im Risikobericht.', 'Wir streichen das aus der Prognose.'] }
                 ];
 
                 // ---- Hilfsfunktionen ----
@@ -29613,57 +29734,95 @@
                     try { return isLowSpecMap(); } catch (e) { return false; }
                 }
 
-                // ---- Ton (kleiner Synth, keine Assets) ----
-                let bvqAudioCtx = null;
-                let bvqMuted = false;
-                try { bvqMuted = localStorage.getItem('bv_quiz_mute') === '1'; } catch (e) {}
+                // ---- Text- und Bewegungs-Helfer ----
+                function bvqReducedMotion() {
+                    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+                }
 
-                function bvqAudio() {
-                    if (bvqMuted) return null;
-                    try {
-                        if (!bvqAudioCtx) {
-                            const Ctx = window.AudioContext || window.webkitAudioContext;
-                            if (!Ctx) return null;
-                            bvqAudioCtx = new Ctx();
-                        }
-                        if (bvqAudioCtx.state === 'suspended') bvqAudioCtx.resume();
-                        return bvqAudioCtx;
-                    } catch (e) { return null; }
+                function bvqEsc(text) {
+                    return String(text == null ? '' : text).replace(/[&<>"']/g, c =>
+                        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
                 }
-                function bvqTone(freq, dur, type, vol, endFreq) {
-                    const ctx = bvqAudio();
-                    if (!ctx) return;
-                    try {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = type || 'sine';
-                        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-                        if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + dur);
-                        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(vol || 0.06, ctx.currentTime + 0.012);
-                        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
-                        osc.connect(gain); gain.connect(ctx.destination);
-                        osc.start(); osc.stop(ctx.currentTime + dur + 0.02);
-                    } catch (e) {}
+
+                // Jury-Sprüche dürfen die Karte nicht sprengen: harte Kürzung an Wortgrenzen.
+                function bvqClampText(text, max) {
+                    const limit = max || 120;
+                    let str = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
+                    if (str.length <= limit) return str;
+                    let cut = str.slice(0, limit);
+                    const sp = cut.lastIndexOf(' ');
+                    if (sp > limit * 0.55) cut = cut.slice(0, sp);
+                    return cut.replace(/[,;:.\-–]$/, '') + '…';
                 }
-                function bvqSfx(kind) {
-                    switch (kind) {
-                        case 'click': bvqTone(520, 0.07, 'triangle', 0.05); break;
-                        case 'good': bvqTone(620, 0.10, 'sine', 0.07, 780); setTimeout(() => bvqTone(930, 0.16, 'sine', 0.06), 95); break;
-                        case 'bad': bvqTone(240, 0.22, 'sawtooth', 0.05, 130); break;
-                        case 'tick': bvqTone(1200, 0.035, 'square', 0.028); break;
-                        case 'joker': bvqTone(760, 0.09, 'triangle', 0.06, 1180); break;
-                        case 'start': bvqTone(420, 0.12, 'triangle', 0.07, 640); setTimeout(() => bvqTone(880, 0.22, 'sine', 0.06), 130); break;
-                        case 'finale': [0, 130, 260, 420].forEach((d, i) => setTimeout(() => bvqTone([523, 659, 784, 1046][i], 0.28, 'sine', 0.06), d)); break;
-                        default: break;
+
+                function bvqSetJudgeSay(card, text, max) {
+                    const say = card.querySelector('.bvq-judge-say');
+                    if (!say) return;
+                    const full = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
+                    say.textContent = bvqClampText(full, max || 104);
+                    say.title = full;
+                }
+
+                // Drei Jurymitglieder ziehen – nie dieselbe Truppe wie in der Runde davor.
+                let bvqLastJudgeIds = [];
+                function bvqPickJudges() {
+                    const pool = bvqShuffle(BVQ_JUDGES);
+                    const pick = pool.slice(0, 3);
+                    const sig = pick.map(j => j.id).sort().join('|');
+                    if (bvqLastJudgeIds.length && sig === bvqLastJudgeIds.join('|') && pool.length > 4) {
+                        pick[2] = pool[3];
                     }
+                    bvqLastJudgeIds = pick.map(j => j.id).sort();
+                    return pick;
                 }
-                function bvqUpdateSoundBtn() {
-                    const btn = bvqEl('bvq-sound');
-                    if (!btn) return;
-                    btn.textContent = bvqMuted ? '🔇' : '🔊';
-                    btn.classList.toggle('muted', bvqMuted);
-                    btn.title = bvqMuted ? 'Ton einschalten' : 'Ton ausschalten';
+
+                function bvqVerdict(judge, good) {
+                    return bvqPick([].concat(good ? judge.verdictOk : judge.verdictBad));
+                }
+
+                // ---- Publikum anziehen (Büro-Gesichter) ----
+                function bvqDressAudience(cheer) {
+                    const host = bvqEl('bvq-audience');
+                    if (!host) return;
+                    Array.prototype.forEach.call(host.children, (sp, i) => {
+                        if (!sp.dataset.seed) sp.dataset.seed = String(Math.floor(Math.random() * 5));
+                        const seed = Number(sp.dataset.seed) || 0;
+                        sp.textContent = cheer
+                            ? bvqPick(BVQ_CHEER_FACES)
+                            : BVQ_AUDIENCE_FACES[(i * 5 + seed * 3) % BVQ_AUDIENCE_FACES.length];
+                        sp.style.animationDelay = (-(i % 7) * 0.18).toFixed(2) + 's';
+                    });
+                    if (typeof parseEmojis === 'function') parseEmojis(host);
+                }
+
+                // ---- Konfetti (reines CSS/DOM, keine Assets) ----
+                function bvqConfetti(opts) {
+                    const layer = bvqEl('bvq-confetti');
+                    if (!layer || bvqReducedMotion()) return;
+                    const cfg = Object.assign({ count: 32, spread: 44, fall: 72, fromX: 50, fromY: 40 }, opts || {});
+                    if (bvqIsLowSpec()) cfg.count = Math.max(8, Math.round(cfg.count * 0.45));
+                    const frag = document.createDocumentFragment();
+                    for (let i = 0; i < cfg.count; i++) {
+                        const el = document.createElement('i');
+                        const dx = (Math.random() - 0.5) * 2 * cfg.spread;
+                        el.style.setProperty('--dx', dx.toFixed(1) + 'vw');
+                        el.style.setProperty('--dy', (cfg.fall + Math.random() * 40).toFixed(0) + 'vh');
+                        el.style.setProperty('--rot', (Math.random() * 900 - 450).toFixed(0) + 'deg');
+                        el.style.setProperty('--dur', (1000 + Math.random() * 900).toFixed(0) + 'ms');
+                        el.style.setProperty('--delay', (Math.random() * 200).toFixed(0) + 'ms');
+                        el.style.setProperty('--c', BVQ_CONFETTI_COLORS[i % BVQ_CONFETTI_COLORS.length]);
+                        el.style.left = (cfg.fromX + (Math.random() - 0.5) * 10).toFixed(1) + '%';
+                        el.style.top = (cfg.fromY + (Math.random() - 0.5) * 10).toFixed(1) + '%';
+                        frag.appendChild(el);
+                    }
+                    layer.appendChild(frag);
+                    const nodes = Array.prototype.slice.call(layer.children, -cfg.count);
+                    setTimeout(() => nodes.forEach(n => n.remove()), 2400);
+                }
+
+                function bvqClearConfetti() {
+                    const layer = bvqEl('bvq-confetti');
+                    if (layer) layer.innerHTML = '';
                 }
 
                 // ---- Jury rendern ----
@@ -29675,7 +29834,7 @@
                             '<span class="bvq-judge-ava">' + j.ava + '</span>' +
                             '<div class="bvq-judge-body">' +
                                 '<div class="bvq-judge-name">' + j.name + '</div>' +
-                                '<div class="bvq-judge-say">…</div>' +
+                                '<div class="bvq-judge-say" title="">…</div>' +
                             '</div>' +
                             '<span class="bvq-judge-score" style="display:none">0</span>' +
                         '</div>'
@@ -29700,7 +29859,8 @@
                         } else if (kind === 'tip') {
                             text = i === quizState.tipJudge ? (hintText || bvqPick(j.tip)) : bvqPick(j.ok);
                         }
-                        if (say) say.textContent = text;
+                        bvqSetJudgeSay(card, text, kind === 'tip' ? 118 : 96);
+                        if (!say) return;
                         card.classList.remove('good', 'bad', 'tip', 'react');
                         void card.offsetWidth;
                         if (kind === 'good') card.classList.add('good', 'react');
@@ -29720,9 +29880,13 @@
                     if (fill) fill.style.width = quizState.crowd + '%';
                     if (val) val.textContent = quizState.crowd + '%';
                     const aud = bvqEl('bvq-audience');
-                    if (aud && animate && !bvqIsLowSpec()) {
+                    if (aud && animate && !bvqReducedMotion()) {
                         aud.classList.add('cheer');
-                        setTimeout(() => aud.classList.remove('cheer'), 1200);
+                        bvqDressAudience(true);
+                        setTimeout(() => {
+                            aud.classList.remove('cheer');
+                            if (quizState) bvqDressAudience(false);
+                        }, 1200);
                     }
                 }
 
@@ -29745,22 +29909,24 @@
                 }
 
                 // ---- Start der Show ----
-                function startQuizScene(npc) {
+                function startQuizScene(npc, diffKey) {
                     if (bvqExitTimer) { clearTimeout(bvqExitTimer); bvqExitTimer = null; }
                     bvqExiting = false;
-                    const judgePool = bvqShuffle(BVQ_JUDGES);
+                    if (diffKey && BVQ_DIFF[diffKey]) bvqDiffKey = diffKey;
+                    const cfg = BVQ_DIFF[bvqDiffKey] || BVQ_DIFF.normal;
                     quizState = {
                         npc,
+                        diff: bvqDiffKey,
                         index: 0,
                         score: 0,
                         gold: 0,
                         streak: 0,
                         bestStreak: 0,
-                        crowd: 50,
+                        crowd: cfg.crowd,
                         answered: false,
-                        questions: prepareQuizQuestions(BVQ_TOTAL_QUESTIONS),
+                        questions: prepareQuizQuestions(cfg.count, bvqDiffKey),
                         lifelines: { fifty: 1, audience: 1, judge: 1 },
-                        judges: judgePool.slice(0, 3),
+                        judges: bvqPickJudges(),
                         judgeScore: [0, 0, 0],
                         tipJudge: Math.floor(Math.random() * 3),
                         timeLimit: 12
@@ -29781,35 +29947,77 @@
                         setTimeout(() => screen.classList.remove('quiz-starting'), 700);
                     }
 
-                    // Finale/Intro zurücksetzen
+                    // Finale / Intro / Übergang aufräumen
                     bvqEl('quiz-end')?.classList.remove('visible');
+                    bvqEl('bvq-exit')?.classList.remove('visible');
+                    bvqClearConfetti();
                     bvqSet('quiz-total', quizState.questions.length);
                     bvqSet('quiz-gold', '0');
                     bvqSet('quiz-current', '1');
-                    bvqSet('quiz-score', '0');
                     bvqRenderJudges();
-                    bvqSetCrowd(50, false);
-                    bvqUpdateSoundBtn();
+                    bvqDressAudience(false);
+                    bvqSetCrowd(cfg.crowd, false);
+                    bvqUpdateDiffChip();
                     bvqWireUi();
                     bvqUpdateLifelines();
                     bvqShowIntro();
                 }
 
-                // ---- Intro mit Countdown (überspringbar) ----
+                // ---- Schwierigkeits-Chip oben rechts ----
+                function bvqUpdateDiffChip() {
+                    const chip = bvqEl('bvq-diff');
+                    if (!chip) return;
+                    const cfg = BVQ_DIFF[bvqDiffKey] || BVQ_DIFF.normal;
+                    chip.innerHTML = '<span>' + cfg.icon + '</span> <b>' + cfg.label + '</b>';
+                    chip.classList.remove('diff-easy', 'diff-normal', 'diff-hard');
+                    chip.classList.add('diff-' + bvqDiffKey);
+                    chip.title = 'Stufe: ' + cfg.label + ' · ' + cfg.count + ' Fragen · Gold ×' + cfg.gold;
+                }
+
+                function bvqSelectDifficulty(key) {
+                    if (!BVQ_DIFF[key]) return;
+                    bvqDiffKey = key;
+                    try { localStorage.setItem('bv_quiz_diff', key); } catch (e) {}
+                    const cfg = BVQ_DIFF[key];
+                    if (quizState) {
+                        quizState.diff = key;
+                        quizState.questions = prepareQuizQuestions(cfg.count, key);
+                        quizState.crowd = cfg.crowd;
+                        bvqSet('quiz-total', quizState.questions.length);
+                        bvqSetCrowd(cfg.crowd, false);
+                    }
+                    bvqUpdateDiffChip();
+                    document.querySelectorAll('#bvq-intro-diff .bvq-diff-btn').forEach(btn => {
+                        btn.classList.toggle('sel', btn.dataset.diff === key);
+                    });
+                }
+
+                // ---- Intro: erst Stufe wählen, dann Countdown ----
                 function bvqShowIntro() {
                     const intro = bvqEl('bvq-intro');
                     if (!intro) { bvqBeginQuestions(); return; }
                     bvqSet('bvq-intro-ava', player.sprite || '🧑‍💼');
                     bvqSet('bvq-intro-name', player.name || 'Held');
-                    intro.classList.remove('leaving');
-                    intro.classList.add('visible');
-                    if (typeof parseEmojis === 'function') parseEmojis(intro);
-
-                    let n = 3;
+                    intro.classList.remove('leaving', 'counting');
+                    intro.classList.add('visible', 'choosing');
                     const countEl = bvqEl('bvq-intro-count');
-                    if (countEl) { countEl.textContent = n; countEl.classList.add('tick'); }
-                    bvqSfx('start');
+                    if (countEl) countEl.textContent = '';
+                    const hint = bvqEl('bvq-intro-hint');
+                    if (hint) hint.textContent = 'Stufe wählen – Leertaste startet mit der Auswahl';
+                    bvqSelectDifficulty(bvqDiffKey);
+                    if (typeof parseEmojis === 'function') parseEmojis(intro);
+                }
 
+                function bvqStartCountdown() {
+                    const intro = bvqEl('bvq-intro');
+                    if (!intro || !intro.classList.contains('visible') || intro.classList.contains('counting')) return;
+                    intro.classList.remove('choosing');
+                    intro.classList.add('counting');
+                    const hint = bvqEl('bvq-intro-hint');
+                    if (hint) hint.textContent = 'Leertaste überspringt den Countdown · ' + (BVQ_DIFF[bvqDiffKey] || BVQ_DIFF.normal).label;
+                    const countEl = bvqEl('bvq-intro-count');
+                    let n = 3;
+                    if (countEl) { countEl.textContent = n; countEl.classList.remove('tick'); void countEl.offsetWidth; countEl.classList.add('tick'); }
                     clearInterval(bvqIntroTimer);
                     bvqIntroTimer = setInterval(() => {
                         n--;
@@ -29818,13 +30026,11 @@
                                 countEl.textContent = n;
                                 countEl.classList.remove('tick'); void countEl.offsetWidth; countEl.classList.add('tick');
                             }
-                            bvqSfx('tick');
                         } else {
                             clearInterval(bvqIntroTimer);
                             bvqIntroTimer = null;
                             if (countEl) countEl.textContent = 'LOS!';
-                            bvqSfx('good');
-                            setTimeout(() => bvqSkipIntro(), 420);
+                            setTimeout(() => bvqSkipIntro(), 380);
                         }
                     }, 700);
                 }
@@ -29833,6 +30039,7 @@
                     if (bvqIntroTimer) { clearInterval(bvqIntroTimer); bvqIntroTimer = null; }
                     const intro = bvqEl('bvq-intro');
                     if (!intro || !intro.classList.contains('visible')) return;
+                    intro.classList.remove('choosing', 'counting');
                     intro.classList.add('leaving');
                     setTimeout(() => intro.classList.remove('visible', 'leaving'), 380);
                     bvqBeginQuestions();
@@ -29861,7 +30068,11 @@
                     bvqSet('bvq-value', (q.gold || 20) + ' 🪙');
                     bvqSet('quiz-question', q.q);
                     const fb = bvqEl('quiz-feedback');
-                    if (fb) fb.innerHTML = '';
+                    if (fb) {
+                        fb.innerHTML = (quizState.index === quizState.questions.length - 1)
+                            ? '<span class="bvq-fb-host">„' + bvqPick(BVQ_HOST.last) + '“ – Showmaster</span>'
+                            : '';
+                    }
                     bvqUpdateStreak();
 
                     // Fragekarte neu animieren
@@ -29889,7 +30100,6 @@
 
                     bvqUpdateLifelines();
                     startQuizTimer();
-                    bvqSfx('click');
                 }
 
                 function bvqUpdateStreak() {
@@ -29940,10 +30150,7 @@
                         if (secs !== lastSec) {
                             lastSec = secs;
                             if (num) num.textContent = secs;
-                            if (secs <= 3 && secs > 0) {
-                                if (row) row.classList.add('urgent');
-                                bvqSfx('tick');
-                            }
+                            if (secs <= 3 && secs > 0 && row) row.classList.add('urgent');
                         }
                         if (remain <= 0) {
                             stopQuizTimer();
@@ -29984,13 +30191,15 @@
                         quizState.gold += gained;
 
                         if (fb) {
+                            const hostLine = bvqPick(quizState.streak >= 3 ? BVQ_HOST.streak : BVQ_HOST.good);
                             fb.innerHTML = '<span class="bvq-fb-good">✅ Richtig! +' + gained + ' 🪙' +
                                 (bonus ? ' · Serien-Bonus +' + bonus : '') + '</span>' +
+                                '<span class="bvq-fb-host">„' + hostLine + '“ – Showmaster</span>' +
                                 (q.fact ? '<span class="bvq-fb-fact">' + q.fact + '</span>' : '');
                         }
-                        bvqSfx('good');
                         bvqFlashScreen();
                         bvqFloatGold(gained);
+                        bvqConfetti({ count: quizState.streak >= 3 ? 46 : 30, fromY: 42 });
                         bvqJudgeReact('good');
                         bvqSetCrowd(quizState.crowd + 9 + bonus / 5, true);
                         const chip = bvqEl('bvq-gold-chip');
@@ -30000,9 +30209,9 @@
                         if (fb) {
                             fb.innerHTML = '<span class="bvq-fb-bad">' +
                                 (index < 0 ? '⏰ Zeit abgelaufen!' : '❌ Falsch!') + '</span>' +
+                                '<span class="bvq-fb-host">„' + bvqPick(index < 0 ? BVQ_HOST.timeout : BVQ_HOST.bad) + '“ – Showmaster</span>' +
                                 (q.fact ? '<span class="bvq-fb-fact">' + q.fact + '</span>' : '');
                         }
-                        bvqSfx('bad');
                         bvqJudgeReact('bad');
                         bvqSetCrowd(quizState.crowd - 11, false);
                     }
@@ -30062,7 +30271,6 @@
 
                     quizState.lifelines[kind] = 0;
                     bvqUpdateLifelines();
-                    bvqSfx('joker');
                 }
 
                 // ---- Finale ----
@@ -30082,7 +30290,8 @@
 
                     bvqSet('quiz-end-icon', perfect ? '👑' : (quizState.score >= Math.ceil(total / 2) ? '🏆' : '📚'));
                     bvqSet('quiz-end-title', perfect ? 'PERFEKTE SHOW!' : (quizState.score >= Math.ceil(total / 2) ? 'Starke Show!' : 'Mutige Show!'));
-                    bvqSet('quiz-end-score', quizState.score + '/' + total + ' richtig' +
+                    const diffLabel = (BVQ_DIFF[quizState.diff] || BVQ_DIFF.normal).label;
+                    bvqSet('quiz-end-score', quizState.score + '/' + total + ' richtig · Stufe ' + diffLabel +
                         (quizState.bestStreak >= 3 ? ' · 🔥 beste Serie ' + quizState.bestStreak : ''));
                     bvqSet('quiz-end-reward', '+' + reward + ' 🪙');
 
@@ -30096,15 +30305,21 @@
                     const verdicts = bvqEl('bvq-finale-verdicts');
                     if (verdicts) {
                         const goodRun = quizState.score >= Math.ceil(total / 2);
-                        verdicts.innerHTML = quizState.judges.map(j =>
-                            '<div><span>' + j.ava + '</span><span><b>' + j.name + ':</b> ' +
-                            (goodRun ? j.verdictOk : j.verdictBad) + '</span></div>'
-                        ).join('') +
-                        (unused ? '<div><span>🎁</span><span><b>Joker-Bonus:</b> ' + unused + ' × ' + BVQ_LIFELINE_BONUS + ' 🪙 für nicht verbrauchte Joker</span></div>' : '');
+                        verdicts.innerHTML = quizState.judges.map(j => {
+                            const full = bvqVerdict(j, goodRun);
+                            return '<div title="' + bvqEsc(full) + '"><span>' + j.ava + '</span><span><b>' + j.name + ':</b> ' +
+                                bvqClampText(full, 92) + '</span></div>';
+                        }).join('') +
+                        (unused ? '<div><span>🎁</span><span><b>Joker-Bonus:</b> ' + unused + ' × ' + BVQ_LIFELINE_BONUS + ' 🪙 für nicht verbrauchte Joker</span></div>' : '') +
+                        '<div><span>🎚</span><span><b>Stufe:</b> ' + diffLabel + ' · ' + total + ' Fragen</span></div>';
                         if (typeof parseEmojis === 'function') parseEmojis(verdicts);
                     }
 
-                    bvqSfx('finale');
+                    if (perfect || quizState.score >= total - 1) {
+                        bvqConfetti({ count: 120, fromY: 26, spread: 54, fall: 78 });
+                    } else {
+                        bvqConfetti({ count: quizState.score >= Math.ceil(total / 2) ? 52 : 20, fromY: 32 });
+                    }
                     bvqSetCrowd(perfect ? 100 : quizState.crowd, true);
                     bvqEl('quiz-end')?.classList.add('visible');
                     if (typeof parseEmojis === 'function') parseEmojis(bvqEl('quiz-end'));
@@ -30124,6 +30339,10 @@
                     bvqEl('bvq-intro')?.classList.remove('visible', 'leaving');
                     const aud = bvqEl('bvq-audience');
                     if (aud) aud.classList.remove('cheer');
+                    bvqClearConfetti();
+                    bvqEl('bvq-exit')?.classList.remove('visible');
+                    const intro = bvqEl('bvq-intro');
+                    if (intro) intro.classList.remove('choosing', 'counting');
                 }
 
                 function exitQuizScene(manual = false) {
@@ -30131,20 +30350,46 @@
                     bvqExiting = true;
                     stopQuizTimer();
                     if (bvqIntroTimer) { clearInterval(bvqIntroTimer); bvqIntroTimer = null; }
-                    const screen = bvqEl('rpg-quiz-screen');
-                    if (screen) screen.classList.add('quiz-exiting');
                     if (bvqExitTimer) { clearTimeout(bvqExitTimer); bvqExitTimer = null; }
+
+                    const screen = bvqEl('rpg-quiz-screen');
+                    const reduced = bvqReducedMotion();
+                    const wasFinale = bvqEl('quiz-end')?.classList.contains('visible');
+
+                    // Kurze, weiche Abschieds-Inszenierung: Vorhang zu, Text, dann Map
+                    const sub = bvqEl('bvq-exit-sub');
+                    if (sub) {
+                        sub.textContent = manual
+                            ? 'Show abgebrochen – bis zur nächsten Runde!'
+                            : (wasFinale ? 'Danke fürs Mitspielen – bis zur nächsten Runde!' : 'Bis zur nächsten Runde!');
+                    }
+                    bvqEl('bvq-exit')?.classList.remove('visible');
+                    if (screen) {
+                        screen.classList.add('quiz-exiting');
+                        void screen.offsetWidth;
+                    }
+                    bvqEl('bvq-exit')?.classList.add('visible');
+                    bvqClearConfetti();
+
+                    const swapDelay = reduced ? 240 : 720;
                     bvqExitTimer = setTimeout(() => {
                         bvqExitTimer = null;
-                        bvqExiting = false;
                         resetQuizScene();
                         showScreen('rpg-game-screen');
+                        const gameScreen = bvqEl('rpg-game-screen');
+                        if (gameScreen && !reduced) {
+                            gameScreen.classList.remove('bvq-arrive');
+                            void gameScreen.offsetWidth;
+                            gameScreen.classList.add('bvq-arrive');
+                            setTimeout(() => gameScreen.classList.remove('bvq-arrive'), 600);
+                        }
                         gameState = 'MAP';
+                        bvqExiting = false;
                         startCameraLoop();
                         startMoveLoop();
                         checkNearbyInteractables();
                         if (manual) showMessage('Show beendet. Du kannst jederzeit wiederkommen!', 'Quiz-Kai', '🧠');
-                    }, 420);
+                    }, swapDelay);
                 }
 
                 // ---- UI-Verdrahtung (einmalig) ----
@@ -30157,27 +30402,41 @@
                         btn.addEventListener('click', () => bvqUseLifeline(btn.dataset.life));
                     });
 
-                    bvqEl('bvq-sound')?.addEventListener('click', () => {
-                        bvqMuted = !bvqMuted;
-                        try { localStorage.setItem('bv_quiz_mute', bvqMuted ? '1' : '0'); } catch (e) {}
-                        bvqUpdateSoundBtn();
-                        if (!bvqMuted) bvqSfx('click');
+                    // Stufenwahl im Intro
+                    document.querySelectorAll('#bvq-intro-diff .bvq-diff-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            bvqSelectDifficulty(btn.dataset.diff);
+                            bvqStartCountdown();
+                        });
                     });
 
-                    bvqEl('bvq-intro')?.addEventListener('click', bvqSkipIntro);
+                    bvqEl('bvq-intro')?.addEventListener('click', (e) => {
+                        if (e.target.closest('.bvq-diff-btn')) return;
+                        const intro = bvqEl('bvq-intro');
+                        if (intro && intro.classList.contains('choosing')) bvqStartCountdown();
+                        else bvqSkipIntro();
+                    });
+
                     bvqEl('bvq-again')?.addEventListener('click', () => {
                         bvqEl('quiz-end')?.classList.remove('visible');
-                        startQuizScene(quizState ? quizState.npc : null);
+                        startQuizScene(quizState ? quizState.npc : null, bvqDiffKey);
                     });
                     bvqEl('bvq-leave')?.addEventListener('click', () => exitQuizScene(false));
 
-                    // Tastatur: 1-4 antworten, Leertaste Intro überspringen, J = Joker
+                    // Tastatur: 1-4 antworten, Leertaste Intro, J = Joker, Esc = verlassen
                     document.addEventListener('keydown', (e) => {
                         if (gameState !== 'QUIZ' || bvqExiting) return;
+                        if (e.key === 'Escape') {
+                            e.preventDefault(); e.stopPropagation();
+                            exitQuizScene(true);
+                            return;
+                        }
                         const intro = bvqEl('bvq-intro');
                         if (intro && intro.classList.contains('visible') && (e.code === 'Space' || e.code === 'Enter')) {
                             e.preventDefault(); e.stopPropagation();
-                            bvqSkipIntro();
+                            if (intro.classList.contains('choosing')) bvqStartCountdown();
+                            else bvqSkipIntro();
                             return;
                         }
                         if (!quizState || quizState.answered) return;
@@ -55243,7 +55502,17 @@ body.bv-settings-particles-off .title-canvas-bg {
 #rpg-quiz-screen.active { display: block; }
 #rpg-quiz-screen * { box-sizing: border-box; }
 
-/* ---------------- Bühnenraum ---------------- */
+/* ---------------- Bühnenraum (Büro-Optik wie auf der Map) ---------------- */
+/* Wand mit Fensterteilungen + Sockelleiste – erinnert an die Büro-Räume der Map */
+.bvq-room::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 46%; pointer-events: none;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 118px, rgba(120,180,255,.10) 118px 121px),
+        repeating-linear-gradient(0deg, transparent 0 74px, rgba(120,180,255,.07) 74px 76px),
+        linear-gradient(180deg, rgba(20,38,70,.95), rgba(10,18,34,.35) 62%, transparent);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent); }
+.bvq-room::after { content: ''; position: absolute; left: 0; right: 0; top: 44%; height: 3px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(140,190,255,.28), rgba(140,190,255,.28), transparent); }
 .bvq-room { position: absolute; inset: 0; overflow: hidden; background:
     radial-gradient(ellipse 90% 60% at 50% 0%, #17264a 0%, #0a1022 45%, #05070f 100%); }
 .bvq-ceiling { position: absolute; top: 0; left: 0; right: 0; height: 58px; display: flex; justify-content: space-around; align-items: flex-start; padding: 0 6%; opacity: .9; }
@@ -55272,17 +55541,22 @@ body.bv-settings-particles-off .title-canvas-bg {
     animation: bvqHaze 7s ease-in-out infinite; }
 @keyframes bvqHaze { 50% { opacity: .8; } }
 
-.bvq-audience { position: absolute; left: 0; right: 0; bottom: 0; height: 78px; display: flex; align-items: flex-end;
-    justify-content: space-around; padding: 0 2%; pointer-events: none; }
-.bvq-audience span { display: block; width: 30px; height: 46px; border-radius: 16px 16px 4px 4px;
-    background: linear-gradient(180deg, #1b2a46, #0b1222);
-    box-shadow: inset 0 12px 0 rgba(120,170,255,.10);
+.bvq-audience { position: absolute; left: 0; right: 0; bottom: 0; height: 104px; display: flex; flex-wrap: wrap;
+    align-items: flex-end; align-content: flex-end; justify-content: space-around;
+    padding: 0 1.5% 2px; row-gap: 2px; pointer-events: none; }
+.bvq-audience span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+    font-size: 1.25rem; line-height: 1;
+    background: radial-gradient(circle at 50% 135%, rgba(90,150,255,.38), rgba(10,18,34,.94));
+    border: 1px solid rgba(120,180,255,.22); box-shadow: 0 6px 14px rgba(0,0,0,.5);
     animation: bvqBob 1.6s ease-in-out infinite; }
-.bvq-audience span:nth-child(2n) { animation-duration: 2.1s; height: 40px; }
-.bvq-audience span:nth-child(3n) { animation-duration: 1.3s; height: 52px; }
-.bvq-audience span:nth-child(5n) { animation-delay: -.5s; }
+.bvq-audience span img.emoji { width: 1em; height: 1em; margin: 0; }
+/* hintere Reihe (erste 10) etwas kleiner und dunkler */
+.bvq-audience span:nth-child(-n+10) { width: 28px; height: 28px; font-size: 1rem; opacity: .68; }
+.bvq-audience span:nth-child(3n) { animation-duration: 1.9s; }
+.bvq-audience span:nth-child(4n) { animation-duration: 1.35s; }
 @keyframes bvqBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-.bvq-audience.cheer span { animation-duration: .5s; background: linear-gradient(180deg, #2a4a7a, #12203a); }
+.bvq-audience.cheer span { animation-duration: .48s; border-color: rgba(255,212,94,.55);
+    box-shadow: 0 0 18px rgba(255,200,60,.45), 0 6px 14px rgba(0,0,0,.5); }
 
 .bvq-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0;
     background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.55), transparent 62%); }
@@ -55318,21 +55592,28 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bvq-chip-gold { border-color: rgba(250,204,21,.5); background: linear-gradient(135deg, rgba(250,204,21,.20), rgba(120,80,10,.22)); color: #ffe9a8; }
 .bvq-chip-gold.bump { animation: bvqGoldBump .55s cubic-bezier(.16,1,.3,1); }
 @keyframes bvqGoldBump { 0%,100% { transform: scale(1); } 40% { transform: scale(1.16); } }
-.bvq-sound { cursor: pointer; font-size: 1rem; padding: 5px 11px; }
-.bvq-sound.muted { opacity: .5; }
+.bvq-chip-diff { gap: 5px; }
+.bvq-chip-diff.diff-easy { border-color: rgba(74,222,128,.55); color: #b8f7cd;
+    background: linear-gradient(135deg, rgba(34,197,94,.20), rgba(10,50,30,.3)); }
+.bvq-chip-diff.diff-hard { border-color: rgba(248,113,113,.6); color: #ffc9c9;
+    background: linear-gradient(135deg, rgba(239,68,68,.22), rgba(60,10,14,.34)); }
 
 /* ---------------- Jury ---------------- */
 .bvq-judges { width: min(1080px, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.bvq-judge { position: relative; display: flex; align-items: center; gap: 9px; padding: 8px 11px; min-width: 0;
+.bvq-judge { position: relative; display: flex; align-items: flex-start; gap: 9px; padding: 8px 11px; min-width: 0;
+    min-height: 62px; overflow: hidden;
     border-radius: 14px; background: linear-gradient(150deg, rgba(28,44,78,.85), rgba(10,18,34,.9));
     border: 1px solid rgba(130,180,255,.20); box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
     transition: border-color .2s ease, transform .2s ease, background .2s ease; }
 .bvq-judge-ava { font-size: 1.5rem; line-height: 1; flex: 0 0 auto; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
-.bvq-judge-body { min-width: 0; }
+.bvq-judge-body { min-width: 0; flex: 1 1 auto; overflow: hidden; }
 .bvq-judge-name { font-family: 'VT323', monospace; font-size: 1rem; color: #cfe2ff; letter-spacing: .4px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bvq-judge-say { font-family: 'VT323', monospace; font-size: .92rem; color: rgba(200,220,255,.6); line-height: 1.15;
-    min-height: 1.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Sprüche höchstens zwei Zeilen – lange Texte werden abgeschnitten, nie überlaufen */
+.bvq-judge-say { font-family: 'VT323', monospace; font-size: .94rem; color: rgba(200,220,255,.62); line-height: 1.16;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    min-height: 2.32em; max-height: 2.32em;
+    overflow: hidden; overflow-wrap: anywhere; word-break: break-word; }
 .bvq-judge.good { border-color: rgba(74,222,128,.6); background: linear-gradient(150deg, rgba(22,70,44,.85), rgba(10,28,20,.9)); }
 .bvq-judge.bad { border-color: rgba(248,113,113,.55); background: linear-gradient(150deg, rgba(78,26,30,.85), rgba(30,10,14,.9)); }
 .bvq-judge.tip { border-color: rgba(168,85,247,.6); }
@@ -55437,6 +55718,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bvq-fb-bad { color: #ffa0a0; }
 .bvq-fb-tip { color: #d8b4fe; }
 .bvq-fb-fact { display: block; font-size: .82em; color: rgba(210,228,255,.75); margin-top: 3px; }
+.bvq-fb-host { display: block; font-size: .84em; color: rgba(255,232,170,.82); margin-top: 2px; }
 
 .bvq-float { position: absolute; right: 26px; top: 54px; z-index: 8; pointer-events: none;
     font-family: 'VT323', monospace; font-size: 1.7rem; color: #ffe9a8; text-shadow: 0 0 16px rgba(255,200,60,.8);
@@ -55516,6 +55798,66 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bvq-btn-primary { background: linear-gradient(150deg, #3b82f6, #7c3aed); border-color: rgba(160,200,255,.7); color: #fff;
     box-shadow: 0 10px 26px rgba(60,120,240,.4); }
 
+/* ---------------- Konfetti ---------------- */
+.bvq-confetti { position: absolute; inset: 0; z-index: 16; pointer-events: none; overflow: hidden; }
+.bvq-confetti i { position: absolute; width: 8px; height: 12px; border-radius: 2px; opacity: 0;
+    background: var(--c, #ffd54a); box-shadow: 0 0 8px rgba(255,255,255,.22);
+    animation: bvqConf var(--dur, 1500ms) cubic-bezier(.25,.6,.35,1) var(--delay, 0ms) forwards; }
+.bvq-confetti i:nth-child(3n) { width: 6px; height: 6px; border-radius: 50%; }
+.bvq-confetti i:nth-child(4n) { width: 11px; height: 5px; }
+.bvq-confetti i:nth-child(7n) { width: 5px; height: 9px; }
+@keyframes bvqConf {
+    0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translate3d(var(--dx, 10vw), var(--dy, 80vh), 0) rotate(var(--rot, 540deg)); }
+}
+
+/* ---------------- Verlassen-Übergang (Vorhang) ---------------- */
+.bvq-exit { position: absolute; inset: 0; z-index: 40; display: none; pointer-events: none; }
+.bvq-exit.visible { display: block; }
+.bvq-exit-bar { position: absolute; left: 0; right: 0; top: 0; height: 51%;
+    background: linear-gradient(180deg, #03060e, #0a1224); transform: translateY(-101%); }
+.bvq-exit-bar.bottom { top: auto; bottom: 0; background: linear-gradient(0deg, #03060e, #0a1224); transform: translateY(101%); }
+.bvq-exit.visible .bvq-exit-bar { animation: bvqWipeTop .42s cubic-bezier(.7,0,.28,1) forwards; }
+.bvq-exit.visible .bvq-exit-bar.bottom { animation: bvqWipeBottom .42s cubic-bezier(.7,0,.28,1) forwards; }
+@keyframes bvqWipeTop { to { transform: translateY(0); } }
+@keyframes bvqWipeBottom { to { transform: translateY(0); } }
+.bvq-exit-inner { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center;
+    text-align: center; opacity: 0; }
+.bvq-exit.visible .bvq-exit-inner { animation: bvqExitText .3s ease-out .28s forwards; }
+@keyframes bvqExitText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.bvq-exit-kicker { font-family: 'VT323', monospace; letter-spacing: 6px; text-transform: uppercase; font-size: 1rem;
+    color: rgba(160,195,240,.7); }
+.bvq-exit-title { font-family: 'Press Start 2P', monospace; font-size: clamp(15px, 2.6vw, 28px); color: #fff;
+    margin-top: 8px; text-shadow: 0 0 34px rgba(90,160,255,.8); }
+.bvq-exit-sub { font-family: 'VT323', monospace; font-size: 1.15rem; color: rgba(190,215,255,.78); margin-top: 10px;
+    max-width: 78vw; }
+/* Sanftes Ankommen zurück auf der Map */
+#rpg-game-screen.bvq-arrive { animation: bvqArrive .45s ease-out both; }
+@keyframes bvqArrive { from { opacity: 0; filter: brightness(1.35); } to { opacity: 1; filter: none; } }
+
+/* ---------------- Schwierigkeitswahl im Intro ---------------- */
+.bvq-intro-diff { margin: 20px auto 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.bvq-intro.choosing .bvq-intro-count { display: none; }
+.bvq-intro.counting .bvq-intro-diff { display: none; }
+.bvq-diff-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 10px 20px; border-radius: 14px; cursor: pointer; font-family: 'VT323', monospace;
+    color: #dfeaff; background: rgba(255,255,255,.06); border: 1px solid rgba(140,190,255,.3);
+    transition: transform .15s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease; }
+.bvq-diff-btn b { font-size: 1.3rem; letter-spacing: .5px; }
+.bvq-diff-btn i { font-style: normal; font-size: .9rem; color: rgba(185,210,245,.7); }
+.bvq-diff-btn:hover { transform: translateY(-3px); border-color: rgba(160,210,255,.8); background: rgba(90,160,255,.18); }
+.bvq-diff-btn.sel { border-color: #ffd45e; background: rgba(255,212,94,.12);
+    box-shadow: 0 0 0 2px rgba(255,212,94,.22), 0 10px 26px rgba(0,0,0,.4); }
+.bvq-diff-btn[data-diff="easy"].sel { border-color: #4ade80; background: rgba(74,222,128,.14); box-shadow: 0 0 0 2px rgba(74,222,128,.22); }
+.bvq-diff-btn[data-diff="hard"].sel { border-color: #f87171; background: rgba(248,113,113,.14); box-shadow: 0 0 0 2px rgba(248,113,113,.22); }
+
+/* ---------------- Map-Anklang: blaue Panel-Kanten wie die Dialoge auf der Karte ---------------- */
+.bvq-board { border: 2px solid rgba(74,159,255,.30); border-radius: 16px; }
+.bvq-ans { border: 2px solid rgba(74,159,255,.26); border-radius: 11px; }
+.bvq-ans:hover:not(:disabled) { border-color: rgba(74,159,255,.85); }
+.bvq-qcard .bvq-cat { border-width: 2px; }
+
 /* ---------------- Low-Spec ---------------- */
 #rpg-quiz-screen.bvq-lowspec .bvq-haze,
 #rpg-quiz-screen.bvq-lowspec .bvq-spot.s3,
@@ -55525,6 +55867,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 #rpg-quiz-screen.bvq-lowspec .bvq-flash { display: none; }
 #rpg-quiz-screen.bvq-lowspec .bvq-intro-rays,
 #rpg-quiz-screen.bvq-lowspec .bvq-finale-rays { display: none; }
+#rpg-quiz-screen.bvq-lowspec .bvq-room::before { opacity: .55; }
 
 /* ---------------- Reduced Motion ---------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -55537,6 +55880,9 @@ body.bv-settings-particles-off .title-canvas-bg {
     #rpg-quiz-screen .bvq-finale-icon,
     #rpg-quiz-screen .bvq-streak.on,
     #rpg-quiz-screen .bvq-timer-row.urgent .bvq-timer-num { animation: none !important; }
+    #rpg-quiz-screen .bvq-confetti { display: none !important; }
+    #rpg-quiz-screen .bvq-exit-bar { animation: none !important; }
+    #rpg-game-screen.bvq-arrive { animation: none !important; }
 }
 
 /* ---------------- Responsive ---------------- */
@@ -55545,8 +55891,14 @@ body.bv-settings-particles-off .title-canvas-bg {
     .bvq-judges { gap: 6px; }
     .bvq-judge { padding: 6px 8px; }
     .bvq-judge-name { font-size: .92rem; }
-    .bvq-judge-say { display: none; }
+    .bvq-judge-say { font-size: .82rem; -webkit-line-clamp: 1; min-height: 1.2em; max-height: 1.2em; }
+    .bvq-judge { min-height: 0; }
+    .bvq-intro-diff { gap: 7px; }
+    .bvq-diff-btn { padding: 8px 13px; }
+    .bvq-diff-btn b { font-size: 1.1rem; }
+    .bvq-diff-btn i { font-size: .8rem; }
     .bvq-answers { grid-template-columns: 1fr; gap: 8px; }
+    .bvq-audience { height: 76px; }
     .bvq-question { font-size: clamp(10px, 2.4vw, 13px); }
     .bvq-ans { font-size: 1.1rem; padding: 11px 12px; }
     .bvq-life .bvq-life-txt { display: none; }
