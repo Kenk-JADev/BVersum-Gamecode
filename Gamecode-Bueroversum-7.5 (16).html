@@ -55953,12 +55953,12 @@ body.bv-settings-particles-off .title-canvas-bg {
     background: radial-gradient(ellipse at 50% 40%, rgba(20,40,90,.92), rgba(3,6,14,.97)); }
 .bvq-intro.visible { display: flex; animation: bvqFadeIn .4s ease-out both; }
 .bvq-intro.leaving { animation: bvqFadeOut .4s ease-in forwards; }
-.bvq-intro-rays { position: absolute; width: 160vmax; height: 160vmax; pointer-events: none; opacity: .22;
+.bvq-intro-rays { position: absolute; width: 160vmax; height: 160vmax; pointer-events: none; opacity: .13;
     transform-origin: 50% 50%;
     background:
-        repeating-conic-gradient(from 0deg, transparent 0 10deg, rgba(140,200,255,.85) 10deg 12.2deg, transparent 12.2deg 22deg),
-        repeating-conic-gradient(from 11deg, transparent 0 24deg, rgba(190,150,255,.55) 24deg 25.4deg, transparent 25.4deg 46deg);
-    animation: bvqSpin 32s linear infinite; }
+        repeating-conic-gradient(from 0deg, transparent 0 15deg, rgba(140,200,255,.8) 15deg 16.6deg, transparent 16.6deg 32deg),
+        repeating-conic-gradient(from 16deg, transparent 0 44deg, rgba(190,150,255,.45) 44deg 45.2deg, transparent 45.2deg 88deg);
+    animation: bvqSpin 38s linear infinite; }
 @keyframes bvqSpin { to { transform: rotate(360deg); } }
 .bvq-intro-inner { position: relative; text-align: center; padding: 24px; }
 .bvq-intro-kicker { font-family: 'VT323', monospace; font-size: 1.1rem; letter-spacing: 5px; text-transform: uppercase;
@@ -55995,9 +55995,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 @keyframes bvqFinalePop { from { opacity: 0; transform: translateY(24px) scale(.95); } }
 .bvq-finale-rays { position: absolute; left: 50%; top: -60%; width: 120%; height: 160%; transform: translateX(-50%);
     background:
-        repeating-conic-gradient(from 90deg at 50% 50%, transparent 0 14deg, rgba(255,220,120,.20) 14deg 16.5deg, transparent 16.5deg 30deg),
-        repeating-conic-gradient(from 97deg at 50% 50%, transparent 0 30deg, rgba(255,240,190,.12) 30deg 31.5deg, transparent 31.5deg 60deg);
-    animation: bvqSpinCenter 26s linear infinite; pointer-events: none; }
+        repeating-conic-gradient(from 90deg at 50% 50%, transparent 0 21deg, rgba(255,220,120,.16) 21deg 23deg, transparent 23deg 44deg),
+        repeating-conic-gradient(from 101deg at 50% 50%, transparent 0 44deg, rgba(255,240,190,.09) 44deg 45.4deg, transparent 45.4deg 89deg);
+    animation: bvqSpinCenter 30s linear infinite; pointer-events: none; }
 @keyframes bvqSpinCenter {
     from { transform: translateX(-50%) rotate(0deg); }
     to   { transform: translateX(-50%) rotate(360deg); }
