@@ -42428,15 +42428,18 @@ function getUnlockedShopSkillCount(player) {
 
 function updateSkillUnlockStats(player) {
     player = player || ((typeof window.getBvPlayer === 'function') ? window.getBvPlayer() : window.player);
-    var root = document.querySelector('#bv-skillshop-main .bv-daily-deal-banner');
+    var root = document.querySelector('#bv-skillshop-main .bs-strip');
     if (!root) return;
 
     var count = getUnlockedShopSkillCount(player);
-    var desc = root.querySelector('.bv-daily-deal-desc');
-    var badge = root.querySelector('.bv-daily-deal-badge');
+    var pct = Math.round(count / Math.max(1, BV_SKILL_ITEMS.length) * 100);
+    var desc = root.querySelector('.bs-strip-desc');
+    var badge = root.querySelector('.bs-strip-badge');
+    var fill = root.querySelector('.bs-progress-fill');
 
     if (desc) desc.textContent = count + ' von ' + BV_SKILL_ITEMS.length + ' Skills freigeschaltet';
-    if (badge) badge.textContent = Math.round(count / Math.max(1, BV_SKILL_ITEMS.length) * 100) + '%';
+    if (badge) badge.textContent = pct + '%';
+    if (fill) fill.style.width = pct + '%';
 }
 
 function refreshRpgHudAndMenu() {
@@ -42448,18 +42451,18 @@ function refreshRpgHudAndMenu() {
    HILFSFUNKTIONEN
    ============================================================ */
 function setKeeperSpeech(containerId, text) {
-    var bubble = document.querySelector('#' + containerId + ' .bv-keeper-speech-bubble');
+    var bubble = document.querySelector('#' + containerId + ' .bs-bubble');
     if (!bubble) return;
-    bubble.textContent = text;
-    bubble.classList.remove('bv-speech-anim');
+    bubble.textContent = String(text == null ? '' : text).replace(/^"+|"+$/g, '');
+    bubble.classList.remove('bs-speak');
     void bubble.offsetWidth;
-    bubble.classList.add('bv-speech-anim');
+    bubble.classList.add('bs-speak');
 }
 
 function setGoldDisplay(containerId, amount) {
     // Alle Gold-Displays im Container aktualisieren (shop + skillshop) mit Countdown-Animation
     ['bv-shop-main', 'bv-skillshop-main'].forEach(function(cid) {
-        var el = document.querySelector('#' + cid + ' .bv-shop-gold-amount');
+        var el = document.querySelector('#' + cid + ' .bs-gold-amount');
         if (!el) return;
         var current = parseInt(el.textContent) || 0;
         var target = parseInt(amount) || 0;
@@ -42480,6 +42483,8 @@ function setGoldDisplay(containerId, amount) {
                 el.textContent = target;
                 el.classList.remove('bv-gold-counting');
                 el.classList.remove('bv-gold-drop');
+                el.classList.add('bs-gold-bump');
+                setTimeout(function () { el.classList.remove('bs-gold-bump'); }, 420);
                 void el.offsetWidth;
                 el.classList.add('bv-gold-drop');
             }
@@ -42490,10 +42495,10 @@ function setGoldDisplay(containerId, amount) {
 
 function showShopToast(containerId, message, type) {
     // entferne alte
-    var old = document.querySelector('#' + containerId + ' .bv-shop-toast');
+    var old = document.querySelector('#' + containerId + ' .bs-toast');
     if (old) old.remove();
     var t = document.createElement('div');
-    t.className = 'bv-shop-toast ' + (type || '');
+    t.className = 'bs-toast ' + (type || '');
     t.textContent = message;
     var container = document.getElementById(containerId);
     if (!container) return;
@@ -42538,8 +42543,8 @@ function getCardCenterInFxLayer(cardEl, layer) {
     var isSkillLayer = layer && layer.classList.contains('bv-skill-scroll-fx-layer-v773');
     // Skill-FX sollen genau beim Button/Status "Freigeschaltet/Erlernt" entstehen, nicht mitten in der Karte.
     var anchor = isSkillLayer
-        ? (cardEl.querySelector('.bv-unlock-btn') || cardEl.querySelector('.bv-skill-buy-area') || cardEl)
-        : (cardEl.querySelector('.bv-buy-btn') || cardEl);
+        ? (cardEl.querySelector('.bs-cta') || cardEl.querySelector('.bs-skill-action') || cardEl)
+        : (cardEl.querySelector('.bs-cta') || cardEl);
 
     var anchorRect = anchor.getBoundingClientRect();
     var layerRect = layer.getBoundingClientRect();
@@ -42576,7 +42581,7 @@ function spawnPurchaseParticles(cardEl) {
     var layer = getShopFxLayer(cardEl);
     if (!layer) return;
 
-    var isSkill = !!cardEl.closest('.bv-skillshop-container');
+    var isSkill = !!cardEl.closest('.bs-skillshop');
     var center = getCardCenterInFxLayer(cardEl, layer);
     var emojis = isSkill
         ? ['✦', '✧', '◆', '◇', '📚', '🔓']
@@ -42718,156 +42723,275 @@ window.renderShopItems = function() { renderNewShopUI(); };
 /* ============================================================
    NEUES SHOP UI BAUEN
    ============================================================ */
+/* ============================================================
+   BÜRO-SHOP v3.0 – Rendering (Shop + Skill-Shop)
+   ============================================================ */
+function bsIsLowSpec() {
+    try {
+        if (window.BV_LOW_END) return true;
+        if (typeof isLowSpecMap === 'function' && isLowSpecMap()) return true;
+    } catch (e) {}
+    return false;
+}
+
+function bsReducedMotion() {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+}
+
+function bsEscText(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+}
+
+function bsRoom(skillMode, low) {
+    var room = document.createElement('div');
+    room.className = 'bs-room';
+    var html = '';
+    if (!low) {
+        html += '<div class="bs-lamp l"></div><div class="bs-lamp r"></div>';
+        html += '<div class="bs-shelf"></div>';
+    }
+    room.innerHTML = html;
+    return room;
+}
+
+/* ---- Kopfzeile: Händler, Zustandswerte, Gold, Schließen ---- */
+function bsHeader(opts) {
+    var head = document.createElement('div');
+    head.className = 'bs-head';
+
+    var vitals = '';
+    if (opts.player) {
+        var p = opts.player;
+        vitals =
+            '<div class="bs-vitals">' +
+                '<span class="bs-vital hp">❤️ ' + (p.hp || 0) + '/' + (p.maxHp || 0) + '</span>' +
+                '<span class="bs-vital mp">☕ ' + (p.mp || 0) + '/' + (p.maxMp || 0) + '</span>' +
+                '<span class="bs-vital atk">⚔️ ' + (p.atk || 0) + '</span>' +
+                '<span class="bs-vital def">🛡️ ' + (p.def || 0) + '</span>' +
+            '</div>';
+    }
+
+    head.innerHTML =
+        '<div class="bs-keeper">' +
+            '<div class="bs-ava">' + opts.ava + '</div>' +
+            '<div class="bs-keeper-txt">' +
+                '<div class="bs-keeper-name">' + bsEscText(opts.name) + '</div>' +
+                '<div class="bs-bubble">' + bsEscText(opts.bubble) + '</div>' +
+            '</div>' +
+        '</div>' +
+        vitals +
+        '<div class="bs-wallet">' +
+            '<span class="bs-wallet-ico">💰</span>' +
+            '<span class="bs-gold-amount">' + (opts.gold || 0) + '</span>' +
+            '<span class="bs-wallet-lbl">G</span>' +
+        '</div>' +
+        '<button class="bs-close" type="button" title="Verlassen (Esc)">✕</button>';
+    return head;
+}
+
+/* ---- Tab-Leiste mit gleitendem Unterstrich ---- */
+function bsTabs(items, onPick) {
+    var wrap = document.createElement('div');
+    wrap.className = 'bs-tabs';
+    var tabs = [];
+    items.forEach(function (it, i) {
+        var tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'bs-tab' + (i === 0 ? ' on' : '');
+        tab.setAttribute('data-bs-tab', it.key);
+        tab.innerHTML = '<span class="bs-tab-ico">' + it.icon + '</span>' +
+            '<span class="bs-tab-lbl">' + it.label + '</span>' +
+            '<span class="bs-tab-count">' + it.count + '</span>';
+        wrap.appendChild(tab);
+        tabs.push(tab);
+    });
+    var ink = document.createElement('div');
+    ink.className = 'bs-ink';
+    wrap.appendChild(ink);
+
+    function moveInk(tab) {
+        if (!tab) return;
+        ink.style.width = tab.offsetWidth + 'px';
+        ink.style.setProperty('--x', tab.offsetLeft + 'px');
+    }
+    function activate(tab) {
+        tabs.forEach(function (t) { t.classList.toggle('on', t === tab); });
+        moveInk(tab);
+    }
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            if (tab.classList.contains('on')) return;
+            activate(tab);
+            onPick(tab.getAttribute('data-bs-tab'), tab);
+        });
+    });
+    // Nach dem Einbau (Layout vorhanden) Unterstrich setzen
+    requestAnimationFrame(function () { moveInk(tabs[0]); });
+    setTimeout(function () { moveInk(wrap.querySelector('.bs-tab.on')); }, 60);
+    wrap._bsActivate = activate;
+    wrap._bsMoveInk = moveInk;
+    return wrap;
+}
+
+/* ---- Info-Leiste (Tages-Deal / Skill-Fortschritt) ---- */
+function bsStripShop(deal) {
+    var el = document.createElement('div');
+    el.className = 'bs-strip';
+    el.id = 'bs-deal-strip';
+    el.innerHTML =
+        '<span class="bs-strip-ico">🔥</span>' +
+        '<div class="bs-strip-txt">' +
+            '<div class="bs-strip-title">TAGES-ANGEBOT</div>' +
+            '<div class="bs-strip-desc">' + bsEscText(deal.item.name) + ' — heute ' + deal.discount + '% günstiger</div>' +
+        '</div>' +
+        '<span class="bs-strip-badge">-' + deal.discount + '%</span>';
+    return el;
+}
+
+function bsStripSkills(player) {
+    var count = getUnlockedShopSkillCount(player);
+    var total = BV_SKILL_ITEMS.length;
+    var pct = Math.round(count / Math.max(1, total) * 100);
+    var el = document.createElement('div');
+    el.className = 'bs-strip skill';
+    el.innerHTML =
+        '<span class="bs-strip-ico">🧠</span>' +
+        '<div class="bs-strip-txt">' +
+            '<div class="bs-strip-title">ERLERNT</div>' +
+            '<div class="bs-strip-desc">' + count + ' von ' + total + ' Skills freigeschaltet</div>' +
+        '</div>' +
+        '<div class="bs-progress"><div class="bs-progress-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="bs-strip-badge">' + pct + '%</span>';
+    return el;
+}
+
+/* ---- Preis-Bausteine ---- */
+function bsPriceHtml(item) {
+    if (item.isDeal) {
+        return '<span class="bs-price"><s>' + item.basePrice + 'G</s> 🔥 ' + item.price + 'G</span>';
+    }
+    return '<span class="bs-price">💰 ' + item.price + 'G</span>';
+}
+
+function bsTagHtml(item) {
+    if (!item.tag) return '';
+    var cls = item.isDeal ? 'deal' : item.tag;
+    return '<span class="bs-tag ' + bsEscText(cls) + '">' + bsEscText(item.tagLabel || item.tag.toUpperCase()) + '</span>';
+}
+
+/* ============================================================
+   SHOP – Aufbau
+   ============================================================ */
 function renderNewShopUI() {
     var screen = document.getElementById('rpg-shop-screen');
     if (!screen) return;
-    screen.innerHTML = '';
-
     var player = (typeof window.getBvPlayer === 'function') ? window.getBvPlayer() : window.player;
-    if (!player) { screen.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center;">Fehler: Spieler nicht gefunden</div>'; return; }
-    var playerGold = (player.gold !== undefined) ? player.gold : 0;
+    screen.innerHTML = '';
+    if (!player) {
+        screen.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center;font-family:VT323,monospace;">Fehler: Spieler nicht gefunden</div>';
+        return;
+    }
+
+    var low = bsIsLowSpec();
+    screen.classList.toggle('bs-lowspec', low);
+    screen.classList.remove('bs-skillshop');
+    screen.appendChild(bsRoom('shop', low));
+
     var inventory = player.inventory || [];
     var dailyDeal = getDailyDeal();
+    var gold = (player.gold !== undefined) ? player.gold : 0;
 
-    // --- Hintergrund (v7.10.11: Low-End → nur statischer Gradient + Raster, keine Blur-Orbs/Dust) ---
-    if (typeof window.BVApplyLowEnd === 'function') window.BVApplyLowEnd(); // Modus ggf. aktualisieren (Settings können sich geändert haben)
-    var bg = document.createElement('div');
-    bg.className = 'bv-shop-bg';
-    var lowEnd = !!window.BV_LOW_END;
-    bg.innerHTML = '<div class="bv-shop-bg-gradient"></div>' +
-        '<div class="bv-shop-grid"></div>' +
-        (lowEnd ? '' :
-        '<div class="bv-shop-dust"></div>' +
-        '<div class="bv-shop-orb o1"></div>' +
-        '<div class="bv-shop-orb o2"></div>' +
-        '<div class="bv-shop-orb o3"></div>');
-    screen.appendChild(bg);
+    var shell = document.createElement('div');
+    shell.className = 'bs-shell';
+    shell.id = 'bv-shop-main';
 
-    // --- Container ---
-    var container = document.createElement('div');
-    container.className = 'bv-shop-container';
-    container.id = 'bv-shop-main';
-    screen.appendChild(container);
+    // Kopf
+    var head = bsHeader({
+        ava: '🛒', name: 'Händler Hans',
+        bubble: getRandomDialog(KEEPER_DIALOGS.shop.welcome),
+        gold: gold, player: player
+    });
+    shell.appendChild(head);
 
-    // --- Top Header ---
-    var header = document.createElement('div');
-    header.className = 'bv-shop-top-header';
-    header.innerHTML =
-        '<div class="bv-keeper-avatar-wrap">' +
-            '<div class="bv-keeper-avatar">🛒</div>' +
-            '<div class="bv-keeper-status-dot"></div>' +
-        '</div>' +
-        '<div class="bv-keeper-dialog-wrap">' +
-            '<div class="bv-keeper-name">Händler Hans</div>' +
-            '<div class="bv-keeper-speech-bubble">' + getRandomDialog(KEEPER_DIALOGS.shop.welcome) + '</div>' +
-        '</div>' +
-        '<div class="bv-shop-gold-panel">' +
-            '<div class="bv-shop-gold-badge">' +
-                '<span class="bv-shop-gold-icon">💰</span>' +
-                '<span class="bv-shop-gold-amount">' + playerGold + '</span>' +
-            '</div>' +
-            '<div class="bv-shop-gold-label">GOLD</div>' +
-        '</div>';
-    container.appendChild(header);
+    // Tabs
+    var healCount = BV_SHOP_ITEMS.filter(function (i) { return i.category === 'heal'; }).length;
+    var boostCount = BV_SHOP_ITEMS.filter(function (i) { return i.category === 'boost'; }).length;
+    var strip = bsStripShop(dailyDeal);
 
-    // --- Tab-Leiste ---
-    var healCount = BV_SHOP_ITEMS.filter(function(i) { return i.category === 'heal'; }).length;
-    var boostCount = BV_SHOP_ITEMS.filter(function(i) { return i.category === 'boost'; }).length;
-    var sellCount = inventory.length;
+    var scroll = document.createElement('div');
+    scroll.className = 'bs-scroll';
 
-    var tabs = document.createElement('div');
-    tabs.className = 'bv-shop-tabs';
-    tabs.innerHTML =
-        '<div class="bv-shop-tab bv-tab-active" data-bv-tab="all"><span class="bv-shop-tab-icon">🏪</span>Alle<span class="bv-shop-tab-count">' + BV_SHOP_ITEMS.length + '</span></div>' +
-        '<div class="bv-shop-tab" data-bv-tab="heal"><span class="bv-shop-tab-icon">❤️</span>Heilung<span class="bv-shop-tab-count">' + healCount + '</span></div>' +
-        '<div class="bv-shop-tab" data-bv-tab="boost"><span class="bv-shop-tab-icon">⚡</span>Boosts<span class="bv-shop-tab-count">' + boostCount + '</span></div>' +
-        '<div class="bv-shop-tab" data-bv-tab="sell"><span class="bv-shop-tab-icon">💸</span>Verkaufen<span class="bv-shop-tab-count">' + sellCount + '</span></div>';
-    container.appendChild(tabs);
-
-    // --- Body ---
-    var body = document.createElement('div');
-    body.className = 'bv-shop-body';
-    container.appendChild(body);
-
-    // --- Tages-Deal Banner (nur bei "all" Tab) ---
-    var dealBanner = document.createElement('div');
-    dealBanner.className = 'bv-daily-deal-banner';
-    dealBanner.id = 'bv-deal-banner';
-    dealBanner.innerHTML =
-        '<div class="bv-daily-deal-icon">🔥</div>' +
-        '<div class="bv-daily-deal-text">' +
-            '<div class="bv-daily-deal-title">TAGES-ANGEBOT</div>' +
-            '<div class="bv-daily-deal-desc">' + dailyDeal.item.name + ' — heute ' + dailyDeal.discount + '% günstiger!</div>' +
-        '</div>' +
-        '<div class="bv-daily-deal-badge">-' + dailyDeal.discount + '%</div>';
-    body.appendChild(dealBanner);
-
-    // --- Item-Grid ---
     var grid = document.createElement('div');
-    grid.className = 'bv-shop-items-grid';
+    grid.className = 'bs-grid';
     grid.id = 'bv-shop-item-grid';
-    body.appendChild(grid);
+    scroll.appendChild(grid);
 
-    // --- Footer ---
-    var footer = document.createElement('div');
-    footer.className = 'bv-shop-footer';
-    footer.innerHTML =
-        '<button class="bv-shop-close-btn" id="bv-shop-close-btn">🚪 Verlassen</button>' +
-        '<div class="bv-shop-hint">Klick auf ein Item<br>um es zu kaufen</div>';
-    container.appendChild(footer);
+    var tabs = bsTabs([
+        { key: 'all', icon: '🏪', label: 'Alle', count: BV_SHOP_ITEMS.length },
+        { key: 'heal', icon: '❤️', label: 'Heilung', count: healCount },
+        { key: 'boost', icon: '⚡', label: 'Boosts', count: boostCount },
+        { key: 'sell', icon: '💸', label: 'Verkaufen', count: inventory.length }
+    ], function (key) {
+        strip.style.display = (key === 'all') ? '' : 'none';
+        grid.classList.add('bs-fading');
+        setTimeout(function () {
+            if (key === 'sell') renderSellGrid(grid, player);
+            else renderShopGrid(grid, key, dailyDeal, player);
+            grid.classList.remove('bs-fading');
+            scroll.scrollTop = 0;
+        }, 130);
+    });
+    shell.appendChild(tabs);
 
-    // --- Render Items (initial: alle) ---
+    // Info-Leiste + Inhalt
+    shell.appendChild(strip);
+    shell.appendChild(scroll);
+
+    // Fußzeile
+    var foot = document.createElement('div');
+    foot.className = 'bs-foot';
+    foot.innerHTML =
+        '<span class="bs-foot-hint">Karte anklicken → Menge wählen → kaufen</span>' +
+        '<span class="bs-foot-key">Esc schließt</span>' +
+        '<button class="bs-leave" type="button">🚪 Verlassen</button>';
+    shell.appendChild(foot);
+
+    screen.appendChild(shell);
+
     renderShopGrid(grid, 'all', dailyDeal, player);
 
-    // --- Tab Events (with crossfade) ---
-    tabs.querySelectorAll('.bv-shop-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            tabs.querySelectorAll('.bv-shop-tab').forEach(function(t) { t.classList.remove('bv-tab-active'); });
-            tab.classList.add('bv-tab-active');
-            var category = tab.getAttribute('data-bv-tab');
-            // Deal-Banner nur bei "all"
-            dealBanner.style.display = (category === 'all') ? '' : 'none';
-            // Crossfade: fade out, swap content, fade in
-            grid.classList.add('bv-grid-fading');
-            grid.classList.remove('bv-grid-ready');
-            setTimeout(function() {
-                if (category === 'sell') {
-                    renderSellGrid(grid, player);
-                } else {
-                    renderShopGrid(grid, category, dailyDeal, player);
-                }
-                // Force reflow before adding ready class
-                void grid.offsetWidth;
-                grid.classList.remove('bv-grid-fading');
-                grid.classList.add('bv-grid-ready');
-            }, 160);
-        });
-    });
-
-    // --- Close Button ---
-    document.getElementById('bv-shop-close-btn').addEventListener('click', function() {
+    foot.querySelector('.bs-leave').addEventListener('click', function () {
         if (typeof window.closeShop === 'function') window.closeShop();
     });
-
-    // parseEmojis wird nicht aufgerufen - twemoji interferiert mit Card-Layout
+    head.querySelector('.bs-close').addEventListener('click', function () {
+        if (typeof window.closeShop === 'function') window.closeShop();
+    });
+    bsWireEscape(function () { if (typeof window.closeShop === 'function') window.closeShop(); });
 }
+
+/* ============================================================
+   SHOP – Item-Karten
+   ============================================================ */
+
 
 /* ============================================================
    SHOP GRID RENDERN (Kauf-Items)
    ============================================================ */
 function renderShopGrid(grid, category, dailyDeal, player) {
+    if (!grid) return;
+    grid.className = 'bs-grid';
+    if (grid.style) grid.style.removeProperty('grid-template-columns');
     grid.innerHTML = '';
-    // BUGFIX: Der Verkaufen-Tab setzt gridTemplateColumns auf 1fr; normale Shop-Tabs müssen wieder ins 2-Spalten-Grid zurück.
-    if (grid && grid.style) grid.style.removeProperty('grid-template-columns');
-    var playerGold = (player && player.gold) ? player.gold : 0;
+    var gold = (player && player.gold) ? player.gold : 0;
 
-    var items = BV_SHOP_ITEMS.filter(function(item) {
+    var items = BV_SHOP_ITEMS.filter(function (item) {
         return category === 'all' || item.category === category;
     });
 
-    // Tages-Deal-Item zuerst (nur bei "all")
     if (category === 'all') {
-        items = items.filter(function(i) { return i.id !== dailyDeal.item.id; });
+        items = items.filter(function (i) { return i.id !== dailyDeal.item.id; });
         items.unshift(Object.assign({}, dailyDeal.item, {
             price: dailyDeal.dealPrice,
             isDeal: true,
@@ -42877,54 +43001,50 @@ function renderShopGrid(grid, category, dailyDeal, player) {
         }));
     }
 
-    items.forEach(function(item) {
-        var canAfford = playerGold >= item.price;
+    items.forEach(function (item, idx) {
+        var canAfford = gold >= item.price;
         var card = document.createElement('div');
-        card.className = 'bv-shop-item-card' +
-            (canAfford ? '' : ' bv-card-cant-afford');
-
-        var rarityClass = item.rarity || 'common';
-        var tagHtml = item.tag ?
-            '<span class="bv-item-tag ' + item.tag + '">' + (item.tagLabel || item.tag.toUpperCase()) + '</span>' : '';
-
-        var statsHtml = (item.stats || []).map(function(s) {
-            return '<span class="bv-stat-badge ' + (s.cls || '') + '">' + s.label + ' <strong>' + s.value + '</strong></span>';
-        }).join('');
-
-        var priceHtml = item.isDeal ?
-            '<span class="bv-item-price"><span class="bv-price-old">' + item.basePrice + 'G</span> <span class="bv-price-deal">' + item.price + 'G</span></span>' :
-            '<span class="bv-item-price">💰 ' + item.price + 'G</span>';
-
+        card.className = 'bs-card' + (canAfford ? '' : ' bs-cant');
+        card.style.setProperty('--i', String(Math.min(idx, 12)));
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
         card.innerHTML =
-            '<div class="bv-item-rarity-bar ' + rarityClass + '"></div>' +
-            '<div class="bv-item-icon-wrap">' +
-                '<span class="bv-item-icon">' + item.icon + '</span>' +
-                tagHtml +
+            '<div class="bs-bar rarity-' + bsEscText(item.rarity || 'common') + '"></div>' +
+            '<div class="bs-card-top">' +
+                '<div class="bs-card-ico">' + item.icon + '</div>' +
+                '<div class="bs-card-head">' +
+                    '<div class="bs-card-name">' + bsEscText(item.name) + '</div>' +
+                    '<div class="bs-card-desc">' + bsEscText(item.desc) + '</div>' +
+                '</div>' +
+                bsTagHtml(item) +
             '</div>' +
-            '<div class="bv-item-name">' + item.name + '</div>' +
-            '<div class="bv-item-desc">' + item.desc + '</div>' +
-            '<div class="bv-item-stats">' + statsHtml + '</div>' +
-            '<div class="bv-item-buy-row">' +
-                priceHtml +
-                '<button class="bv-buy-btn">Kaufen →</button>' +
+            '<div class="bs-chips">' +
+                (item.stats || []).map(function (s) {
+                    return '<span class="bs-chip ' + bsEscText(s.cls || '') + '">' + s.label + ' <strong>' + s.value + '</strong></span>';
+                }).join('') +
+            '</div>' +
+            '<div class="bs-buy">' +
+                bsPriceHtml(item) +
+                '<button class="bs-cta buy" type="button">Kaufen</button>' +
             '</div>';
 
-        // v7.10.11: Item-Referenz am Karten-Element speichern — ermöglicht das
-        // In-Place-Affordability-Update nach dem Kauf (kein Grid-Rebuild nötig).
         card._bvItemRef = item;
-        // v7.10.11: EIN universeller Click-Handler statt if/else-Zweigen.
-        // handleBuyItem prüft den Gold-Stand selbst — so bleibt die Karte auch
-        // korrekt bedienbar, wenn sie nach dem Kauf ohne Rebuild auf
-        // "nicht bezahlbar" gestellt wird (updateShopAffordability()).
-        card.addEventListener('click', function(e) {
+        function act(e) {
+            if (e) e.preventDefault();
             handleBuyItem(item, card, player);
+        }
+        card.addEventListener('click', act);
+        card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') act(e);
         });
-
         grid.appendChild(card);
     });
-
-    if (false && typeof window.parseEmojis === 'function') window.parseEmojis(grid);
 }
+
+/* ============================================================
+   SHOP – Verkaufen
+   ============================================================ */
+
 
 /* ============================================================
    v7.10.11: Bezahlbarkeit der bestehenden Karten IN-PLACE aktualisieren.
@@ -42936,10 +43056,12 @@ function renderShopGrid(grid, category, dailyDeal, player) {
 function updateShopAffordability(grid, player) {
     if (!grid || !player) return;
     var playerGold = player.gold || 0;
-    grid.querySelectorAll('.bv-shop-item-card').forEach(function(card) {
+    grid.querySelectorAll('.bs-card').forEach(function(card) {
         var item = card._bvItemRef;
         if (!item) return; // z.B. Verkaufen-Karten ohne Item-Referenz überspringen
-        card.classList.toggle('bv-card-cant-afford', playerGold < (item.price || 0));
+        var poor = playerGold < (item.price || 0);
+        card.classList.toggle('bs-cant', poor);
+        card.classList.toggle('bv-card-cant-afford', poor);
     });
 }
 
@@ -42947,39 +43069,42 @@ function updateShopAffordability(grid, player) {
    VERKAUFEN-GRID RENDERN
    ============================================================ */
 function renderSellGrid(grid, player) {
-    grid.innerHTML = '';
+    if (!grid) return;
+    grid.className = 'bs-grid bs-sell-list';
     grid.style.gridTemplateColumns = '1fr';
+    grid.innerHTML = '';
     var inventory = (player && player.inventory) ? player.inventory : [];
 
-    if (inventory.length === 0) {
-        var empty = document.createElement('div');
-        empty.className = 'bv-sell-empty';
-        empty.innerHTML = '<div class="bv-sell-empty-icon">📭</div><div>Dein Inventar ist leer.<br>Kaufe erst Items!</div>';
-        grid.appendChild(empty);
+    if (!inventory.length) {
+        grid.innerHTML =
+            '<div class="bs-empty">' +
+                '<div class="bs-empty-ico">📭</div>' +
+                '<div>Dein Inventar ist leer.<br>Kaufe zuerst ein paar Items!</div>' +
+            '</div>';
         return;
     }
 
-    inventory.forEach(function(invItem, idx) {
+    inventory.forEach(function (invItem, idx) {
         var sellPrice = Math.max(1, Math.floor((invItem.price || 20) * 0.45));
-        var card = document.createElement('div');
-        card.className = 'bv-sell-item-card';
-        card.innerHTML =
-            '<span class="bv-sell-item-icon">' + (invItem.name.split(' ')[0] || '📦') + '</span>' +
-            '<div class="bv-sell-item-info">' +
-                '<span class="bv-sell-item-name">' + invItem.name + '</span>' +
-                '<span class="bv-sell-item-count">Anzahl: ' + (invItem.count || 1) + '</span>' +
-            '</div>' +
-            '<span class="bv-sell-price">💰 +' + sellPrice + 'G</span>';
-
-        card.addEventListener('click', function() {
-            handleSellItem(invItem, idx, sellPrice, player, card, grid);
+        var row = document.createElement('div');
+        row.className = 'bs-row';
+        row.style.setProperty('--i', String(Math.min(idx, 14)));
+        row.innerHTML =
+            '<span class="bs-row-ico">' + (invItem.name.split(' ')[0] || '📦') + '</span>' +
+            '<span class="bs-row-name">' + bsEscText(invItem.name) + '</span>' +
+            '<span class="bs-row-count">×' + (invItem.count || 1) + '</span>' +
+            '<span class="bs-row-price">💰 +' + sellPrice + 'G</span>';
+        row.addEventListener('click', function () {
+            handleSellItem(invItem, idx, sellPrice, player, row, grid);
         });
-
-        grid.appendChild(card);
+        grid.appendChild(row);
     });
-
-    if (false && typeof window.parseEmojis === 'function') window.parseEmojis(grid);
 }
+
+/* ============================================================
+   SKILL-SHOP – Aufbau
+   ============================================================ */
+
 
 /* ============================================================
    KAUF-LOGIK + MENGEN-AUSWAHL
@@ -43127,9 +43252,9 @@ function commitBuyItemQuantity(item, cardEl, player, qty) {
     var totalPrice = item.price * qty;
 
     if ((player.gold || 0) < totalPrice) {
-        cardEl.classList.remove('bv-cant-afford-shake');
+        cardEl.classList.remove('bs-shake');
         void cardEl.offsetWidth;
-        cardEl.classList.add('bv-cant-afford-shake');
+        cardEl.classList.add('bs-shake');
         setKeeperSpeech('bv-shop-main', getRandomDialog(KEEPER_DIALOGS.shop.cantBuy));
         showShopToast('bv-shop-main', '❌ Nicht genug Gold!', 'error');
         return;
@@ -43140,10 +43265,10 @@ function commitBuyItemQuantity(item, cardEl, player, qty) {
     setKeeperSpeech('bv-shop-main', '"' + qty + 'x ' + item.name + ' – sehr gute Wahl!"');
 
     // Partikel-Burst
-    cardEl.classList.remove('bv-purchase-burst');
-    requestAnimationFrame(function(){ cardEl.classList.add('bv-purchase-burst'); });
+    cardEl.classList.remove('bs-flash');
+    requestAnimationFrame(function(){ cardEl.classList.add('bs-flash'); });
     spawnPurchaseParticles(cardEl);
-    setTimeout(function() { cardEl.classList.remove('bv-purchase-burst'); }, 900);
+    setTimeout(function() { cardEl.classList.remove('bs-flash'); }, 900);
 
     // Floating Stat
     var statText = getBuyStatText(item, qty);
@@ -43196,9 +43321,9 @@ function handleBuyItem(item, cardEl, _playerIgnored) {
     var player = (typeof window.getBvPlayer === 'function') ? window.getBvPlayer() : window.player;
     if (!player) return;
     if (player.gold < item.price) {
-        cardEl.classList.remove('bv-cant-afford-shake');
+        cardEl.classList.remove('bs-shake');
         void cardEl.offsetWidth;
-        cardEl.classList.add('bv-cant-afford-shake');
+        cardEl.classList.add('bs-shake');
         setKeeperSpeech('bv-shop-main', getRandomDialog(KEEPER_DIALOGS.shop.cantBuy));
         showShopToast('bv-shop-main', '❌ Nicht genug Gold!', 'error');
         return;
@@ -43236,7 +43361,7 @@ function handleSellItem(invItem, idx, sellPrice, _playerIgnored, cardEl, grid) {
     setTimeout(function() {
         renderSellGrid(grid, player);
         // Tab-Count updaten
-        var sellTab = document.querySelector('#bv-shop-main .bv-shop-tab[data-bv-tab="sell"] .bv-shop-tab-count');
+        var sellTab = document.querySelector('#bv-shop-main .bs-tab[data-bs-tab="sell"] .bs-tab-count');
         if (sellTab) sellTab.textContent = player.inventory.length;
     }, 320);
 }
@@ -43268,139 +43393,95 @@ window.renderSkillShopItems = function() { renderNewSkillShopUI(); };
 function renderNewSkillShopUI() {
     var screen = document.getElementById('rpg-skillshop-screen');
     if (!screen) return;
-    screen.innerHTML = '';
-
     var player = (typeof window.getBvPlayer === 'function') ? window.getBvPlayer() : window.player;
-    if (!player) { screen.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center;">Fehler: Spieler nicht gefunden</div>'; return; }
-    var playerGold = (player.gold !== undefined) ? player.gold : 0;
+    screen.innerHTML = '';
+    if (!player) {
+        screen.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center;">Fehler: Spieler nicht gefunden</div>';
+        return;
+    }
     if (!player.unlockedSkills) player.unlockedSkills = [];
     normalizeSkillUnlocks(player);
 
-    // --- Hintergrund (v7.10.11: Low-End → nur statischer Gradient + Raster, keine Blur-Orbs/Dust) ---
-    if (typeof window.BVApplyLowEnd === 'function') window.BVApplyLowEnd(); // Modus ggf. aktualisieren
-    var bg = document.createElement('div');
-    bg.className = 'bv-shop-bg bv-skillshop-bg';
-    var lowEnd = !!window.BV_LOW_END;
-    bg.innerHTML = '<div class="bv-shop-bg-gradient"></div>' +
-        '<div class="bv-shop-grid"></div>' +
-        (lowEnd ? '' :
-        '<div class="bv-shop-dust"></div>' +
-        '<div class="bv-shop-orb o1"></div>' +
-        '<div class="bv-shop-orb o2"></div>' +
-        '<div class="bv-shop-orb o3"></div>');
-    screen.appendChild(bg);
+    var low = bsIsLowSpec();
+    screen.classList.toggle('bs-lowspec', low);
+    screen.classList.add('bs-skillshop');
+    screen.appendChild(bsRoom('skill', low));
 
-    // --- Container ---
-    var container = document.createElement('div');
-    container.className = 'bv-shop-container bv-skillshop-container';
-    container.id = 'bv-skillshop-main';
-    screen.appendChild(container);
+    var shell = document.createElement('div');
+    shell.className = 'bs-shell';
+    shell.id = 'bv-skillshop-main';
 
-    // --- Top Header ---
-    var header = document.createElement('div');
-    header.className = 'bv-shop-top-header';
-    header.innerHTML =
-        '<div class="bv-keeper-avatar-wrap">' +
-            '<div class="bv-keeper-avatar">📚</div>' +
-            '<div class="bv-keeper-status-dot"></div>' +
-        '</div>' +
-        '<div class="bv-keeper-dialog-wrap">' +
-            '<div class="bv-keeper-name">Meister Markus</div>' +
-            '<div class="bv-keeper-speech-bubble">' + getRandomDialog(KEEPER_DIALOGS.skillshop.welcome) + '</div>' +
-        '</div>' +
-        '<div class="bv-shop-gold-panel">' +
-            '<div class="bv-shop-gold-badge">' +
-                '<span class="bv-shop-gold-icon">💰</span>' +
-                '<span class="bv-shop-gold-amount">' + playerGold + '</span>' +
-            '</div>' +
-            '<div class="bv-shop-gold-label">GOLD</div>' +
-        '</div>';
-    container.appendChild(header);
+    shell.appendChild(bsHeader({
+        ava: '📚', name: 'Meister Markus',
+        bubble: getRandomDialog(KEEPER_DIALOGS.skillshop.welcome),
+        gold: (player.gold !== undefined) ? player.gold : 0,
+        player: player
+    }));
 
-    // --- Tab-Leiste (Skills nach Kategorie) ---
     var cats = [
-        { key: 'all',     icon: '📖', label: 'Alle' },
-        { key: 'attack',  icon: '⚔️', label: 'Angriff' },
+        { key: 'all', icon: '📖', label: 'Alle' },
+        { key: 'attack', icon: '⚔️', label: 'Angriff' },
         { key: 'special', icon: '🔮', label: 'Spezial' },
         { key: 'support', icon: '💚', label: 'Support' },
-        { key: 'ultimate',icon: '⭐', label: 'Ultimate' },
-    ];
-    var tabs = document.createElement('div');
-    tabs.className = 'bv-shop-tabs';
-    cats.forEach(function(c, i) {
-        var count = c.key === 'all' ? BV_SKILL_ITEMS.length :
-            BV_SKILL_ITEMS.filter(function(s) { return s.category === c.key; }).length;
-        var tab = document.createElement('div');
-        tab.className = 'bv-shop-tab' + (i === 0 ? ' bv-tab-active' : '');
-        tab.setAttribute('data-bv-skill-tab', c.key);
-        tab.innerHTML = '<span class="bv-shop-tab-icon">' + c.icon + '</span>' + c.label +
-            '<span class="bv-shop-tab-count">' + count + '</span>';
-        tabs.appendChild(tab);
-    });
-    container.appendChild(tabs);
-
-    // --- Body ---
-    var body = document.createElement('div');
-    body.className = 'bv-shop-body';
-    container.appendChild(body);
-
-    // Unlocked Stats Bar
-    var unlockedCount = getUnlockedShopSkillCount(player);
-    var statsBar = document.createElement('div');
-    statsBar.className = 'bv-daily-deal-banner';
-    statsBar.style.cssText = 'background:linear-gradient(90deg,rgba(168,85,247,0.14),transparent);border-bottom-color:rgba(168,85,247,0.2);';
-    statsBar.innerHTML =
-        '<div class="bv-daily-deal-icon">🧠</div>' +
-        '<div class="bv-daily-deal-text">' +
-            '<div class="bv-daily-deal-title" style="color:#d8b4fe">ERLERNTE SKILLS</div>' +
-            '<div class="bv-daily-deal-desc" style="color:rgba(220,180,255,0.8)">' + unlockedCount + ' von ' + BV_SKILL_ITEMS.length + ' Skills freigeschaltet</div>' +
-        '</div>' +
-        '<div class="bv-daily-deal-badge" style="background:linear-gradient(135deg,#7c3aed,#a855f7)">' +
-            Math.round(unlockedCount / BV_SKILL_ITEMS.length * 100) + '%' +
-        '</div>';
-    body.appendChild(statsBar);
-
-    // --- Skill-Grid ---
-    var skillGrid = document.createElement('div');
-    skillGrid.className = 'bv-skill-items-grid';
-    skillGrid.id = 'bv-skillshop-grid';
-    body.appendChild(skillGrid);
-
-    // --- Footer ---
-    var footer = document.createElement('div');
-    footer.className = 'bv-shop-footer';
-    footer.innerHTML =
-        '<button class="bv-shop-close-btn" id="bv-skillshop-close-btn" style="border-color:rgba(168,85,247,0.25);">🚪 Verlassen</button>' +
-        '<div class="bv-shop-hint">Skills freischalten<br>für Kampf-Vorteile</div>';
-    container.appendChild(footer);
-
-    // Initial rendern
-    renderSkillGrid(skillGrid, 'all', player);
-
-    // Tab Events (with crossfade)
-    tabs.querySelectorAll('.bv-shop-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            tabs.querySelectorAll('.bv-shop-tab').forEach(function(t) { t.classList.remove('bv-tab-active'); });
-            tab.classList.add('bv-tab-active');
-            // Crossfade: fade out, swap content, fade in
-            skillGrid.classList.add('bv-grid-fading');
-            skillGrid.classList.remove('bv-grid-ready');
-            setTimeout(function() {
-                renderSkillGrid(skillGrid, tab.getAttribute('data-bv-skill-tab'), player);
-                void skillGrid.offsetWidth;
-                skillGrid.classList.remove('bv-grid-fading');
-                skillGrid.classList.add('bv-grid-ready');
-            }, 160);
-        });
+        { key: 'ultimate', icon: '⭐', label: 'Ultimate' }
+    ].map(function (c) {
+        return {
+            key: c.key, icon: c.icon, label: c.label,
+            count: c.key === 'all' ? BV_SKILL_ITEMS.length
+                : BV_SKILL_ITEMS.filter(function (s) { return s.category === c.key; }).length
+        };
     });
 
-    // Close
-    document.getElementById('bv-skillshop-close-btn').addEventListener('click', function() {
+    var strip = bsStripSkills(player);
+    var scroll = document.createElement('div');
+    scroll.className = 'bs-scroll';
+    var grid = document.createElement('div');
+    grid.className = 'bs-list bv-skill-items-grid';
+    grid.id = 'bv-skillshop-grid';
+    scroll.appendChild(grid);
+
+    var tabs = bsTabs(cats, function (key) {
+        grid.classList.add('bs-fading');
+        setTimeout(function () {
+            renderSkillGrid(grid, key, player);
+            grid.classList.remove('bs-fading');
+            scroll.scrollTop = 0;
+        }, 130);
+    });
+    shell.appendChild(tabs);
+    shell.appendChild(strip);
+    shell.appendChild(scroll);
+
+    var foot = document.createElement('div');
+    foot.className = 'bs-foot';
+    foot.innerHTML =
+        '<span class="bs-foot-hint">Skill anklicken zum Freischalten · danach upgraden</span>' +
+        '<span class="bs-foot-key">Esc schließt</span>' +
+        '<button class="bs-leave" type="button">🚪 Verlassen</button>';
+    shell.appendChild(foot);
+
+    screen.appendChild(shell);
+
+    renderSkillGrid(grid, 'all', player);
+
+    foot.querySelector('.bs-leave').addEventListener('click', function () {
         if (typeof window.closeSkillShop === 'function') window.closeSkillShop();
+        else if (typeof window.closeShop === 'function') window.closeShop();
     });
-
-    if (false && typeof window.parseEmojis === 'function') window.parseEmojis(screen);
+    shell.querySelector('.bs-close').addEventListener('click', function () {
+        if (typeof window.closeSkillShop === 'function') window.closeSkillShop();
+        else if (typeof window.closeShop === 'function') window.closeShop();
+    });
+    bsWireEscape(function () {
+        if (typeof window.closeSkillShop === 'function') window.closeSkillShop();
+        else if (typeof window.closeShop === 'function') window.closeShop();
+    });
 }
+
+/* ============================================================
+   SKILL-SHOP – Skill-Karten
+   ============================================================ */
+
 
 /* ============================================================
    SKILL-UPGRADE SYSTEM
@@ -43456,74 +43537,93 @@ function markSkillCardUpgraded(cardEl) {
    SKILL-GRID RENDERN
    ============================================================ */
 function renderSkillGrid(grid, category, player) {
+    if (!grid) return;
+    grid.className = 'bs-list bv-skill-items-grid';
     grid.innerHTML = '';
-    var playerGold = (player && player.gold) ? player.gold : 0;
+    var gold = (player && player.gold) ? player.gold : 0;
     normalizeSkillUnlocks(player);
     ensureSkillLevels(player);
     var unlocked = (player && player.unlockedSkills) ? player.unlockedSkills : [];
+    var maxLevel = (typeof BV_SKILL_MAX_LEVEL !== 'undefined') ? BV_SKILL_MAX_LEVEL : 5;
 
-    var skills = BV_SKILL_ITEMS.filter(function(s) {
+    var skills = BV_SKILL_ITEMS.filter(function (s) {
         return category === 'all' || s.category === category;
     });
 
-    skills.forEach(function(skill) {
-        var isOwned = unlocked.includes(skill.id);
-        var skillLevel = isOwned ? getSkillLevel(player, skill.id) : 0;
-        var isMaxLevel = skillLevel >= BV_SKILL_MAX_LEVEL;
-        var upgradeCost = isOwned && !isMaxLevel ? getSkillUpgradeCost(skill, skillLevel) : 0;
-        var canAfford = playerGold >= (isOwned ? upgradeCost : skill.price);
+    skills.forEach(function (skill, idx) {
+        var isOwned = unlocked.indexOf(skill.id) !== -1;
+        var level = isOwned ? getSkillLevel(player, skill.id) : 0;
+        var isMax = isOwned && level >= maxLevel;
+        var cost = isOwned ? (isMax ? 0 : getSkillUpgradeCost(skill, level)) : skill.price;
+        var canAfford = gold >= cost;
 
         var card = document.createElement('div');
-        card.className = 'bv-skill-card' +
-            (isOwned ? ' bv-skill-owned' : (canAfford ? '' : ' bv-skill-cant-afford')) +
-            (isOwned && !isMaxLevel ? ' bv-skill-upgradable' : '') +
-            (isMaxLevel ? ' bv-skill-maxed' : '') +
-            (isOwned && !canAfford && !isMaxLevel ? ' bv-skill-cant-afford' : '');
+        card.className = 'bs-skill' +
+            (isOwned ? ' owned' : (canAfford ? '' : ' locked')) +
+            (isMax ? ' maxed' : '');
+        card.style.setProperty('--i', String(Math.min(idx, 14)));
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
 
-        var statsHtml = (skill.stats || []).map(function(s) {
-            return '<span class="bv-skill-stat ' + (s.cls || '') + '">' + s.label + ' <strong>' + s.value + '</strong></span>';
-        }).join('');
+        var pips = '';
         if (isOwned) {
-            statsHtml = '<span class="bv-skill-stat level">⭐ Lv <strong>' + skillLevel + '/' + BV_SKILL_MAX_LEVEL + '</strong></span>' + statsHtml;
-            if (!isMaxLevel) statsHtml += '<span class="bv-skill-stat upgrade">⬆️ <strong>' + getSkillUpgradeText(skill, skillLevel) + '</strong></span>';
+            pips = '<span class="bs-pips">';
+            for (var l = 1; l <= maxLevel; l++) pips += '<i class="' + (l <= level ? 'on' : '') + '"></i>';
+            pips += '</span>';
         }
 
-        var typeBadge = '<span class="bv-item-tag ' + (skill.category || 'attack') + '" style="font-size:0.6rem;padding:3px 8px;">' + (skill.typeLabel || 'SKILL') + '</span>';
+        var stats = (skill.stats || []).map(function (s) {
+            return '<span class="bs-chip">' + s.label + ' <strong>' + s.value + '</strong></span>';
+        }).join('');
 
-        var btnHtml = isOwned ?
-            (isMaxLevel ? '<button class="bv-unlock-btn">🏆 MAX</button>' : '<button class="bv-unlock-btn upgrade">⬆️ Upgrade</button>') :
-            '<button class="bv-unlock-btn">🔓 Freischalten</button>';
+        var cta = isOwned
+            ? (isMax ? '<button class="bs-cta max" type="button">MAX</button>'
+                     : '<button class="bs-cta upgrade" type="button">⬆ Upgrade</button>')
+            : '<button class="bs-cta buy" type="button">Freischalten</button>';
 
-        var priceHtml = isOwned ?
-            (isMaxLevel ? '<span class="bv-skill-price" style="color:#44ff88;">✓ Lv MAX</span>' : '<span class="bv-skill-price">💰 ' + upgradeCost + 'G</span>') :
-            '<span class="bv-skill-price">💰 ' + skill.price + 'G</span>';
+        var price = isOwned
+            ? (isMax ? '<span class="bs-price" style="color:#9cffc2">✓ MAX</span>' : '<span class="bs-price">💰 ' + cost + 'G</span>')
+            : '<span class="bs-price">💰 ' + cost + 'G</span>';
 
         card.innerHTML =
-            '<div class="bv-skill-icon-wrap"><span>' + skill.icon + '</span></div>' +
-            '<div class="bv-skill-info">' +
-                '<div class="bv-skill-name">' + skill.name + ' ' + typeBadge + '</div>' +
-                '<div class="bv-skill-desc">' + skill.desc + '</div>' +
-                '<div class="bv-skill-stat-row">' + statsHtml + '</div>' +
+            '<div class="bs-skill-ico">' + skill.icon + '</div>' +
+            '<div class="bs-skill-main">' +
+                '<div class="bs-skill-name">' +
+                    '<span>' + bsEscText(skill.name) + '</span>' +
+                    '<span class="bs-tag ' + bsEscText(skill.category || 'attack') + '">' + bsEscText(skill.typeLabel || 'SKILL') + '</span>' +
+                '</div>' +
+                '<div class="bs-skill-desc">' + bsEscText(skill.desc) + '</div>' +
+                '<div class="bs-skill-meta">' + stats + (pips ? ' ' + pips : '') + '</div>' +
             '</div>' +
-            '<div class="bv-skill-buy-area">' +
-                priceHtml +
-                btnHtml +
-            '</div>';
+            '<div class="bs-skill-action">' + price + cta + '</div>';
 
-        if (!isOwned) {
-            card.addEventListener('click', function() {
-                handleBuySkill(skill, card, player, grid, category);
-            });
-        } else if (!isMaxLevel) {
-            card.addEventListener('click', function() {
-                handleUpgradeSkill(skill, card, player, grid, category);
-            });
+        function act(e) {
+            if (e) e.preventDefault();
+            if (!isOwned) handleBuySkill(skill, card, player, grid, category);
+            else if (!isMax) handleUpgradeSkill(skill, card, player, grid, category);
         }
-
+        card.addEventListener('click', act);
+        card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') act(e);
+        });
         grid.appendChild(card);
     });
+}
 
-    if (false && typeof window.parseEmojis === 'function') window.parseEmojis(grid);
+
+/* ---- Esc schließt den Shop (einmalige Verdrahtung) ---- */
+var bsEscWired = false;
+function bsWireEscape(closeFn) {
+    if (bsEscWired) { bsEscWired = closeFn; return; }
+    bsEscWired = closeFn;
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        if (typeof gameState !== 'undefined' && gameState !== 'SHOP' && gameState !== 'SKILLSHOP') return;
+        if (document.querySelector('.bv-qty-overlay')) return; // Mengen-Dialog hat Vorrang
+        e.preventDefault();
+        var fn = bsEscWired;
+        if (typeof fn === 'function') fn();
+    }, true);
 }
 
 /* ============================================================
@@ -43541,12 +43641,12 @@ function handleBuySkill(skill, cardEl, _playerIgnored, grid, category) {
     }
 
     if (player.gold < skill.price) {
-        cardEl.classList.remove('bv-skill-shake');
+        cardEl.classList.remove('bs-shake');
         void cardEl.offsetWidth;
-        cardEl.classList.add('bv-skill-shake');
+        cardEl.classList.add('bs-shake');
         setKeeperSpeech('bv-skillshop-main', getRandomDialog(KEEPER_DIALOGS.skillshop.cantBuy));
         showShopToast('bv-skillshop-main', '❌ Nicht genug Gold!', 'error');
-        setTimeout(function() { cardEl.classList.remove('bv-skill-shake'); }, 450);
+        setTimeout(function() { cardEl.classList.remove('bs-shake'); }, 450);
         return;
     }
 
@@ -43560,8 +43660,8 @@ function handleBuySkill(skill, cardEl, _playerIgnored, grid, category) {
     // auch bevor das Grid nachanimiert neu gerendert wird.
     cardEl.classList.remove('bv-skill-cant-afford');
     cardEl.classList.add('bv-skill-owned');
-    var priceEl = cardEl.querySelector('.bv-skill-price');
-    var btnEl = cardEl.querySelector('.bv-unlock-btn');
+    var priceEl = cardEl.querySelector('.bs-price');
+    var btnEl = cardEl.querySelector('.bs-cta');
     if (priceEl) priceEl.textContent = '✓ Gelernt';
     if (btnEl) btnEl.textContent = '✓ Erlernt';
 
@@ -43622,12 +43722,12 @@ function handleUpgradeSkill(skill, cardEl, _playerIgnored, grid, category) {
 
     var cost = getSkillUpgradeCost(skill, level);
     if ((player.gold || 0) < cost) {
-        cardEl.classList.remove('bv-skill-shake');
+        cardEl.classList.remove('bs-shake');
         void cardEl.offsetWidth;
-        cardEl.classList.add('bv-skill-shake');
+        cardEl.classList.add('bs-shake');
         setKeeperSpeech('bv-skillshop-main', '"Für dieses Upgrade brauchst du mehr Gold."');
         showShopToast('bv-skillshop-main', '❌ Nicht genug Gold für Upgrade!', 'error');
-        setTimeout(function() { cardEl.classList.remove('bv-skill-shake'); }, 450);
+        setTimeout(function() { cardEl.classList.remove('bs-shake'); }, 450);
         return;
     }
 
@@ -43657,10 +43757,10 @@ var _origCloseShop = window.closeShop;
 window.closeShop = function() {
     // Exit-Animation: Container shrink/fade before closing
     var container = document.getElementById('bv-shop-main');
-    if (container && !container.classList.contains('bv-exiting')) {
-        container.classList.add('bv-exiting');
+    if (container && !container.classList.contains('bs-exiting')) {
+        container.classList.add('bs-exiting');
         setTimeout(function() {
-            container.classList.remove('bv-exiting');
+            container.classList.remove('bs-exiting');
             if (typeof _origCloseShop === 'function') {
                 _origCloseShop.apply(this, arguments);
             } else {
@@ -43711,10 +43811,10 @@ var _origCloseSkillShop = window.closeSkillShop;
 window.closeSkillShop = function() {
     // Exit-Animation: Container shrink/fade before closing
     var container = document.getElementById('bv-skillshop-main');
-    if (container && !container.classList.contains('bv-exiting')) {
-        container.classList.add('bv-exiting');
+    if (container && !container.classList.contains('bs-exiting')) {
+        container.classList.add('bs-exiting');
         setTimeout(function() {
-            container.classList.remove('bv-exiting');
+            container.classList.remove('bs-exiting');
             if (typeof _origCloseSkillShop === 'function') {
                 _origCloseSkillShop.apply(this, arguments);
             } else {
@@ -56180,5 +56280,349 @@ body.bv-settings-particles-off .title-canvas-bg {
     .bvq-ans { padding: 9px 11px; }
     .bvq-audience { display: none; }
     .bvq-stage { padding-bottom: 20px; }
+}
+</style>
+
+<style>
+/* ============================================================
+   BÜRO-SHOP v3.0 – komplett neues UI (Shop + Skill-Shop)
+   Nur transform/opacity-Animationen. Low-Spec: #rpg-shop-screen.bs-lowspec
+   Reduced Motion: @media (prefers-reduced-motion: reduce)
+   ============================================================ */
+
+#rpg-shop-screen, #rpg-skillshop-screen {
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    padding: 8px !important;
+}
+
+/* ---------------- Raum / Hintergrund ---------------- */
+.bs-room { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, #1b3566 0%, #0a1224 55%, #060a14 100%); }
+.bs-room::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 34%;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 96px, rgba(120,180,255,.07) 96px 98px),
+        linear-gradient(180deg, rgba(30,55,105,.55), transparent);
+    mask-image: linear-gradient(to bottom, #000 55%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent); }
+.bs-room::after { content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 55% at 50% 110%, rgba(74,159,255,.14), transparent 62%); }
+.bs-shelf { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; opacity: .5;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 74px, rgba(140,190,255,.14) 74px 76px),
+        linear-gradient(0deg, rgba(10,20,40,.9), transparent); }
+.bs-lamp { position: absolute; top: -6%; width: 34vw; height: 70%; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0%, rgba(140,200,255,.20), transparent 62%); filter: blur(8px);
+    animation: bsSway 11s ease-in-out infinite; }
+.bs-lamp.l { left: -6%; }
+.bs-lamp.r { right: -6%; animation-direction: reverse; animation-duration: 13s; }
+.bs-skillshop .bs-room::after { background: radial-gradient(ellipse 70% 55% at 50% 110%, rgba(168,85,247,.16), transparent 62%); }
+
+/* ---------------- Shell ---------------- */
+.bs-shell, .bs-shell *, .bs-room, .bs-toast { box-sizing: border-box; }
+.bs-shell { position: relative; z-index: 2; display: flex; flex-direction: column; max-height: 100%;
+    width: min(880px, 100%); height: min(100%, 620px); min-height: 0;
+    border-radius: 18px; overflow: hidden;
+    background: linear-gradient(165deg, rgba(16,27,52,.97), rgba(7,12,25,.99));
+    border: 1.5px solid rgba(74,159,255,.32);
+    box-shadow: 0 24px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.07);
+    animation: bsShellIn .34s cubic-bezier(.16,1,.3,1) both; }
+.bs-skillshop .bs-shell { border-color: rgba(168,85,247,.34); }
+.bs-shell::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; z-index: 3;
+    background: linear-gradient(180deg, #5aa0ff, #a855f7 55%, #ffd45e); box-shadow: 0 0 16px rgba(90,160,255,.5); }
+.bs-skillshop .bs-shell::before { background: linear-gradient(180deg, #a855f7, #7c3aed 55%, #5aa0ff); }
+@keyframes bsShellIn { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+.bs-shell.bs-exiting { animation: bsShellOut .26s ease-in forwards; }
+@keyframes bsShellOut { to { opacity: 0; transform: translateY(10px) scale(.98); } }
+
+/* ---------------- Kopfzeile ---------------- */
+.bs-head { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 10px 12px 9px 14px;
+    border-bottom: 1px solid rgba(140,190,255,.12); background: rgba(10,20,40,.5); }
+.bs-keeper { flex: 0 0 auto; display: flex; align-items: center; gap: 9px; min-width: 0; }
+.bs-ava { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 13px; display: grid;
+    place-items: center; font-size: 1.45rem; line-height: 1;
+    background: linear-gradient(160deg, rgba(90,160,255,.30), rgba(20,35,70,.9));
+    border: 1px solid rgba(140,190,255,.35); box-shadow: 0 6px 16px rgba(0,0,0,.4);
+    animation: bsAvaFloat 4.5s ease-in-out infinite; }
+.bs-ava::after { content: ''; position: absolute; right: -2px; bottom: -2px; width: 10px; height: 10px;
+    border-radius: 50%; background: #22c55e; border: 2px solid #0b1424; box-shadow: 0 0 8px rgba(34,197,94,.8);
+    animation: bsDot 2.4s ease-in-out infinite; }
+@keyframes bsAvaFloat { 50% { transform: translateY(-3px); } }
+@keyframes bsDot { 50% { opacity: .45; } }
+.bs-keeper-txt { min-width: 0; }
+.bs-keeper-name { font-family: 'VT323', monospace; font-size: 1.05rem; color: #dbe9ff; line-height: 1.1; }
+.bs-bubble { font-family: 'VT323', monospace; font-size: .95rem; color: rgba(196,218,255,.72); line-height: 1.15;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    max-width: 240px; }
+.bs-bubble.bs-speak { animation: bsSpeak .35s ease-out; }
+@keyframes bsSpeak { 0% { transform: translateY(4px); opacity: .3; } 100% { transform: none; opacity: 1; } }
+.bs-vitals { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; }
+.bs-vital { font-family: 'VT323', monospace; font-size: .92rem; padding: 3px 9px; border-radius: 999px;
+    background: rgba(10,20,40,.72); border: 1px solid rgba(140,190,255,.2); color: #cfe2ff; white-space: nowrap; }
+.bs-vital.hp { color: #ffb3b3; border-color: rgba(248,113,113,.32); }
+.bs-vital.mp { color: #b9d8ff; border-color: rgba(90,160,255,.32); }
+.bs-vital.atk { color: #ffd9a8; border-color: rgba(250,204,21,.28); }
+.bs-vital.def { color: #b7f0e2; border-color: rgba(34,197,94,.28); }
+.bs-wallet { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px;
+    background: linear-gradient(135deg, rgba(250,204,21,.22), rgba(120,80,10,.26));
+    border: 1px solid rgba(250,204,21,.5); box-shadow: 0 0 18px rgba(250,204,21,.16); }
+.bs-wallet-ico { font-size: 1rem; }
+.bs-gold-amount { font-family: 'VT323', monospace; font-size: 1.2rem; color: #fff3c4; letter-spacing: .4px; }
+.bs-wallet-lbl { font-family: 'VT323', monospace; font-size: .72rem; letter-spacing: 2px; color: rgba(255,236,158,.6); }
+.bs-close { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 10px; cursor: pointer; color: #dfeaff;
+    font-size: .95rem; line-height: 1; background: rgba(255,255,255,.05);
+    border: 1px solid rgba(140,190,255,.28); transition: transform .16s ease, background .16s ease; }
+.bs-close:hover { transform: rotate(90deg) scale(1.06); background: rgba(239,68,68,.55); border-color: rgba(239,68,68,.6); }
+
+/* ---------------- Tabs ---------------- */
+.bs-tabs { position: relative; flex: 0 0 auto; display: flex; gap: 4px; padding: 7px 12px 0 14px;
+    border-bottom: 1px solid rgba(140,190,255,.1); }
+.bs-tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px 8px; border-radius: 10px 10px 0 0; cursor: pointer; border: 0; background: transparent;
+    font-family: 'VT323', monospace; font-size: 1rem; color: rgba(190,215,255,.62); white-space: nowrap;
+    transition: color .16s ease, transform .12s ease; }
+.bs-tab:hover { color: #dbe9ff; }
+.bs-tab:active { transform: translateY(1px); }
+.bs-tab.on { color: #fff; }
+.bs-tab-ico { font-size: .98rem; line-height: 1; }
+.bs-tab-count { font-size: .82rem; padding: 0 6px; border-radius: 999px; line-height: 1.35;
+    background: rgba(255,255,255,.08); color: rgba(220,235,255,.85); }
+.bs-tab.on .bs-tab-count { background: rgba(74,159,255,.3); color: #fff; }
+.bs-ink { position: absolute; bottom: -1px; left: 0; height: 2px; border-radius: 2px; width: 0;
+    background: linear-gradient(90deg, #5aa0ff, #a855f7);
+    box-shadow: 0 0 12px rgba(90,160,255,.8);
+    transform: translateX(var(--x, 0px)); transition: transform .28s cubic-bezier(.16,1,.3,1), width .28s ease; }
+.bs-skillshop .bs-ink { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+
+/* ---------------- Info-Leiste (Deal / Fortschritt) ---------------- */
+.bs-strip { position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    margin: 9px 12px 0 14px; padding: 7px 12px; border-radius: 11px; overflow: hidden;
+    background: linear-gradient(90deg, rgba(250,204,21,.13), rgba(250,204,21,.02));
+    border: 1px solid rgba(250,204,21,.28); }
+.bs-strip.skill { background: linear-gradient(90deg, rgba(168,85,247,.15), rgba(168,85,247,.02));
+    border-color: rgba(168,85,247,.3); }
+.bs-strip::after { content: ''; position: absolute; top: 0; bottom: 0; width: 42%; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.13), transparent);
+    animation: bsShimmer 4.2s ease-in-out infinite; }
+@keyframes bsShimmer { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(260%); } }
+.bs-strip-ico { font-size: 1.05rem; }
+.bs-strip-txt { min-width: 0; }
+.bs-strip-title { font-family: 'VT323', monospace; font-size: .86rem; letter-spacing: 1.4px; text-transform: uppercase;
+    color: #ffe9a8; }
+.bs-strip.skill .bs-strip-title { color: #e2ccff; }
+.bs-strip-desc { font-family: 'VT323', monospace; font-size: .95rem; color: rgba(214,232,255,.75); line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bs-strip-badge { margin-left: auto; flex: 0 0 auto; font-family: 'VT323', monospace; font-size: 1rem;
+    padding: 2px 10px; border-radius: 999px; color: #0b1424; background: linear-gradient(135deg, #ffd45e, #f0a92c); }
+.bs-strip.skill .bs-strip-badge { color: #fff; background: linear-gradient(135deg, #a855f7, #7c3aed); }
+.bs-progress { flex: 1 1 auto; min-width: 60px; height: 5px; border-radius: 999px; overflow: hidden;
+    background: rgba(255,255,255,.09); }
+.bs-progress-fill { height: 100%; width: 0; border-radius: 999px;
+    background: linear-gradient(90deg, #a855f7, #d8b4fe);
+    transition: width .5s cubic-bezier(.16,1,.3,1); }
+
+/* ---------------- Scrollbereich ---------------- */
+.bs-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    padding: 10px 12px 12px 14px; scrollbar-width: thin; scrollbar-color: rgba(120,170,255,.4) transparent;
+    overscroll-behavior: contain; }
+.bs-scroll::-webkit-scrollbar { width: 8px; }
+.bs-scroll::-webkit-scrollbar-thumb { background: rgba(120,170,255,.32); border-radius: 999px; }
+.bs-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------------- Item-Karten ---------------- */
+.bs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(226px, 1fr)); gap: 9px;
+    align-items: stretch; }
+.bs-card { position: relative; display: flex; flex-direction: column; gap: 5px; overflow: hidden;
+    padding: 9px 10px 10px; border-radius: 13px; cursor: pointer; min-width: 0;
+    background: linear-gradient(158deg, rgba(30,48,84,.7), rgba(10,18,34,.85));
+    border: 1px solid rgba(120,175,255,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    transition: transform .16s cubic-bezier(.2,.8,.3,1), border-color .16s ease, box-shadow .16s ease;
+    animation: bsCardIn .34s cubic-bezier(.16,1,.3,1) both;
+    animation-delay: calc(var(--i, 0) * 32ms); }
+@keyframes bsCardIn { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.bs-card:hover { transform: translateY(-3px); border-color: rgba(140,200,255,.62);
+    box-shadow: 0 12px 26px rgba(10,40,90,.45), inset 0 1px 0 rgba(255,255,255,.09); }
+.bs-card:active { transform: translateY(-1px) scale(.995); }
+.bs-card-top { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+.bs-card-ico { position: relative; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px;
+    display: grid; place-items: center; font-size: 1.3rem; line-height: 1;
+    background: linear-gradient(160deg, rgba(120,180,255,.22), rgba(12,22,42,.9));
+    border: 1px solid rgba(140,190,255,.26); transition: transform .2s cubic-bezier(.16,1,.3,1); }
+.bs-card:hover .bs-card-ico { transform: rotate(-6deg) scale(1.06); }
+.bs-card-head { min-width: 0; flex: 1 1 auto; }
+.bs-card-name { font-family: 'VT323', monospace; font-size: 1.12rem; color: #fff; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bs-card-desc { font-family: 'VT323', monospace; font-size: .92rem; color: rgba(198,218,250,.66); line-height: 1.15;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.3em; }
+.bs-tag { flex: 0 0 auto; font-family: 'VT323', monospace; font-size: .74rem; letter-spacing: .8px;
+    padding: 1px 7px; border-radius: 999px; border: 1px solid rgba(140,190,255,.3);
+    color: #cfe2ff; background: rgba(90,160,255,.14); white-space: nowrap; }
+.bs-tag.deal { color: #0b1424; background: linear-gradient(135deg, #ffd45e, #f0a92c); border-color: transparent;
+    animation: bsTagPulse 1.8s ease-in-out infinite; }
+.bs-tag.atk { color: #ffd9a8; border-color: rgba(250,204,21,.4); background: rgba(250,204,21,.12); }
+.bs-tag.def { color: #b7f0e2; border-color: rgba(34,197,94,.4); background: rgba(34,197,94,.12); }
+.bs-tag.heal { color: #ffb3b3; border-color: rgba(248,113,113,.4); background: rgba(248,113,113,.12); }
+.bs-tag.combo { color: #d8b4fe; border-color: rgba(168,85,247,.4); background: rgba(168,85,247,.14); }
+@keyframes bsTagPulse { 50% { transform: scale(1.06); } }
+.bs-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: rgba(140,190,255,.5); }
+.bs-bar.rarity-uncommon { background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,.6); }
+.bs-bar.rarity-rare { background: #5aa0ff; box-shadow: 0 0 10px rgba(90,160,255,.7); }
+.bs-bar.rarity-epic { background: #a855f7; box-shadow: 0 0 12px rgba(168,85,247,.75); }
+.bs-bar.rarity-deal { background: #ffd45e; box-shadow: 0 0 12px rgba(255,212,94,.8); }
+.bs-chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 1.5em; }
+.bs-chip { font-family: 'VT323', monospace; font-size: .88rem; padding: 0 7px; border-radius: 7px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(140,190,255,.16); color: rgba(214,232,255,.85);
+    white-space: nowrap; }
+.bs-chip strong { color: #fff; }
+.bs-buy { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 4px; }
+.bs-price { font-family: 'VT323', monospace; font-size: 1.05rem; color: #ffe9a8; display: inline-flex;
+    align-items: baseline; gap: 5px; }
+.bs-price s { font-size: .84rem; color: rgba(255,255,255,.4); }
+.bs-cta { margin-left: auto; flex: 0 0 auto; font-family: 'VT323', monospace; font-size: 1rem; padding: 5px 12px;
+    border-radius: 9px; cursor: pointer; color: #08101f; border: 0;
+    background: linear-gradient(135deg, #cfe4ff, #8fb8ee);
+    box-shadow: 0 3px 0 rgba(0,0,0,.35);
+    transition: transform .14s ease, filter .14s ease, box-shadow .14s ease; }
+.bs-cta:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.bs-cta:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+.bs-cta.buy { background: linear-gradient(135deg, #ffd45e, #f0a92c); }
+.bs-cta.upgrade { background: linear-gradient(135deg, #d8b4fe, #a855f7); color: #150a24; }
+.bs-cta.owned { background: rgba(34,197,94,.22); color: #9cffc2; box-shadow: none; border: 1px solid rgba(34,197,94,.45); }
+.bs-cta.max { background: rgba(255,212,94,.18); color: #ffe9a8; box-shadow: none; border: 1px solid rgba(255,212,94,.45); }
+.bs-cant { opacity: .58; }
+.bs-cant .bs-price { color: rgba(255,180,180,.85); }
+.bs-cant .bs-cta.buy { background: rgba(120,140,170,.35); color: #dbe9ff; box-shadow: none; }
+.bs-cant:hover { transform: none; border-color: rgba(248,113,113,.4); }
+.bs-card.bs-flash { animation: bsCardFlash .5s ease-out; }
+.bs-grid.bs-fading, .bs-list.bs-fading { opacity: .3; }
+.bs-gold-bump { animation: bsGoldBump .42s cubic-bezier(.16,1,.3,1); }
+@keyframes bsGoldBump { 40% { transform: scale(1.18); } }
+.bs-skill-action .bs-price { font-size: 1rem; }
+@keyframes bsCardFlash { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.6); } 100% { box-shadow: 0 0 0 14px rgba(34,197,94,0); } }
+.bs-card.bs-shake { animation: bsShake .42s ease-out; }
+@keyframes bsShake { 0%,100% { transform: translateX(0); } 22% { transform: translateX(-5px); } 55% { transform: translateX(4px); } }
+
+/* ---------------- Verkaufen ---------------- */
+.bs-sell-list { display: flex; flex-direction: column; gap: 7px; }
+.bs-row { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: 11px;
+    cursor: pointer; background: rgba(255,255,255,.045); border: 1px solid rgba(140,190,255,.16);
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    animation: bsCardIn .3s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 28ms); }
+.bs-row:hover { transform: translateX(3px); border-color: rgba(140,200,255,.55); background: rgba(90,160,255,.1); }
+.bs-row-ico { font-size: 1.2rem; }
+.bs-row-name { font-family: 'VT323', monospace; font-size: 1.05rem; color: #eaf2ff; }
+.bs-row-count { font-family: 'VT323', monospace; font-size: .88rem; color: rgba(196,218,255,.6); }
+.bs-row-price { margin-left: auto; font-family: 'VT323', monospace; font-size: 1.05rem; color: #ffe9a8; }
+.bs-empty { display: grid; place-items: center; gap: 6px; padding: 34px 12px; text-align: center;
+    font-family: 'VT323', monospace; color: rgba(196,218,255,.6); }
+.bs-empty-ico { font-size: 2.2rem; animation: bsAvaFloat 3.6s ease-in-out infinite; }
+
+/* ---------------- Skill-Karten ---------------- */
+.bs-list { display: flex; flex-direction: column; gap: 8px; }
+.bs-skill { position: relative; display: flex; align-items: center; gap: 11px; padding: 9px 11px;
+    border-radius: 13px; cursor: pointer; overflow: hidden;
+    background: linear-gradient(150deg, rgba(34,26,66,.72), rgba(10,14,30,.9));
+    border: 1px solid rgba(168,85,247,.22);
+    transition: transform .16s cubic-bezier(.2,.8,.3,1), border-color .16s ease, box-shadow .16s ease;
+    animation: bsCardIn .34s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 32ms); }
+.bs-skill:hover { transform: translateY(-2px); border-color: rgba(190,140,255,.6);
+    box-shadow: 0 10px 22px rgba(40,10,80,.45); }
+.bs-skill-ico { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+    font-size: 1.4rem; background: linear-gradient(160deg, rgba(168,85,247,.26), rgba(14,20,40,.9));
+    border: 1px solid rgba(190,140,255,.3); transition: transform .2s cubic-bezier(.16,1,.3,1); }
+.bs-skill:hover .bs-skill-ico { transform: scale(1.07) rotate(4deg); }
+.bs-skill-main { min-width: 0; flex: 1 1 auto; }
+.bs-skill-name { display: flex; align-items: center; gap: 6px; min-width: 0;
+    font-family: 'VT323', monospace; font-size: 1.14rem; color: #fff; }
+.bs-skill-name > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bs-skill-desc { font-family: 'VT323', monospace; font-size: .92rem; color: rgba(206,196,240,.66); line-height: 1.15;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bs-skill-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.bs-pips { display: inline-flex; gap: 2px; }
+.bs-pips i { width: 8px; height: 8px; border-radius: 2px; background: rgba(255,255,255,.14); }
+.bs-pips i.on { background: linear-gradient(135deg, #d8b4fe, #a855f7); box-shadow: 0 0 6px rgba(168,85,247,.7); }
+.bs-skill-action { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.bs-skill.owned { border-color: rgba(34,197,94,.42); background: linear-gradient(150deg, rgba(18,54,40,.7), rgba(8,18,26,.9)); }
+.bs-skill.maxed { border-color: rgba(255,212,94,.5); }
+.bs-skill.locked { opacity: .6; }
+.bs-skill.locked:hover { transform: none; border-color: rgba(248,113,113,.35); }
+.bs-skill.bs-shake { animation: bsShake .42s ease-out; }
+.bs-skill.bs-upgraded { animation: bsPop .55s cubic-bezier(.16,1,.3,1); }
+@keyframes bsPop { 40% { transform: scale(1.03); } }
+
+/* ---------------- Fußzeile ---------------- */
+.bs-foot { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 8px 12px 9px 14px;
+    border-top: 1px solid rgba(140,190,255,.12); background: rgba(8,16,32,.55); }
+.bs-foot-hint { font-family: 'VT323', monospace; font-size: .9rem; color: rgba(190,215,255,.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bs-foot-key { font-family: 'VT323', monospace; font-size: .8rem; color: rgba(190,215,255,.4); }
+.bs-leave { margin-left: auto; flex: 0 0 auto; font-family: 'VT323', monospace; font-size: 1rem;
+    padding: 6px 16px; border-radius: 10px; cursor: pointer; color: #eaf2ff;
+    background: linear-gradient(135deg, rgba(80,120,190,.45), rgba(22,36,66,.8));
+    border: 1px solid rgba(140,190,255,.35); transition: transform .15s ease, filter .15s ease; }
+.bs-leave:hover { transform: translateY(-1px); filter: brightness(1.15); }
+.bs-skillshop .bs-leave { background: linear-gradient(135deg, rgba(124,58,237,.45), rgba(30,18,60,.85));
+    border-color: rgba(168,85,247,.4); }
+
+/* ---------------- Toast ---------------- */
+.bs-toast { position: absolute; left: 50%; top: 12px; z-index: 20; transform: translateX(-50%);
+    padding: 6px 16px; border-radius: 999px; font-family: 'VT323', monospace; font-size: 1.02rem;
+    color: #eaf2ff; background: rgba(12,24,48,.94); border: 1px solid rgba(140,190,255,.4);
+    box-shadow: 0 12px 30px rgba(0,0,0,.5); animation: bsToast 2.4s ease-out forwards;
+    pointer-events: none; white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
+.bs-toast.success { border-color: rgba(34,197,94,.55); color: #b6ffd2; }
+.bs-toast.error { border-color: rgba(248,113,113,.55); color: #ffc0c0; }
+.bs-toast.gold { border-color: rgba(250,204,21,.55); color: #ffe9a8; }
+@keyframes bsToast {
+    0% { opacity: 0; transform: translate(-50%, -10px) scale(.95); }
+    10%, 78% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -8px) scale(.98); }
+}
+
+/* ---------------- FX-Layer (Partikel bleiben erhalten) ---------------- */
+#rpg-shop-screen .bs-fx, #rpg-skillshop-screen .bs-fx { position: absolute; inset: 0; pointer-events: none; z-index: 9; }
+
+/* ---------------- Low-Spec ---------------- */
+.bs-lowspec .bs-room::before, .bs-lowspec .bs-shelf, .bs-lowspec .bs-lamp { display: none; }
+.bs-lowspec .bs-shell, .bs-lowspec .bs-card, .bs-lowspec .bs-skill, .bs-lowspec .bs-row { animation: none !important; }
+.bs-lowspec .bs-strip::after { display: none; }
+.bs-lowspec .bs-ava, .bs-lowspec .bs-ava::after { animation: none !important; }
+.bs-lowspec .bs-card:hover, .bs-lowspec .bs-skill:hover, .bs-lowspec .bs-row:hover { transform: none; }
+.bs-lowspec .bs-card:hover .bs-card-ico, .bs-lowspec .bs-skill:hover .bs-skill-ico { transform: none; }
+
+/* ---------------- Reduced Motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+    #rpg-shop-screen .bs-shell, #rpg-shop-screen .bs-card, #rpg-shop-screen .bs-row,
+    #rpg-shop-screen .bs-strip::after, #rpg-shop-screen .bs-ava, #rpg-shop-screen .bs-ava::after,
+    #rpg-shop-screen .bs-lamp, #rpg-shop-screen .bs-tag.deal,
+    #rpg-skillshop-screen .bs-shell, #rpg-skillshop-screen .bs-card, #rpg-skillshop-screen .bs-skill,
+    #rpg-skillshop-screen .bs-row, #rpg-skillshop-screen .bs-strip::after, #rpg-skillshop-screen .bs-ava,
+    #rpg-skillshop-screen .bs-ava::after, #rpg-skillshop-screen .bs-lamp, #rpg-skillshop-screen .bs-tag.deal,
+    #rpg-skillshop-screen .bs-empty-ico {
+        animation: none !important;
+    }
+    #rpg-shop-screen .bs-toast, #rpg-skillshop-screen .bs-toast { animation-duration: .01ms !important; opacity: 1; }
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 760px) {
+    .bs-shell { height: 100%; border-radius: 14px; }
+    .bs-vitals { display: none; }
+    .bs-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+    .bs-bubble { max-width: 150px; }
+    .bs-tab { padding: 7px 8px; font-size: .95rem; }
+    .bs-tab .bs-tab-lbl { display: none; }
+}
+@media (max-height: 560px) {
+    .bs-head { padding: 7px 10px 6px 12px; }
+    .bs-ava { width: 34px; height: 34px; font-size: 1.15rem; }
+    .bs-strip { margin: 6px 10px 0 12px; padding: 5px 10px; }
+    .bs-scroll { padding: 8px 10px 10px 12px; }
+    .bs-card-desc { -webkit-line-clamp: 1; min-height: 1.15em; }
+    .bs-foot { padding: 6px 10px 7px 12px; }
+    .bs-skill-desc { -webkit-line-clamp: 1; }
 }
 </style>
