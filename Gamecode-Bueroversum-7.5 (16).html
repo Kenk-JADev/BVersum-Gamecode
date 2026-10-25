@@ -24611,6 +24611,7 @@
                 const SPRINT_MIN_STEP_MS = 56;    // Untergrenze: lesbar & CPU-schonend
                 let sprintHeld = false;
                 let isSprinting = false;
+                let sprintWatchdog = null;
 
                 // Reine Rechenfunktionen - kein Layout-Read, kein DOM-Zugriff.
                 function getBaseStepMs() { return isLowSpecMap() ? 78 : MOVE_DURATION; }
@@ -24646,9 +24647,21 @@
                     // (Taste gehalten, aber es geht nicht weiter).
                     const recentlyMoved = (performance.now() - lastMoveTimestamp) < 400;
                     const canSprint = sprintHeld && gameState === 'MAP' && !cheatConsoleVisible &&
-                        !isTransitioning && !isBattleStarting && !isMoving &&
+                        !isTransitioning && !isBattleStarting &&
                         hasHeldMoveKey() && recentlyMoved;
                     setSprinting(canSprint);
+                    // WICHTIG: Sprint wurde frueher nur bei gehaltener Bewegung neu
+                    // ausgewertet. Wer Shift haelt und nur EINMAL tippt, blieb in der
+                    // Sprint-/Laufanimation haengen, bis Shift losgelassen wurde.
+                    // Der Watchdog prueft den Zustand selbststaendig nach.
+                    if (sprintWatchdog) { clearTimeout(sprintWatchdog); sprintWatchdog = null; }
+                    if (isSprinting) {
+                        sprintWatchdog = setTimeout(() => {
+                            sprintWatchdog = null;
+                            if (!sprintHeld) { setSprinting(false); return; }
+                            updateSprintState();
+                        }, 240);
+                    }
                 }
 
                 // ---- v7.10.17: Staub-/Speed-Layer in Kamera-Koordinaten ----
@@ -24764,7 +24777,13 @@
                     if (!code) return;
                     delete keysHeld[code];
                     directionHistory = directionHistory.filter(k => k !== code);
-                    if (!Object.keys(keysHeld).some(k => MOVE_KEY_DIRS[k])) stopMoveLoop();
+                    if (!Object.keys(keysHeld).some(k => MOVE_KEY_DIRS[k])) {
+                        stopMoveLoop();
+                        // Keine Bewegungstaste mehr -> Sprint sofort beenden,
+                        // damit die Lauf-Animation nicht weiterlaeuft.
+                        if (typeof setSprinting === "function") setSprinting(false);
+                        if (typeof playerEl !== "undefined" && playerEl) playerEl.classList.remove("walking");
+                    }
                 }
 
                 function clearMoveInputState() {
@@ -24866,6 +24885,8 @@
                         playerEl.style.transition = "";
                         updateCamera(); // Endziel exakt auf das Zieltile setzen
                         checkNearbyInteractables();
+                        // Sprint nur solange wirklich gelaufen wird
+                        if (typeof updateSprintState === "function") updateSprintState();
                         // v7.10.15: Nahtlos weiterlaufen statt auf den nächsten
                         // Interval-Tick zu warten (der konnte einen Schritt
                         // überspringen -> doppelte Schrittzeit = Stocken).
@@ -42507,34 +42528,20 @@ function showShopToast(containerId, message, type) {
 }
 
 function getShopFxLayer(cardEl) {
-    // SkillShop: FX-Layer gehört in die scrollende Skill-Liste, damit Partikel beim Scrollen mitwandern.
-    var skillGrid = cardEl?.closest?.('.bv-skill-items-grid');
-    if (skillGrid) {
-        skillGrid.classList.add('bv-skill-fx-host-v773');
-        var skillLayer = Array.from(skillGrid.children).find(function(el) {
-            return el.classList && el.classList.contains('bv-shop-fx-layer-v772');
-        });
-        if (!skillLayer) {
-            skillLayer = document.createElement('div');
-            skillLayer.className = 'bv-shop-fx-layer-v772 bv-skill-scroll-fx-layer-v773';
-            skillGrid.appendChild(skillLayer);
-        }
-        // Layer muss so hoch sein wie der Scroll-Content, sonst liegen Partikel bei Scrollpositionen falsch.
-        skillLayer.style.height = Math.max(skillGrid.scrollHeight, skillGrid.clientHeight) + 'px';
-        skillLayer.style.width = Math.max(skillGrid.scrollWidth, skillGrid.clientWidth) + 'px';
-        return skillLayer;
-    }
+    // v2.5: Der FX-Layer liegt jetzt direkt im Shop-Screen, NICHT mehr im
+    // Container. Der Container hat overflow:hidden + border-radius – dadurch
+    // wurden Partikel an den Raendern abgeschnitten. Der Screen ist
+    // vollflaechig, dort koennen die Partikel frei fliegen.
+    var screen = (cardEl && cardEl.closest && cardEl.closest('.rpg-screen')) ||
+                 document.getElementById('rpg-shop-screen') ||
+                 document.getElementById('rpg-skillshop-screen');
+    if (!screen) return null;
 
-    // Item-Shop: FX bleibt im Shop-Fenster, da die Itemkarten nicht in derselben Weise scrollen müssen.
-    var root = cardEl?.closest?.('.bv-shop-container, .bv-skillshop-container') ||
-               document.getElementById('bv-shop-main') ||
-               document.getElementById('bv-skillshop-main');
-    if (!root) return null;
-    var layer = root.querySelector(':scope > .bv-shop-fx-layer-v772');
+    var layer = screen.querySelector(':scope > .bs-fx');
     if (!layer) {
         layer = document.createElement('div');
-        layer.className = 'bv-shop-fx-layer-v772';
-        root.appendChild(layer);
+        layer.className = 'bs-fx';
+        screen.appendChild(layer);
     }
     return layer;
 }
@@ -42590,7 +42597,7 @@ function spawnPurchaseParticles(cardEl) {
         ? ['#d8b4fe', '#a855f7', '#ffffff', '#44ff88']
         : ['#ffd700', '#44ff88', '#4a9fff', '#ffffff'];
     // v7.10.11: Low-End → deutlich weniger DOM-Partikel
-    var count = window.BV_LOW_END ? (isSkill ? 6 : 5) : (isSkill ? 18 : 16);
+    var count = window.BV_LOW_END ? (isSkill ? 7 : 6) : (isSkill ? 24 : 20);
 
     // Sofort sichtbarer Kern-FX: nur wenige Elemente, damit der Start nicht ruckelt.
     var core = document.createDocumentFragment();
@@ -42633,7 +42640,9 @@ function spawnPurchaseParticles(cardEl) {
         p.style.setProperty('--rot', ((Math.random() - 0.5) * 620).toFixed(1) + 'deg');
         p.style.setProperty('--c', colors[Math.floor(Math.random() * colors.length)]);
         p.style.setProperty('--s', (isSkill ? (11 + Math.random() * 11) : (10 + Math.random() * 10)).toFixed(1) + 'px');
-        p.style.setProperty('--dur', (isSkill ? (1.15 + Math.random() * 0.42) : (0.82 + Math.random() * 0.32)).toFixed(2) + 's');
+        p.style.setProperty('--dur', (isSkill ? (1.25 + Math.random() * 0.5) : (0.95 + Math.random() * 0.38)).toFixed(2) + 's');
+        p.style.setProperty('--g', (46 + Math.random() * 54).toFixed(0) + 'px');
+        p.style.setProperty('--tilt', ((Math.random() - 0.5) * 40).toFixed(1) + 'deg');
         p.style.animationDelay = (Math.random() * 0.08).toFixed(2) + 's';
         removeFxAfter(p, isSkill ? 1850 : 1350);
         return p;
@@ -42661,7 +42670,7 @@ function spawnSkillUnlockRunes(cardEl) {
     layer.appendChild(rings);
 
     var runes = ['✦', '✧', '✶', '◆', '◇', '✹'];
-    var count = lowEnd ? 6 : 20;
+    var count = lowEnd ? 7 : 26;
     appendFxBatched(layer, count, 5, function (i, total) {
         var r = document.createElement('span');
         r.className = 'bv-skill-rune-particle-v772';
@@ -42674,6 +42683,7 @@ function spawnSkillUnlockRunes(cardEl) {
         r.style.setProperty('--ry', (Math.sin(angle) * dist - 14).toFixed(1) + 'px');
         r.style.setProperty('--rot', ((Math.random() - 0.5) * 620).toFixed(1) + 'deg');
         r.style.setProperty('--c', ['#d8b4fe', '#a855f7', '#44ff88', '#ffffff'][Math.floor(Math.random() * 4)]);
+        r.style.setProperty('--g', (60 + Math.random() * 70).toFixed(0) + 'px');
         r.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
         removeFxAfter(r, 2200);
         return r;
@@ -56625,4 +56635,222 @@ body.bv-settings-particles-off .title-canvas-bg {
     .bs-foot { padding: 6px 10px 7px 12px; }
     .bs-skill-desc { -webkit-line-clamp: 1; }
 }
+</style>
+
+<style>
+/* ============================================================
+   v2.5 – Battle-Fenster, Shop-Animationen, Partikel-Physik
+   ============================================================ */
+
+/* ---------- 1) Battle: Skill-/Item-Fenster passt immer ins Fenster ---------- */
+/* Vorher: bottom:145px + max-height min(430px, calc(100% - 190px)) und die
+   alte submenuPop-Animation hat das transform ueberschrieben -> der
+   "Zurück"-Button rutschte unten aus dem Fenster. Jetzt mittig, mit
+   fixem Kopf, scrollender Liste und festem Zurück-Button. */
+#rpg-battle-screen .battle-submenu {
+    top: 50% !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(480px, calc(100% - 24px)) !important;
+    max-height: calc(100% - 24px) !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    display: none;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+#rpg-battle-screen .battle-submenu.visible {
+    display: flex !important;
+    animation: bvBattleMenuIn .26s cubic-bezier(.16,1,.3,1) both !important;
+}
+
+@keyframes bvBattleMenuIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(.94); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+#rpg-battle-screen .battle-submenu .submenu-header {
+    flex: 0 0 auto !important;
+    margin-bottom: 8px !important;
+}
+
+#rpg-battle-screen #battle-skill-list,
+#rpg-battle-screen #battle-item-list {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 4px !important;
+    overscroll-behavior: contain;
+}
+
+#rpg-battle-screen .submenu-back {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin: 8px 0 0 !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-height: 480px) {
+    #rpg-battle-screen .battle-submenu {
+        max-height: calc(100% - 12px) !important;
+        padding: 8px !important;
+    }
+    #rpg-battle-screen .submenu-back { margin-top: 5px !important; padding: 4px !important; }
+}
+
+/* ---------- 2) Shop: Animationen ruhiger und hochwertiger ---------- */
+/* Kartenwechsel beim Tab: gleiten statt nur blass werden */
+.bs-grid, .bs-list { transition: opacity .17s ease, transform .17s cubic-bezier(.16,1,.3,1); }
+.bs-grid.bs-fading, .bs-list.bs-fading { opacity: 0; transform: translateY(7px); }
+
+/* Lichtstreifen über Karten beim Hover */
+.bs-card::after, .bs-skill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(115deg, transparent 34%, rgba(255,255,255,.14) 50%, transparent 66%);
+    transform: translateX(-70%);
+}
+.bs-card:hover::after, .bs-skill:hover::after { opacity: 1; animation: bsSheen .72s ease-out; }
+@keyframes bsSheen { from { transform: translateX(-70%); } to { transform: translateX(70%); } }
+
+/* Tastendruck-Feedback auf Buttons */
+.bs-cta:active, .bs-leave:active, .bs-close:active, .bs-tab:active { transform: scale(.95); }
+
+/* Kauf-/Upgrade-Bursts im neuen UI */
+.bs-card.bv-purchase-burst::before,
+.bs-skill.bv-skill-unlock-burst::before,
+.bs-skill.bv-skill-upgrade-burst::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    pointer-events: none;
+    box-shadow: 0 0 0 2px rgba(34,197,94,.65), 0 0 34px rgba(34,197,94,.5);
+    animation: bsBurstRing .85s ease-out forwards;
+}
+.bs-skill.bv-skill-upgrade-burst::before {
+    box-shadow: 0 0 0 2px rgba(168,85,247,.7), 0 0 36px rgba(168,85,247,.55);
+}
+@keyframes bsBurstRing {
+    0%   { opacity: 0; transform: scale(.92); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.04); }
+}
+
+.bs-skill-flash-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 13px;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.75), transparent 68%);
+    animation: bsSkillFlash .6s ease-out forwards;
+}
+@keyframes bsSkillFlash { 0% { opacity: .85; } 100% { opacity: 0; } }
+
+/* Karte nach dem Neurendern wieder sanft einsetzen */
+.bs-skill.bv-skill-no-entry-card, .bs-card.bv-no-entry-card {
+    animation: bsCardIn .3s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ---------- 3) Partikel: echte Flugbahn mit Schwerkraft ---------- */
+.bs-fx {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Kauf-Partikel: steigen auf, verlieren Tempo und fallen mit Schwerkraft */
+@keyframes bvPurchaseParticleItemV772 {
+    0%   { opacity: 0; transform: translate(-50%, -50%) translate(0, 0) scale(.4) rotate(0deg); }
+    10%  { opacity: 1; }
+    22%  { opacity: 1; transform: translate(-50%, -50%)
+             translate(calc(var(--dx) * .22), calc(var(--dy) * .22 - 16px))
+             scale(1.05) rotate(calc(var(--rot) * .25)); }
+    62%  { opacity: .95; transform: translate(-50%, -50%)
+             translate(calc(var(--dx) * .72), calc(var(--dy) * .72 + var(--g, 48px) * .35))
+             scale(.95) rotate(calc(var(--rot) * .7)); }
+    100% { opacity: 0; transform: translate(-50%, -50%)
+             translate(var(--dx), calc(var(--dy) + var(--g, 48px)))
+             scale(.68) rotate(var(--rot)); }
+}
+
+@keyframes bvPurchaseParticleSkillV772 {
+    0%   { opacity: 0; transform: translate(-50%, -50%) translate(0, 0) scale(.35) rotate(0deg); }
+    8%   { opacity: 1; }
+    20%  { opacity: 1; transform: translate(-50%, -50%)
+             translate(calc(var(--dx) * .2), calc(var(--dy) * .2 - 22px))
+             scale(1.15) rotate(calc(var(--rot) * .2)); }
+    65%  { opacity: .95; transform: translate(-50%, -50%)
+             translate(calc(var(--dx) * .78), calc(var(--dy) * .78 + var(--g, 70px) * .4))
+             scale(.95) rotate(calc(var(--rot) * .75)); }
+    100% { opacity: 0; transform: translate(-50%, -50%)
+             translate(var(--dx), calc(var(--dy) + var(--g, 70px)))
+             scale(.6) rotate(var(--rot)); }
+}
+
+@keyframes bvSkillRuneParticleV772 {
+    0%   { opacity: 0; transform: translate(-50%, -50%) translate(0, 0) scale(.3) rotate(0deg); }
+    10%  { opacity: 1; }
+    25%  { opacity: 1; transform: translate(-50%, -50%)
+             translate(calc(var(--rx) * .25), calc(var(--ry) * .25 - 20px))
+             scale(1.12) rotate(calc(var(--rot) * .3)); }
+    70%  { opacity: .9; transform: translate(-50%, -50%)
+             translate(calc(var(--rx) * .8), calc(var(--ry) * .8 + var(--g, 70px) * .4))
+             scale(.92) rotate(calc(var(--rot) * .8)); }
+    100% { opacity: 0; transform: translate(-50%, -50%)
+             translate(var(--rx), calc(var(--ry) + var(--g, 70px)))
+             scale(.55) rotate(var(--rot)); }
+}
+
+/* Kugel-Blitz: kurzer Aufblitz mit leichtem Nachschwingen */
+@keyframes bvPurchaseOrbV772 {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+    16%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+    42%  { opacity: .85; transform: translate(-50%, -50%) scale(.92); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.55); }
+}
+
+/* Ringe: wachsen weich, drehen leicht, verblassen */
+@keyframes bvSkillMagicRingV772 {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.18) rotate(0deg); }
+    22%  { opacity: .85; transform: translate(-50%, -50%) scale(.75) rotate(45deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.35) rotate(200deg); }
+}
+
+/* Aufsteigende Zahlen (Gold/Stat) */
+@keyframes bvFloatStatOverlayV772 {
+    0%   { opacity: 0; transform: translate(-50%, 10px) scale(.75); }
+    16%  { opacity: 1; transform: translate(-50%, -8px) scale(1.16); }
+    70%  { opacity: 1; transform: translate(-50%, -32px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -58px) scale(.92); }
+}
+
+/* Partikel bleiben scharf, aber ohne teure Filter */
+.bv-purchase-particle-v772,
+.bv-skill-rune-particle-v772 {
+    text-shadow: 0 0 8px currentColor !important;
+    filter: none !important;
+    will-change: transform, opacity !important;
+}
+
+/* ---------- 4) Reduced Motion: Partikel aus, Übergänge ohne Bewegung ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .bs-fx { display: none !important; }
+    .bs-card::after, .bs-skill::after { display: none !important; }
+    .bs-grid.bs-fading, .bs-list.bs-fading { opacity: .55; transform: none; }
+    #rpg-battle-screen .battle-submenu.visible { animation: none !important; }
+}
+
+/* Low-Spec: nur die günstigsten Effekte */
+.bs-lowspec .bs-card::after, .bs-lowspec .bs-skill::after { display: none; }
+.bs-lowspec .bs-card:hover, .bs-lowspec .bs-skill:hover { transform: none; }
 </style>
