@@ -32460,25 +32460,22 @@
                     const battleIntroDuration = 1300 + vsSplashDuration + VS_FADE_OUT;
 
                     // ===== BATTLE PANELS SEQUENCE =====
-                    // 0ms: Panels start opening
+                    // v5.1: Der Vor-Kampf-Übergang läuft komplett IM Gamefenster.
+                    // Die alten bildschirmfüllenden Ebenen (#battle-panels und die
+                    // Map-Transition mit battle-hold) deckten die ganze Website ab und
+                    // werden für den Kampfstart deshalb nicht mehr aktiviert.
                     const battlePanels = document.getElementById("battle-panels");
-                    if (battlePanels) {
-                        battlePanels.classList.add("active", "open");
-                    }
 
-                    // SHOW MAP-TRANSITION IMMEDIATELY (Flash Phase 0ms) - even though panels will hide it
-                    if (mapTrans) {
-                        mapTrans.classList.add("active", "battle-hold", "no-content");
-                    }
-
-                    // v4.0: eigener Vor-Kampf-Übergang (zufällige Variante, Boss extra)
-                    if (typeof window.BVPlayBattleTransition === "function") {
+                    // v5.1: Übergang nur im normalen Kampf - im Battle-Editor nie
+                    if (!currentEnemy.isEditorTest && typeof window.BVPlayBattleTransition === "function") {
                         try {
                             window.BVPlayBattleTransition({
                                 boss: !!currentEnemy.isBoss,
                                 name: currentEnemy.displayName || currentEnemy.name || ""
                             });
                         } catch (e) {}
+                    } else if (typeof window.BVClearBattleTransition === "function") {
+                        window.BVClearBattleTransition();
                     }
 
                     // Timeline: Panels open(0-600ms) → Zoom(500-1700ms) → Screen swap(900ms) → Panels close(1050-1650ms) → VS-Splash(1300ms)
@@ -32607,11 +32604,6 @@
                         } else {
                             battleLog("Ein wilder " + currentEnemy.displayName + " erscheint!");
                         }
-
-                        setTimeout(() => battleLog(
-                            "💥 Krit-Chance: Du " + Math.round(bvCritChance("player") * 100) + " % · " +
-                            "Gegner " + Math.round(bvCritChance("enemy") * 100) + " %"
-                        ), 950);
 
                         setTimeout(() => showTurn("Dein Zug!", true), 300);
                     }, battleIntroDuration);
@@ -57619,17 +57611,18 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 <script>
 /* ============================================================
-   v5.0 – BEGEGNUNGS-ÜBERGANG (FF-Stil)
-   Klassischer Begegnungs-Wechsel: weißer Blitz, rotierender Wirbel,
-   der sich zur Mitte zieht, dann kurzer Schriftzug mit Gegnername.
-   Varianten: Wirbel / Splitter / Zoom, für Bosse ein roter Vortex.
-   Läuft nur in der Intro-Phase und blendet aus, wenn der VS-Splash kommt.
+   v5.1 – VOR-KAMPF-ÜBERGANG (im Gamefenster)
+   Vier Begegnungs-Inszenierungen für normale Kämpfe und eine eigene
+   für Bosse. Läuft ausschließlich innerhalb von #rpg-game-window,
+   wird also vom Fenster beschnitten und deckt nie die Website ab.
+   Aufbau immer gleich: Blitz-Auftakt, Bild-Aktion, dunkler Abschluss,
+   FF-Schriftzug mit Gegnername.
    ============================================================ */
 (function () {
     'use strict';
 
     var HOST_ID = 'bv-battle-transition';
-    var NORMAL = ['swirl', 'shards', 'zoom'];
+    var NORMAL = ['slash', 'vortex', 'crack', 'iris'];
 
     function btLowSpec() {
         try {
@@ -57649,22 +57642,48 @@ body.bv-settings-particles-off .title-canvas-bg {
         });
     }
 
+    function sparks(n) {
+        var out = '', i;
+        for (i = 0; i < n; i++) {
+            var a = (360 / n) * i + (Math.random() * 18 - 9);
+            out += '<i class="bvbt-spark" style="--a:' + a.toFixed(1) + 'deg;--d:' + (60 + Math.random() * 90).toFixed(0) + ';"></i>';
+        }
+        return out;
+    }
+
+    function crackSvg() {
+        return '<svg class="bvbt-crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+            '<polyline class="cl cl-glow" points="2,64 24,52 40,60 56,40 74,52 88,38 99,45"></polyline>' +
+            '<polyline class="cl cl-glow" points="56,40 63,24 76,15 82,4"></polyline>' +
+            '<polyline class="cl cl-glow" points="40,60 32,78 20,87 12,99"></polyline>' +
+            '<polyline class="cl cl-core" points="2,64 24,52 40,60 56,40 74,52 88,38 99,45"></polyline>' +
+            '<polyline class="cl cl-core" points="56,40 63,24 76,15 82,4"></polyline>' +
+            '<polyline class="cl cl-core" points="40,60 32,78 20,87 12,99"></polyline>' +
+            '</svg>';
+    }
+
     function artHtml(v) {
-        var i, out = '';
-        if (v === 'swirl') {
-            out += '<i class="bvbt-flash"></i>';
+        var out = '';
+        if (v === 'slash') {
+            out += '<i class="bvbt-vig"></i>';
+            out += '<i class="bvbt-slash s1"></i><i class="bvbt-slash s2"></i>';
+            out += '<i class="bvbt-star"></i><i class="bvbt-shock"></i>';
+            out += sparks(8);
+        } else if (v === 'vortex') {
+            out += '<i class="bvbt-vig"></i>';
             out += '<i class="bvbt-swirl s1"></i><i class="bvbt-swirl s2"></i><i class="bvbt-swirl s3"></i>';
-            out += '<i class="bvbt-core"></i>';
-        } else if (v === 'shards') {
-            out += '<i class="bvbt-flash"></i>';
-            for (i = 0; i < 9; i++) out += '<i class="bvbt-shard" style="--i:' + i + '"></i>';
-        } else if (v === 'zoom') {
-            out += '<i class="bvbt-flash"></i>';
-            out += '<i class="bvbt-zoomring r1"></i><i class="bvbt-zoomring r2"></i><i class="bvbt-zoomring r3"></i>';
-            out += '<i class="bvbt-vignette"></i>';
+            out += '<i class="bvbt-core"></i><i class="bvbt-shock"></i>';
+        } else if (v === 'crack') {
+            out += '<i class="bvbt-vig"></i>';
+            out += crackSvg();
+            out += '<i class="bvbt-star small"></i><i class="bvbt-shock"></i>';
+        } else if (v === 'iris') {
+            out += '<i class="bvbt-iris"></i><i class="bvbt-rays"></i>';
+            out += '<i class="bvbt-shock"></i>';
         } else if (v === 'boss') {
-            out += '<i class="bvbt-flash short"></i>';
+            out += '<i class="bvbt-vig"></i>';
             out += '<i class="bvbt-swirl boss s1"></i><i class="bvbt-swirl boss s2"></i>';
+            out += crackSvg();
             out += '<i class="bvbt-core boss"></i>';
             out += '<i class="bvbt-hazard top"></i><i class="bvbt-hazard bottom"></i>';
             out += '<i class="bvbt-redflash"></i>';
@@ -57675,8 +57694,9 @@ body.bv-settings-particles-off .title-canvas-bg {
     function captionHtml(v, name) {
         var boss = v === 'boss';
         return '<div class="bvbt-caption' + (boss ? ' is-boss' : '') + '">' +
+            '<span class="bvbt-tick tl"></span><span class="bvbt-tick tr"></span>' +
+            '<span class="bvbt-tick bl"></span><span class="bvbt-tick br"></span>' +
             '<span class="bvbt-kicker">' + (boss ? 'WARNING' : 'ENCOUNTER') + '</span>' +
-            '<span class="bvbt-rule"></span>' +
             '<span class="bvbt-title">' + (boss ? 'BOSS-KAMPF' : 'KAMPF') + '</span>' +
             '<span class="bvbt-rule"></span>' +
             (name ? '<span class="bvbt-sub">' + esc(name) + '</span>' : '') +
@@ -57692,15 +57712,21 @@ body.bv-settings-particles-off .title-canvas-bg {
         var old = document.getElementById(HOST_ID);
         if (old && old.parentNode) old.parentNode.removeChild(old);
 
+        /* Wichtig: der Layer lebt IM Gamefenster, nicht am Dokument. */
+        var host = document.getElementById('rpg-game-window') ||
+                   document.getElementById('rpg-battle-screen') ||
+                   document.body;
+
         var el = document.createElement('div');
         el.id = HOST_ID;
-        el.className = 'bvbt v-bt-' + variant + (low ? ' bt-low' : '');
+        el.className = 'bvbt v-bt-' + variant + (low ? ' bt-low' : '') +
+                       (host === document.body ? ' bt-global' : '');
         el.setAttribute('aria-hidden', 'true');
         el.innerHTML = '<i class="bvbt-veil"></i>' +
             (low ? '' : artHtml(variant)) +
             captionHtml(variant, opts.name);
 
-        (document.body || document.documentElement).appendChild(el);
+        host.appendChild(el);
 
         var outAt = low ? 820 : 1000;
         setTimeout(function () { el.classList.add('bt-out'); }, outAt);
@@ -57721,18 +57747,23 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 <style>
 /* ============================================================
-   v5.0 – Begegnungs-Übergang im FF-Stil
+   v5.1 – Vor-Kampf-Übergang (nur im Gamefenster)
    ============================================================ */
 #bv-battle-transition {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    z-index: 100002;
+    z-index: 9000;
     pointer-events: none;
     overflow: hidden;
     font-family: 'VT323', monospace;
     opacity: 1;
     transition: opacity .3s ease;
-    contain: paint;
+    /* Beschneidung übernimmt das Gamefenster (overflow: hidden) */
+}
+
+#bv-battle-transition.bt-global {
+    position: fixed;
+    z-index: 100002;
 }
 
 #bv-battle-transition.bt-out {
@@ -57743,115 +57774,260 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 50% 50%, rgba(18, 30, 76, .96), rgba(2, 3, 10, .995) 68%),
+        radial-gradient(ellipse at 50% 46%, rgba(16, 26, 62, .97), rgba(2, 3, 10, .995) 70%),
         #02030a;
     opacity: 0;
-    animation: bvbtVeilIn .42s ease .16s forwards;
+    animation: bvbtVeilIn .42s ease .12s forwards;
 }
 
 @keyframes bvbtVeilIn {
     to { opacity: 1; }
 }
 
-/* --- Text im FF-Stil --- */
+/* Vignette: zieht sich von den Rändern zu */
+#bv-battle-transition .bvbt-vig {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 26%, rgba(2, 3, 10, .96) 78%);
+    opacity: 0;
+    animation: bvbtVigIn .5s ease .05s forwards;
+}
+
+@keyframes bvbtVigIn {
+    to { opacity: 1; }
+}
+
+/* --- Schriftzug --- */
 #bv-battle-transition .bvbt-caption {
     position: absolute;
-    left: 0;
-    right: 0;
+    left: 50%;
     top: 50%;
+    width: min(74%, 460px);
+    padding: 14px 8px 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     text-align: center;
-    transform: translateY(-50%);
-    animation: bvbtCapIn .5s cubic-bezier(.16, 1, .3, 1) .2s both;
+    transform: translate(-50%, -50%);
+    animation: bvbtCapIn .5s cubic-bezier(.16, 1, .3, 1) .3s both;
 }
 
 @keyframes bvbtCapIn {
-    from { opacity: 0; transform: translateY(-50%) scale(.92); letter-spacing: 10px; }
-    to   { opacity: 1; transform: translateY(-50%) scale(1); letter-spacing: normal; }
+    from { opacity: 0; transform: translate(-50%, -50%) scale(1.16); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* FF-typische Eck-Ticks um den Schriftzug */
+#bv-battle-transition .bvbt-tick {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid rgba(190, 215, 255, .55);
+    animation: bvbtTicks .5s ease .34s both;
+}
+
+#bv-battle-transition .bvbt-tick.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+#bv-battle-transition .bvbt-tick.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+#bv-battle-transition .bvbt-tick.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+#bv-battle-transition .bvbt-tick.br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+@keyframes bvbtTicks {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 #bv-battle-transition .bvbt-kicker {
-    font-size: .62rem;
+    font-size: .6rem;
     letter-spacing: 6px;
-    color: rgba(190, 215, 255, .6);
-    text-transform: uppercase;
-}
-
-#bv-battle-transition .bvbt-rule {
-    width: 190px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(190, 215, 255, .55), transparent);
+    color: rgba(190, 215, 255, .62);
 }
 
 #bv-battle-transition .bvbt-title {
-    font-size: 2.1rem;
-    letter-spacing: 9px;
+    font-size: 2.15rem;
+    letter-spacing: 11px;
+    line-height: 1.15;
     color: #fff;
     text-shadow:
-        0 0 10px rgba(130, 180, 255, .95),
-        0 0 34px rgba(60, 120, 255, .75),
+        0 0 10px rgba(140, 190, 255, .95),
+        0 0 30px rgba(60, 120, 255, .7),
         0 2px 0 #0a1240;
 }
 
-#bv-battle-transition .bvbt-sub {
-    margin-top: 2px;
-    font-size: .8rem;
-    letter-spacing: 2px;
-    color: rgba(200, 222, 255, .68);
+#bv-battle-transition .bvbt-rule {
+    width: 100%;
+    height: 1px;
+    margin: 3px 0 1px;
+    background: linear-gradient(90deg, transparent, rgba(190, 215, 255, .6), transparent);
 }
 
-/* --- Variante 1: Wirbel (FF-Begegnung) --- */
+#bv-battle-transition .bvbt-sub {
+    font-size: .8rem;
+    letter-spacing: 2px;
+    color: rgba(200, 222, 255, .7);
+}
+
+/* --- Variante: Klingenkreuz --- */
+#bv-battle-transition .bvbt-slash {
+    position: absolute;
+    left: -30%;
+    top: 50%;
+    width: 160%;
+    height: 26px;
+    margin-top: -13px;
+    background: linear-gradient(90deg, transparent 0 8%, #ffffff 46%, #cfe4ff 52%, transparent 88%);
+    box-shadow: 0 0 18px rgba(150, 200, 255, .85);
+    transform-origin: center;
+    animation: bvbtSlash .42s cubic-bezier(.2, .9, .2, 1) forwards;
+}
+
+#bv-battle-transition .bvbt-slash.s1 { transform: rotate(-24deg) scaleX(0); }
+#bv-battle-transition .bvbt-slash.s2 { transform: rotate(19deg) scaleX(0); animation-delay: .07s; }
+
+@keyframes bvbtSlash {
+    0%   { opacity: 0; }
+    12%  { opacity: 1; }
+    55%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+#bv-battle-transition .bvbt-slash.s1 { animation-name: bvbtSlashA; }
+#bv-battle-transition .bvbt-slash.s2 { animation-name: bvbtSlashB; }
+
+@keyframes bvbtSlashA {
+    0%   { opacity: 0; transform: rotate(-24deg) scaleX(0); }
+    16%  { opacity: 1; transform: rotate(-24deg) scaleX(1); }
+    60%  { opacity: 1; transform: rotate(-24deg) scaleX(1); }
+    100% { opacity: 0; transform: rotate(-24deg) scaleX(1); }
+}
+
+@keyframes bvbtSlashB {
+    0%   { opacity: 0; transform: rotate(19deg) scaleX(0); }
+    16%  { opacity: 1; transform: rotate(19deg) scaleX(1); }
+    60%  { opacity: 1; transform: rotate(19deg) scaleX(1); }
+    100% { opacity: 0; transform: rotate(19deg) scaleX(1); }
+}
+
+#bv-battle-transition .bvbt-star {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 30%, rgba(190, 220, 255, .8) 55%, transparent 72%);
+    animation: bvbtStar .55s ease-out .14s forwards;
+    opacity: 0;
+}
+
+#bv-battle-transition .bvbt-star.small {
+    animation-delay: .18s;
+}
+
+@keyframes bvbtStar {
+    0%   { opacity: 0; transform: scale(.2); }
+    25%  { opacity: 1; transform: scale(2.6); }
+    100% { opacity: 0; transform: scale(4.4); }
+}
+
+#bv-battle-transition .bvbt-shock {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 46%;
+    padding-top: 46%;
+    margin-left: -23%;
+    margin-top: -23%;
+    border-radius: 50%;
+    border: 2px solid rgba(180, 215, 255, .7);
+    opacity: 0;
+    animation: bvbtShock .62s cubic-bezier(.16, 1, .3, 1) .1s forwards;
+}
+
+@keyframes bvbtShock {
+    0%   { opacity: 0; transform: scale(.15); }
+    20%  { opacity: .95; }
+    100% { opacity: 0; transform: scale(1.35); }
+}
+
+#bv-battle-transition .bvbt-spark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: #dff0ff;
+    box-shadow: 0 0 8px rgba(160, 210, 255, .9);
+    opacity: 0;
+    transform: rotate(var(--a, 0deg)) translateY(0) scale(.4);
+    animation: bvbtSpark .55s cubic-bezier(.2, .8, .2, 1) .16s forwards;
+}
+
+@keyframes bvbtSpark {
+    0%   { opacity: 0; transform: rotate(var(--a, 0deg)) translateY(6px) scale(.4); }
+    25%  { opacity: 1; }
+    100% { opacity: 0; transform: rotate(var(--a, 0deg)) translateY(calc(var(--d, 90) * 1px + 60px)) scale(1); }
+}
+
+/* --- Variante: Wirbel (FF) --- */
 #bv-battle-transition .bvbt-swirl {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 165vmax;
-    height: 165vmax;
+    width: 240%;
+    height: 240%;
     border-radius: 50%;
     will-change: transform, opacity;
-    transform: translate(-50%, -50%) rotate(0deg) scale(1.6);
     opacity: 0;
 }
 
 #bv-battle-transition .bvbt-swirl.s1 {
     background: repeating-conic-gradient(from 0deg,
         rgba(120, 180, 255, 0) 0deg 6deg,
-        rgba(150, 200, 255, .85) 6deg 9deg,
+        rgba(160, 205, 255, .9) 6deg 9deg,
         rgba(120, 180, 255, 0) 9deg 16deg);
-    animation: bvbtSwirlA .72s cubic-bezier(.45, 0, .25, 1) forwards;
+    animation: bvbtSwirlA .74s cubic-bezier(.45, 0, .25, 1) forwards;
 }
 
 #bv-battle-transition .bvbt-swirl.s2 {
-    width: 130vmax;
-    height: 130vmax;
+    width: 200%;
+    height: 200%;
     background: repeating-conic-gradient(from 12deg,
         rgba(90, 150, 255, 0) 0deg 10deg,
-        rgba(190, 225, 255, .55) 10deg 14deg,
+        rgba(200, 230, 255, .6) 10deg 14deg,
         rgba(90, 150, 255, 0) 14deg 26deg);
-    animation: bvbtSwirlB .68s cubic-bezier(.45, 0, .25, 1) .04s forwards;
+    animation: bvbtSwirlB .7s cubic-bezier(.45, 0, .25, 1) .04s forwards;
 }
 
 #bv-battle-transition .bvbt-swirl.s3 {
-    width: 95vmax;
-    height: 95vmax;
+    width: 150%;
+    height: 150%;
     background: repeating-conic-gradient(from 24deg,
         rgba(40, 70, 180, 0) 0deg 14deg,
-        rgba(60, 110, 230, .75) 14deg 20deg,
+        rgba(70, 120, 235, .8) 14deg 20deg,
         rgba(40, 70, 180, 0) 20deg 36deg);
-    animation: bvbtSwirlC .62s cubic-bezier(.45, 0, .25, 1) .08s forwards;
+    animation: bvbtSwirlC .64s cubic-bezier(.45, 0, .25, 1) .08s forwards;
+}
+
+#bv-battle-transition .bvbt-swirl::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 34%, rgba(2, 3, 10, .55) 62%, rgba(2, 3, 10, .9) 78%);
 }
 
 @keyframes bvbtSwirlA {
-    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-50deg) scale(1.7); }
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-50deg) scale(1.6); }
     22%  { opacity: 1; }
     100% { opacity: .95; transform: translate(-50%, -50%) rotate(150deg) scale(.05); }
 }
 
 @keyframes bvbtSwirlB {
-    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(40deg) scale(1.5); }
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(40deg) scale(1.45); }
     22%  { opacity: 1; }
     100% { opacity: .9; transform: translate(-50%, -50%) rotate(-170deg) scale(.04); }
 }
@@ -57862,126 +58038,133 @@ body.bv-settings-particles-off .title-canvas-bg {
     100% { opacity: .85; transform: translate(-50%, -50%) rotate(210deg) scale(.03); }
 }
 
-/* Dunkler Kern, in den der Wirbel läuft */
 #bv-battle-transition .bvbt-core {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 40vmax;
-    height: 40vmax;
+    width: 52%;
+    padding-top: 52%;
+    margin-left: -26%;
+    margin-top: -26%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(6, 10, 26, .95), rgba(2, 3, 10, .98) 62%, transparent 72%);
-    transform: translate(-50%, -50%) scale(.2);
+    background: radial-gradient(circle, rgba(6, 10, 26, .96), rgba(2, 3, 10, .98) 60%, transparent 74%);
+    transform: scale(.2);
     opacity: 0;
     animation: bvbtCoreIn .55s ease .18s forwards;
 }
 
 @keyframes bvbtCoreIn {
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+    0%   { opacity: 0; transform: scale(.2); }
     60%  { opacity: 1; }
-    100% { opacity: 1; transform: translate(-50%, -50%) scale(4.2); }
+    100% { opacity: 1; transform: scale(2.6); }
 }
 
-/* --- Variante 2: Splitter --- */
-#bv-battle-transition .bvbt-shard {
+/* --- Variante: Riss --- */
+#bv-battle-transition .bvbt-crack {
     position: absolute;
-    top: -20%;
-    left: calc(var(--i) * 11% - 6%);
-    width: 15%;
-    height: 145%;
-    background: linear-gradient(180deg, rgba(18, 30, 76, .98), rgba(4, 8, 26, .99));
-    border-left: 2px solid rgba(170, 210, 255, .55);
-    border-right: 2px solid rgba(170, 210, 255, .25);
-    transform: translateY(-105%) skewX(-9deg);
-    animation: bvbtShardIn .34s cubic-bezier(.2, .9, .2, 1) forwards;
-    animation-delay: calc(var(--i) * 26ms);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
 }
 
-@keyframes bvbtShardIn {
-    to { transform: translateY(0) skewX(-9deg); }
+#bv-battle-transition .bvbt-crack .cl {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 260;
+    stroke-dashoffset: 260;
+    vector-effect: non-scaling-stroke;
+    animation: bvbtCrack .3s ease-out forwards;
 }
 
-/* --- Variante 3: Zoom --- */
-#bv-battle-transition .bvbt-zoomring {
+#bv-battle-transition .bvbt-crack .cl-glow {
+    stroke: rgba(150, 200, 255, .35);
+    stroke-width: 14;
+}
+
+#bv-battle-transition .bvbt-crack .cl-core {
+    stroke: #fff;
+    stroke-width: 3;
+    animation-delay: .04s;
+}
+
+@keyframes bvbtCrack {
+    0%   { stroke-dashoffset: 260; opacity: 0; }
+    20%  { opacity: 1; }
+    55%  { stroke-dashoffset: 0; opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* --- Variante: Iris --- */
+#bv-battle-transition .bvbt-iris {
     position: absolute;
     left: 50%;
     top: 50%;
+    width: 190%;
+    padding-top: 190%;
+    margin-left: -95%;
+    margin-top: -95%;
     border-radius: 50%;
-    border: 2px solid rgba(170, 210, 255, .55);
-    transform: translate(-50%, -50%) scale(.05);
-    opacity: 0;
-    animation: bvbtRingOut .5s ease-out forwards;
+    background: radial-gradient(circle, transparent 0 46%, rgba(3, 5, 14, .97) 49%);
+    transform: scale(1.5);
+    animation: bvbtIris .72s cubic-bezier(.5, 0, .2, 1) .06s forwards;
 }
 
-#bv-battle-transition .bvbt-zoomring.r1 { width: 40vmax; height: 40vmax; }
-#bv-battle-transition .bvbt-zoomring.r2 { width: 80vmax; height: 80vmax; animation-delay: .07s; }
-#bv-battle-transition .bvbt-zoomring.r3 { width: 130vmax; height: 130vmax; animation-delay: .14s; }
-
-@keyframes bvbtRingOut {
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.05); }
-    25%  { opacity: 1; }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+@keyframes bvbtIris {
+    0%   { transform: scale(1.5); opacity: 1; }
+    55%  { transform: scale(.9); opacity: 1; }
+    100% { transform: scale(.02); opacity: 1; }
 }
 
-#bv-battle-transition .bvbt-vignette {
+#bv-battle-transition .bvbt-rays {
     position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 50% 50%, transparent 12%, rgba(2, 3, 10, .98) 62%);
+    left: 50%;
+    top: 50%;
+    width: 170%;
+    padding-top: 170%;
+    margin-left: -85%;
+    margin-top: -85%;
+    border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg,
+        rgba(180, 215, 255, .22) 0deg 2deg,
+        transparent 2deg 12deg);
+    animation: bvbtRays .6s cubic-bezier(.3, 0, .2, 1) forwards;
     opacity: 0;
-    animation: bvbtVignetteIn .55s ease .1s forwards;
 }
 
-@keyframes bvbtVignetteIn {
-    to { opacity: 1; }
+@keyframes bvbtRays {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(0deg) scale(1.3); }
+    30%  { opacity: .9; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(50deg) scale(.4); }
 }
 
-/* --- Blitz --- */
-#bv-battle-transition .bvbt-flash {
-    position: absolute;
-    inset: 0;
-    background: #fff;
-    opacity: 0;
-    animation: bvbtWhiteFlash .42s ease-out forwards;
-}
-
-#bv-battle-transition .bvbt-flash.short {
-    animation-duration: .3s;
-}
-
-@keyframes bvbtWhiteFlash {
-    0%   { opacity: 0; }
-    14%  { opacity: .92; }
-    100% { opacity: 0; }
-}
-
-/* --- Boss: roter Vortex --- */
+/* --- Boss-Variante --- */
 #bv-battle-transition .bvbt-swirl.boss.s1 {
     background: repeating-conic-gradient(from 0deg,
         rgba(255, 60, 40, 0) 0deg 7deg,
-        rgba(255, 90, 60, .85) 7deg 11deg,
+        rgba(255, 95, 60, .9) 7deg 11deg,
         rgba(255, 60, 40, 0) 11deg 19deg);
-    animation: bvbtSwirlA .78s cubic-bezier(.45, 0, .25, 1) forwards;
 }
 
 #bv-battle-transition .bvbt-swirl.boss.s2 {
     background: repeating-conic-gradient(from 30deg,
         rgba(180, 20, 10, 0) 0deg 12deg,
-        rgba(255, 140, 60, .7) 12deg 17deg,
+        rgba(255, 145, 60, .75) 12deg 17deg,
         rgba(180, 20, 10, 0) 17deg 30deg);
-    animation: bvbtSwirlB .72s cubic-bezier(.45, 0, .25, 1) .05s forwards;
 }
 
 #bv-battle-transition .bvbt-core.boss {
-    background: radial-gradient(circle, rgba(120, 10, 6, .95), rgba(10, 2, 3, .98) 60%, transparent 72%);
+    background: radial-gradient(circle, rgba(120, 10, 6, .95), rgba(10, 2, 3, .98) 60%, transparent 74%);
 }
 
 #bv-battle-transition .bvbt-hazard {
     position: absolute;
     left: 0;
     right: 0;
-    height: 74px;
-    background: repeating-linear-gradient(115deg, rgba(229, 53, 43, .92) 0 24px, rgba(12, 12, 18, .95) 24px 48px);
-    box-shadow: 0 0 26px rgba(229, 53, 43, .5);
+    height: 62px;
+    background: repeating-linear-gradient(115deg, rgba(229, 53, 43, .92) 0 22px, rgba(12, 12, 18, .95) 22px 44px);
+    box-shadow: 0 0 24px rgba(229, 53, 43, .45);
     transform: scaleY(0);
     animation: bvbtHazardIn .3s cubic-bezier(.16, 1, .3, 1) forwards;
 }
@@ -57996,7 +58179,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 #bv-battle-transition .bvbt-redflash {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(255, 40, 30, .38), transparent 64%);
+    background: radial-gradient(circle at 50% 50%, rgba(255, 40, 30, .4), transparent 62%);
     opacity: 0;
     animation: bvbtRedFlash .8s ease-out .08s 2;
 }
@@ -58011,23 +58194,27 @@ body.bv-settings-particles-off .title-canvas-bg {
     color: #ffe9e6;
     text-shadow:
         0 0 12px rgba(255, 70, 50, .95),
-        0 0 40px rgba(255, 20, 10, .7),
+        0 0 38px rgba(255, 20, 10, .7),
         0 2px 0 #2a0503;
 }
 
-#bv-battle-transition.v-bt-boss .bvbt-kicker { color: rgba(255, 170, 160, .8); }
+#bv-battle-transition.v-bt-boss .bvbt-kicker { color: rgba(255, 170, 160, .82); }
+#bv-battle-transition.v-bt-boss .bvbt-sub { color: rgba(255, 200, 195, .78); }
 #bv-battle-transition.v-bt-boss .bvbt-rule {
-    background: linear-gradient(90deg, transparent, rgba(255, 120, 100, .65), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 120, 100, .7), transparent);
 }
-#bv-battle-transition.v-bt-boss .bvbt-sub { color: rgba(255, 200, 195, .75); }
+#bv-battle-transition.v-bt-boss .bvbt-tick { border-color: rgba(255, 150, 130, .6); }
 
-/* --- Low-Spec: ruhiger Vorhang + Text --- */
-#bv-battle-transition.bt-low .bvbt-flash,
+/* --- Low-Spec: nur Vorhang + Schriftzug --- */
+#bv-battle-transition.bt-low .bvbt-slash,
+#bv-battle-transition.bt-low .bvbt-star,
 #bv-battle-transition.bt-low .bvbt-swirl,
 #bv-battle-transition.bt-low .bvbt-core,
-#bv-battle-transition.bt-low .bvbt-shard,
-#bv-battle-transition.bt-low .bvbt-zoomring,
-#bv-battle-transition.bt-low .bvbt-vignette {
+#bv-battle-transition.bt-low .bvbt-crack,
+#bv-battle-transition.bt-low .bvbt-iris,
+#bv-battle-transition.bt-low .bvbt-rays,
+#bv-battle-transition.bt-low .bvbt-spark,
+#bv-battle-transition.bt-low .bvbt-vig {
     display: none !important;
 }
 
@@ -58037,7 +58224,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #bv-battle-transition.bt-low.v-bt-boss .bvbt-veil {
-    background: radial-gradient(ellipse at 50% 50%, rgba(88, 14, 12, .96), rgba(4, 3, 8, .995) 70%), #05030a;
+    background: radial-gradient(ellipse at 50% 50%, rgba(84, 14, 12, .96), rgba(4, 3, 8, .995) 70%), #05030a;
 }
 
 #bv-battle-transition.bt-low .bvbt-hazard {
@@ -58050,8 +58237,18 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 @media (prefers-reduced-motion: reduce) {
     #bv-battle-transition .bvbt-caption,
-    #bv-battle-transition .bvbt-veil {
-        animation-duration: .12s !important;
+    #bv-battle-transition .bvbt-veil { animation-duration: .12s !important; }
+}
+
+/* --- Kleine Fenster: Schriftzug kompakter --- */
+@media (max-width: 520px) {
+    #bv-battle-transition .bvbt-title {
+        font-size: 1.5rem;
+        letter-spacing: 7px;
+    }
+
+    #bv-battle-transition .bvbt-caption {
+        width: 86%;
     }
 }
 </style>
