@@ -52438,11 +52438,19 @@ body.bv-settings-particles-off .title-canvas-bg {
    BV FEATURE v1.0: Level-Up Choice Screen + Achievements
    ============================================================ */
 
-/* ===== KARRIEREPFAD v4.0 (im Gamefenster) =====
-   Der Screen liegt in #rpg-game-window (absolute), nicht mehr über der
-   ganzen Seite. Nur transform/opacity-Animationen, keine Blur-Ebenen.
+/* ===== KARRIEREPFAD v5.0 (im Gamefenster, FF-Fensterstil) =====
+   Klassische Menü-Fenster-Optik: tiefblaue Flächen, helle Doppelrahmen,
+   goldene Kopfzeile, Zeiger-Cursor auf der aktiven Karte.
+   Nur transform/opacity-Animationen, keine Blur-Ebenen.
    Low-Spec (Einstellungen / prefers-reduced-motion) schaltet Effekte ab. */
+
 #levelup-choice-overlay {
+    --ff-line: #cfd8ff;
+    --ff-line-dim: rgba(207, 216, 255, .42);
+    --ff-win-top: #1d2c86;
+    --ff-win-mid: #0b1450;
+    --ff-win-bot: #050a2c;
+    --ff-gold: #ffd479;
     position: absolute;
     inset: 0;
     z-index: 9000;
@@ -52453,12 +52461,11 @@ body.bv-settings-particles-off .title-canvas-bg {
     opacity: 0;
     pointer-events: none;
     overflow: hidden;
-    transition: opacity .24s ease;
+    transition: opacity .22s ease;
     font-family: 'VT323', monospace;
-    color: #e8eeff;
+    color: #eef2ff;
 }
 
-/* Falls das Gamefenster (theoretisch) fehlt: bildschirmfüllend */
 #levelup-choice-overlay.bvk-floating {
     position: fixed;
     z-index: 9999999;
@@ -52472,7 +52479,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay.closing {
     opacity: 0;
     pointer-events: none;
-    transition-duration: .2s;
+    transition-duration: .18s;
 }
 
 /* --- Hintergrund im Fenster --- */
@@ -52480,29 +52487,31 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 50% 0%, rgba(255, 190, 70, .14), transparent 58%),
-        radial-gradient(ellipse at 50% 110%, rgba(74, 159, 255, .14), transparent 55%),
-        linear-gradient(rgba(255, 215, 0, .025) 1px, transparent 1px) 0 0 / 52px 52px,
-        linear-gradient(90deg, rgba(255, 215, 0, .025) 1px, transparent 1px) 0 0 / 52px 52px,
-        linear-gradient(180deg, rgba(6, 8, 16, .96), rgba(4, 5, 12, .985));
+        radial-gradient(ellipse at 50% 0%, rgba(90, 130, 255, .16), transparent 58%),
+        radial-gradient(ellipse at 50% 110%, rgba(255, 190, 70, .1), transparent 55%),
+        linear-gradient(180deg, rgba(4, 7, 22, .95), rgba(2, 4, 14, .985));
 }
 
-/* --- Panel --- */
+/* --- klassisches FF-Fenster --- */
 #levelup-choice-overlay .bvk-panel {
     position: relative;
     z-index: 2;
-    width: min(760px, 100%);
+    width: min(770px, 100%);
     max-height: 100%;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 12px 14px 10px;
-    border-radius: 14px;
-    border: 1.5px solid rgba(255, 205, 90, .3);
-    background: linear-gradient(180deg, rgba(20, 26, 48, .97), rgba(9, 11, 22, .98));
-    box-shadow: 0 14px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .05);
+    padding: 12px 16px 10px;
+    border-radius: 7px;
+    border: 2px solid var(--ff-line);
+    background:
+        linear-gradient(180deg, var(--ff-win-top) 0%, var(--ff-win-mid) 46%, var(--ff-win-bot) 100%);
+    box-shadow:
+        0 0 0 2px #0a1240 inset,
+        0 0 0 4px rgba(207, 216, 255, .16) inset,
+        0 14px 38px rgba(0, 0, 0, .6);
     opacity: 0;
-    transform: translateY(14px) scale(.97);
-    transition: transform .3s cubic-bezier(.16, 1, .3, 1), opacity .22s ease;
+    transform: translateY(12px) scale(.975);
+    transition: transform .28s cubic-bezier(.16, 1, .3, 1), opacity .2s ease;
 }
 
 #levelup-choice-overlay.active .bvk-panel {
@@ -52513,20 +52522,34 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay.closing .bvk-panel {
     opacity: 0;
     transform: translateY(-8px) scale(.985);
-    transition-duration: .22s;
+    transition-duration: .2s;
 }
 
-/* Goldene Oberkante */
+/* Eck-Ornamente wie im FF-Menü */
+#levelup-choice-overlay .bvk-corner {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--ff-line);
+    opacity: .75;
+    pointer-events: none;
+}
+
+#levelup-choice-overlay .bvk-corner.tl { top: 3px; left: 3px; border-right: none; border-bottom: none; border-top-left-radius: 5px; }
+#levelup-choice-overlay .bvk-corner.tr { top: 3px; right: 3px; border-left: none; border-bottom: none; border-top-right-radius: 5px; }
+#levelup-choice-overlay .bvk-corner.bl { bottom: 3px; left: 3px; border-right: none; border-top: none; border-bottom-left-radius: 5px; }
+#levelup-choice-overlay .bvk-corner.br { bottom: 3px; right: 3px; border-left: none; border-top: none; border-bottom-right-radius: 5px; }
+
+/* Goldene Doppellinie unter der Kopfzeile */
 #levelup-choice-overlay .bvk-panel::before {
     content: '';
     position: absolute;
     left: 14px;
     right: 14px;
-    top: 0;
+    top: 56px;
     height: 2px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, transparent, #ffd166, transparent);
-    opacity: .8;
+    background: linear-gradient(90deg, transparent, var(--ff-gold), rgba(255, 212, 121, .25), transparent);
+    opacity: .75;
     pointer-events: none;
 }
 
@@ -52534,23 +52557,23 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay .bvk-head {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 11px;
+    padding-bottom: 6px;
 }
 
 #levelup-choice-overlay .bvk-badge {
     position: relative;
     flex: 0 0 auto;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background:
-        radial-gradient(circle at 50% 28%, #2b3763, #0d1226 72%);
-    border: 2px solid rgba(255, 205, 90, .55);
-    box-shadow: 0 0 14px rgba(255, 190, 60, .16);
+    background: linear-gradient(180deg, #2a3da0, #08113c);
+    border: 2px solid var(--ff-line);
+    box-shadow: 0 0 0 2px #0a1240 inset, 0 0 12px rgba(140, 180, 255, .25);
 }
 
 #levelup-choice-overlay .bvk-badge-n {
@@ -52558,14 +52581,14 @@ body.bv-settings-particles-off .title-canvas-bg {
     line-height: 1;
     color: #fff;
     font-weight: normal;
+    text-shadow: 0 0 10px rgba(160, 200, 255, .8);
 }
 
 #levelup-choice-overlay .bvk-badge-k {
     font-size: .42rem;
     font-style: normal;
     letter-spacing: 1.4px;
-    color: #ffd166;
-    opacity: .85;
+    color: var(--ff-gold);
     line-height: 1.2;
 }
 
@@ -52575,17 +52598,19 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #levelup-choice-overlay .bvk-title {
-    font-size: 1.2rem;
-    letter-spacing: 3px;
-    color: #ffd166;
-    text-shadow: 0 0 12px rgba(255, 190, 60, .32);
-    line-height: 1.1;
+    font-size: 1.15rem;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow:
+        1px 1px 0 #0a1240,
+        0 0 12px rgba(150, 190, 255, .55);
+    line-height: 1.15;
 }
 
 #levelup-choice-overlay .bvk-rankline {
-    margin-top: 2px;
+    margin-top: 1px;
     font-size: .78rem;
-    color: rgba(255, 255, 255, .42);
+    color: rgba(220, 230, 255, .5);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -52593,29 +52618,29 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 #levelup-choice-overlay .bvk-rankline b {
     font-weight: normal;
-    color: #9ad0ff;
+    color: var(--ff-gold);
 }
 
 #levelup-choice-overlay .bvk-sep {
     margin: 0 5px;
-    opacity: .5;
+    opacity: .45;
 }
 
 #levelup-choice-overlay .bvk-counter {
     flex: 0 0 auto;
     font-size: .7rem;
-    padding: 3px 8px;
-    border-radius: 20px;
-    color: #ffe08a;
-    background: rgba(255, 205, 90, .12);
-    border: 1px solid rgba(255, 205, 90, .3);
+    padding: 2px 9px;
+    border-radius: 4px;
+    color: #ffe6b0;
+    background: rgba(255, 212, 121, .1);
+    border: 1px solid rgba(255, 212, 121, .45);
 }
 
-/* --- Rang-Leiter (schmal) --- */
+/* --- Rang-Leiter --- */
 #levelup-choice-overlay .bvk-rail {
     display: flex;
     align-items: flex-start;
-    margin: 9px 0 1px;
+    margin: 10px 0 1px;
 }
 
 #levelup-choice-overlay .bvk-step {
@@ -52630,57 +52655,57 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay .bvk-step i {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
-    background: #232a44;
-    border: 1.5px solid #3a4368;
+    border-radius: 2px;
+    transform: rotate(45deg);
+    background: #16205c;
+    border: 1.5px solid rgba(207, 216, 255, .35);
 }
 
 #levelup-choice-overlay .bvk-step span {
     font-size: .55rem;
     white-space: nowrap;
-    color: rgba(255, 255, 255, .26);
+    color: rgba(210, 222, 255, .32);
 }
 
 #levelup-choice-overlay .bvk-step.done i {
     background: #3f8f5f;
-    border-color: #6ee7a8;
+    border-color: #8ef0b6;
 }
 
 #levelup-choice-overlay .bvk-step.done span {
-    color: rgba(160, 230, 190, .55);
+    color: rgba(160, 235, 195, .6);
 }
 
 #levelup-choice-overlay .bvk-step.now i {
-    width: 12px;
-    height: 12px;
-    margin-top: -2px;
-    background: #ffd166;
-    border-color: #fff3c4;
-    box-shadow: 0 0 9px rgba(255, 200, 60, .6);
+    width: 11px;
+    height: 11px;
+    background: var(--ff-gold);
+    border-color: #fff6d8;
+    box-shadow: 0 0 9px rgba(255, 200, 90, .75);
 }
 
 #levelup-choice-overlay .bvk-step.now span {
-    color: #ffe08a;
+    color: #ffe0a3;
 }
 
 #levelup-choice-overlay .bvk-link {
     flex: 1 1 auto;
-    height: 2px;
-    margin: 4px -5px 0;
-    border-radius: 2px;
-    background: #232a44;
+    height: 1px;
+    margin: 5px -5px 0;
+    background: rgba(207, 216, 255, .2);
 }
 
 #levelup-choice-overlay .bvk-link.done {
-    background: linear-gradient(90deg, #6ee7a8, #ffd166);
+    background: linear-gradient(90deg, #8ef0b6, var(--ff-gold));
 }
 
 /* --- Rang-Fortschritt --- */
 #levelup-choice-overlay .bvk-progress {
-    height: 4px;
+    height: 5px;
     margin: 5px 0 10px;
-    border-radius: 4px;
-    background: #161c30;
+    border-radius: 3px;
+    background: #050b26;
+    border: 1px solid rgba(207, 216, 255, .22);
     overflow: hidden;
 }
 
@@ -52688,8 +52713,7 @@ body.bv-settings-particles-off .title-canvas-bg {
     display: block;
     height: 100%;
     width: 0;
-    border-radius: 4px;
-    background: linear-gradient(90deg, #4a9fff, #ffd166);
+    background: linear-gradient(90deg, #7fb2ff, var(--ff-gold));
     transition: width .45s cubic-bezier(.16, 1, .3, 1);
 }
 
@@ -52707,9 +52731,9 @@ body.bv-settings-particles-off .title-canvas-bg {
     align-items: center;
     gap: 1px;
     padding: 11px 7px 9px;
-    border-radius: 11px;
-    border: 1.5px solid rgba(255, 255, 255, .08);
-    background: linear-gradient(170deg, rgba(28, 34, 60, .96), rgba(11, 14, 26, .98));
+    border-radius: 5px;
+    border: 2px solid rgba(207, 216, 255, .3);
+    background: linear-gradient(180deg, rgba(30, 46, 128, .85), rgba(6, 12, 44, .92));
     color: inherit;
     font: inherit;
     text-align: center;
@@ -52718,8 +52742,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     transform: translateY(12px) scale(.97);
     transition: transform .24s cubic-bezier(.16, 1, .3, 1),
                 opacity .22s ease,
-                border-color .16s ease,
-                box-shadow .2s ease;
+                border-color .14s ease,
+                box-shadow .18s ease;
     -webkit-tap-highlight-color: transparent;
     will-change: transform;
 }
@@ -52729,16 +52753,34 @@ body.bv-settings-particles-off .title-canvas-bg {
     transform: none;
 }
 
+/* Neue Version: goldener Kopfstreifen + FF-Zeiger */
 #levelup-choice-overlay .bvk-card::before {
     content: '';
     position: absolute;
-    left: 9px;
-    right: 9px;
+    left: 8px;
+    right: 8px;
     top: 0;
     height: 2px;
-    border-radius: 2px;
-    background: var(--accent, #ffd166);
-    opacity: .8;
+    background: var(--accent, var(--ff-gold));
+    opacity: .85;
+}
+
+#levelup-choice-overlay .bvk-cursor {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    font-size: .6rem;
+    color: var(--ff-gold);
+    opacity: 0;
+    transform: translate(-4px, -50%);
+    transition: opacity .14s ease, transform .14s ease;
+    pointer-events: none;
+}
+
+#levelup-choice-overlay .bvk-card:hover .bvk-cursor,
+#levelup-choice-overlay .bvk-card.kbd-focus .bvk-cursor {
+    opacity: 1;
+    transform: translate(0, -50%);
 }
 
 #levelup-choice-overlay .bvk-card::after {
@@ -52748,7 +52790,7 @@ body.bv-settings-particles-off .title-canvas-bg {
     border-radius: inherit;
     pointer-events: none;
     opacity: 0;
-    background: linear-gradient(115deg, transparent 36%, rgba(255, 255, 255, .12) 50%, transparent 64%);
+    background: linear-gradient(115deg, transparent 36%, rgba(255, 255, 255, .14) 50%, transparent 64%);
     transform: translateX(-60%);
 }
 
@@ -52765,23 +52807,23 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 #levelup-choice-overlay .bvk-card:hover,
 #levelup-choice-overlay .bvk-card.kbd-focus {
-    border-color: var(--accent, #ffd166);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px var(--accent, #ffd166);
+    border-color: var(--ff-line);
+    box-shadow: 0 0 0 2px rgba(10, 18, 64, .9) inset, 0 0 16px rgba(150, 190, 255, .35);
 }
 
 #levelup-choice-overlay .bvk-card.kbd-focus {
-    outline: 2px solid var(--accent, #ffd166);
+    outline: 1px solid var(--ff-gold);
     outline-offset: 2px;
 }
 
 #levelup-choice-overlay .bvk-card:active {
     transform: scale(.97);
-    transition-duration: .08s;
+    transition-duration: .07s;
 }
 
 #levelup-choice-overlay .bvk-card.chosen {
-    border-color: var(--accent, #ffd166);
-    box-shadow: 0 0 22px -6px var(--accent, #ffd166), inset 0 0 0 2px var(--accent, #ffd166);
+    border-color: var(--ff-gold);
+    box-shadow: 0 0 0 2px rgba(255, 212, 121, .35) inset, 0 0 18px rgba(255, 200, 90, .35);
     transform: translateY(-2px) scale(1.02);
     cursor: default;
 }
@@ -52790,32 +52832,32 @@ body.bv-settings-particles-off .title-canvas-bg {
     opacity: .3;
     transform: scale(.96);
     pointer-events: none;
-    transition: opacity .18s ease, transform .18s ease;
+    transition: opacity .16s ease, transform .16s ease;
 }
 
 #levelup-choice-overlay .bvk-key {
     position: absolute;
     top: 4px;
     left: 5px;
-    font-size: .52rem;
+    font-size: .5rem;
     line-height: 1.3;
     padding: 0 3px;
-    color: rgba(255, 255, 255, .28);
-    border: 1px solid rgba(255, 255, 255, .14);
-    border-radius: 4px;
+    color: rgba(207, 216, 255, .4);
+    border: 1px solid rgba(207, 216, 255, .22);
+    border-radius: 2px;
 }
 
 #levelup-choice-overlay .bvk-medal {
     width: 40px;
     height: 40px;
     margin-bottom: 2px;
-    border-radius: 50%;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at 42% 30%, rgba(255, 255, 255, .12), transparent 62%), #171d33;
-    border: 1.5px solid var(--accent, #ffd166);
-    box-shadow: 0 0 10px -3px var(--accent, #ffd166);
+    background: linear-gradient(180deg, #22307e, #070d30);
+    border: 2px solid var(--accent, var(--ff-gold));
+    box-shadow: 0 0 10px -3px var(--accent, var(--ff-gold));
     transition: transform .24s cubic-bezier(.16, 1, .3, 1);
 }
 
@@ -52825,19 +52867,20 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #levelup-choice-overlay .bvk-card:hover .bvk-medal {
-    transform: scale(1.07) rotate(-6deg);
+    transform: scale(1.07) rotate(-5deg);
 }
 
 #levelup-choice-overlay .bvk-name {
     font-size: .82rem;
     letter-spacing: .3px;
-    color: #dfe6ff;
+    color: #e6ecff;
 }
 
 #levelup-choice-overlay .bvk-bonus {
     font-size: 1rem;
     line-height: 1.15;
-    color: var(--accent, #ffd166);
+    color: var(--accent, var(--ff-gold));
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, .6);
 }
 
 #levelup-choice-overlay .bvk-delta {
@@ -52845,7 +52888,7 @@ body.bv-settings-particles-off .title-canvas-bg {
     align-items: center;
     gap: 4px;
     font-size: .62rem;
-    color: rgba(255, 255, 255, .36);
+    color: rgba(220, 230, 255, .42);
 }
 
 #levelup-choice-overlay .bvk-delta b {
@@ -52862,8 +52905,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     width: 100%;
     height: 4px;
     margin: 4px 0 3px;
-    border-radius: 3px;
-    background: #141a2c;
+    background: #050b26;
+    border: 1px solid rgba(207, 216, 255, .16);
     overflow: hidden;
 }
 
@@ -52872,20 +52915,20 @@ body.bv-settings-particles-off .title-canvas-bg {
     left: 0;
     top: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, .2);
+    background: rgba(207, 216, 255, .28);
 }
 
 #levelup-choice-overlay .bvk-bar u {
     position: absolute;
     top: 0;
     bottom: 0;
-    background: var(--accent, #ffd166);
+    background: var(--accent, var(--ff-gold));
 }
 
 #levelup-choice-overlay .bvk-desc {
     font-size: .58rem;
     line-height: 1.2;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(210, 222, 255, .34);
 }
 
 #levelup-choice-overlay .bvk-stamp {
@@ -52893,24 +52936,24 @@ body.bv-settings-particles-off .title-canvas-bg {
     top: 50%;
     left: 50%;
     padding: 2px 7px;
-    border-radius: 4px;
+    border-radius: 3px;
     font-size: .56rem;
     letter-spacing: 1.4px;
-    color: #10141f;
-    background: #ffd166;
+    color: #0a1240;
+    background: var(--ff-gold);
     opacity: 0;
     transform: translate(-50%, -50%) rotate(-12deg) scale(.5);
     pointer-events: none;
 }
 
 #levelup-choice-overlay .bvk-card.chosen .bvk-stamp {
-    animation: bvkStamp .32s cubic-bezier(.16, 1, .3, 1) .05s forwards;
+    animation: bvkStamp .3s cubic-bezier(.16, 1, .3, 1) .04s forwards;
 }
 
 @keyframes bvkStamp {
     0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(.5); }
-    70%  { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg) scale(1.12); }
-    100% { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg) scale(1); }
+    70%  { opacity: 1; transform: translate(-50%, -50%) rotate(-7deg) scale(1.12); }
+    100% { opacity: 1; transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
 }
 
 /* --- Fußzeile --- */
@@ -52921,7 +52964,7 @@ body.bv-settings-particles-off .title-canvas-bg {
     gap: 10px;
     margin-top: 9px;
     font-size: .58rem;
-    color: rgba(255, 255, 255, .28);
+    color: rgba(210, 222, 255, .34);
 }
 
 #levelup-choice-overlay .bvk-foot kbd {
@@ -52929,26 +52972,26 @@ body.bv-settings-particles-off .title-canvas-bg {
     min-width: 12px;
     margin: 0 1px;
     padding: 0 3px;
-    border-radius: 3px;
-    border: 1px solid rgba(255, 255, 255, .15);
-    background: rgba(255, 255, 255, .05);
+    border-radius: 2px;
+    border: 1px solid rgba(207, 216, 255, .25);
+    background: rgba(207, 216, 255, .07);
     font-family: inherit;
     font-size: .55rem;
-    color: rgba(255, 255, 255, .48);
+    color: rgba(230, 238, 255, .55);
     text-align: center;
 }
 
 #levelup-choice-overlay .bvk-foot-r {
     white-space: nowrap;
-    color: rgba(255, 255, 255, .36);
+    color: rgba(255, 224, 163, .55);
 }
 
-/* --- Auswahl-Effekte (im Overlay, nicht am Bildschirm) --- */
+/* --- Auswahl-Effekte (im Overlay) --- */
 #levelup-choice-overlay .bvk-ring {
     position: absolute;
     width: 34px;
     height: 34px;
-    border: 3px solid #ffd166;
+    border: 3px solid var(--ff-gold);
     border-radius: 50%;
     pointer-events: none;
     z-index: 5;
@@ -52979,8 +53022,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     z-index: 6;
     pointer-events: none;
     font-size: 1.3rem;
-    color: #ffd166;
-    text-shadow: 0 0 14px rgba(255, 190, 60, .7), 0 2px 8px rgba(0, 0, 0, .5);
+    color: var(--ff-gold);
+    text-shadow: 0 0 14px rgba(255, 200, 90, .75), 1px 1px 0 #0a1240;
     animation: bvkFloatUp 1s cubic-bezier(.16, 1, .3, 1) forwards;
 }
 
@@ -53028,6 +53071,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     #levelup-choice-overlay .bvk-desc {
         display: none;
     }
+
+    #levelup-choice-overlay .bvk-panel::before {
+        top: 52px;
+    }
 }
 
 @media (max-width: 470px) {
@@ -53044,8 +53091,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     }
 
     #levelup-choice-overlay .bvk-badge {
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
     }
 }
 
@@ -53066,6 +53113,10 @@ body.bv-settings-particles-off .title-canvas-bg {
 
     #levelup-choice-overlay .bvk-ico {
         font-size: 1.05rem;
+    }
+
+    #levelup-choice-overlay .bvk-panel::before {
+        display: none;
     }
 }
 
@@ -53587,6 +53638,8 @@ body.bv-settings-particles-off .title-canvas-bg {
             el.innerHTML =
                 '<div class="bvk-veil" aria-hidden="true"></div>' +
                 '<div class="bvk-panel">' +
+                    '<i class="bvk-corner tl"></i><i class="bvk-corner tr"></i>' +
+                    '<i class="bvk-corner bl"></i><i class="bvk-corner br"></i>' +
                     '<div class="bvk-head">' +
                         '<div class="bvk-badge"><b class="bvk-badge-n">1</b><i class="bvk-badge-k">LVL</i></div>' +
                         '<div class="bvk-headmain">' +
@@ -53683,6 +53736,7 @@ body.bv-settings-particles-off .title-canvas-bg {
             card.style.setProperty('--accent', ch.color || '#ffd166');
             card.innerHTML =
                 '<span class="bvk-key">' + (i + 1) + '</span>' +
+                '<span class="bvk-cursor" aria-hidden="true">▶</span>' +
                 '<span class="bvk-medal"><span class="bvk-ico">' + ch.icon + '</span></span>' +
                 '<span class="bvk-name">' + ch.name + '</span>' +
                 '<span class="bvk-bonus">' + ch.bonus + '</span>' +
@@ -57565,16 +57619,17 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 <script>
 /* ============================================================
-   v4.0 – VOR-KAMPF-ÜBERGANG (mehrere Varianten + Boss-Variante)
-   Läuft nur während der Intro-Phase (bis der VS-Splash kommt).
-   Alle Effekte über transform/opacity, Low-Spec bekommt eine ruhige
-   Variante ohne Muster-Bewegung.
+   v5.0 – BEGEGNUNGS-ÜBERGANG (FF-Stil)
+   Klassischer Begegnungs-Wechsel: weißer Blitz, rotierender Wirbel,
+   der sich zur Mitte zieht, dann kurzer Schriftzug mit Gegnername.
+   Varianten: Wirbel / Splitter / Zoom, für Bosse ein roter Vortex.
+   Läuft nur in der Intro-Phase und blendet aus, wenn der VS-Splash kommt.
    ============================================================ */
 (function () {
     'use strict';
 
     var HOST_ID = 'bv-battle-transition';
-    var NORMAL = ['slash', 'comic', 'grid', 'speed'];
+    var NORMAL = ['swirl', 'shards', 'zoom'];
 
     function btLowSpec() {
         try {
@@ -57596,31 +57651,23 @@ body.bv-settings-particles-off .title-canvas-bg {
 
     function artHtml(v) {
         var i, out = '';
-        if (v === 'slash') {
+        if (v === 'swirl') {
             out += '<i class="bvbt-flash"></i>';
-            var tops = [16, 38, 60, 80];
-            for (i = 0; i < tops.length; i++) {
-                out += '<i class="bvbt-beam" style="--i:' + i + ';--t:' + tops[i] + '%"></i>';
-            }
-        } else if (v === 'comic') {
-            for (i = 0; i < 4; i++) {
-                out += '<i class="bvbt-strip" style="--i:' + i + '"></i>';
-            }
-            out += '<i class="bvbt-burst">⚡</i>';
-        } else if (v === 'grid') {
-            for (i = 0; i < 30; i++) {
-                var col = i % 6, row = Math.floor(i / 6);
-                out += '<i class="bvbt-cell" style="left:' + (col * 16.7) + '%;top:' + (row * 20) +
-                    '%;--d:' + (i * 18) + 'ms"></i>';
-            }
-        } else if (v === 'speed') {
-            for (i = 0; i < 13; i++) {
-                out += '<i class="bvbt-line" style="--x:' + (i * 7.5 + 2).toFixed(1) + '%;--d:' + (i * 24) + 'ms"></i>';
-            }
-            out += '<i class="bvbt-zoom"></i>';
+            out += '<i class="bvbt-swirl s1"></i><i class="bvbt-swirl s2"></i><i class="bvbt-swirl s3"></i>';
+            out += '<i class="bvbt-core"></i>';
+        } else if (v === 'shards') {
+            out += '<i class="bvbt-flash"></i>';
+            for (i = 0; i < 9; i++) out += '<i class="bvbt-shard" style="--i:' + i + '"></i>';
+        } else if (v === 'zoom') {
+            out += '<i class="bvbt-flash"></i>';
+            out += '<i class="bvbt-zoomring r1"></i><i class="bvbt-zoomring r2"></i><i class="bvbt-zoomring r3"></i>';
+            out += '<i class="bvbt-vignette"></i>';
         } else if (v === 'boss') {
-            out += '<i class="bvbt-hazard top"></i><i class="bvbt-hazard bottom"></i>' +
-                   '<i class="bvbt-redflash"></i><i class="bvbt-warnring"></i>';
+            out += '<i class="bvbt-flash short"></i>';
+            out += '<i class="bvbt-swirl boss s1"></i><i class="bvbt-swirl boss s2"></i>';
+            out += '<i class="bvbt-core boss"></i>';
+            out += '<i class="bvbt-hazard top"></i><i class="bvbt-hazard bottom"></i>';
+            out += '<i class="bvbt-redflash"></i>';
         }
         return out;
     }
@@ -57628,8 +57675,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     function captionHtml(v, name) {
         var boss = v === 'boss';
         return '<div class="bvbt-caption' + (boss ? ' is-boss' : '') + '">' +
-            '<span class="bvbt-ico">' + (boss ? '💀' : '⚔️') + '</span>' +
+            '<span class="bvbt-kicker">' + (boss ? 'WARNING' : 'ENCOUNTER') + '</span>' +
+            '<span class="bvbt-rule"></span>' +
             '<span class="bvbt-title">' + (boss ? 'BOSS-KAMPF' : 'KAMPF') + '</span>' +
+            '<span class="bvbt-rule"></span>' +
             (name ? '<span class="bvbt-sub">' + esc(name) + '</span>' : '') +
             '</div>';
     }
@@ -57653,7 +57702,6 @@ body.bv-settings-particles-off .title-canvas-bg {
 
         (document.body || document.documentElement).appendChild(el);
 
-        // Einblenden -> halten -> ausblenden, kurz bevor der VS-Splash übernimmt
         var outAt = low ? 820 : 1000;
         setTimeout(function () { el.classList.add('bt-out'); }, outAt);
         setTimeout(function () {
@@ -57673,7 +57721,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 <style>
 /* ============================================================
-   v4.0 – Vor-Kampf-Übergang: Varianten
+   v5.0 – Begegnungs-Übergang im FF-Stil
    ============================================================ */
 #bv-battle-transition {
     position: fixed;
@@ -57695,17 +57743,17 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 50% 45%, rgba(26, 42, 78, .95), rgba(4, 6, 14, .99) 72%),
-        #05070f;
+        radial-gradient(ellipse at 50% 50%, rgba(18, 30, 76, .96), rgba(2, 3, 10, .995) 68%),
+        #02030a;
     opacity: 0;
-    animation: bvbtVeilIn .2s ease forwards;
+    animation: bvbtVeilIn .42s ease .16s forwards;
 }
 
 @keyframes bvbtVeilIn {
     to { opacity: 1; }
 }
 
-/* --- gemeinsame Caption --- */
+/* --- Text im FF-Stil --- */
 #bv-battle-transition .bvbt-caption {
     position: absolute;
     left: 0;
@@ -57714,172 +57762,232 @@ body.bv-settings-particles-off .title-canvas-bg {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
     text-align: center;
     transform: translateY(-50%);
-    animation: bvbtCapIn .42s cubic-bezier(.16, 1, .3, 1) .22s both;
+    animation: bvbtCapIn .5s cubic-bezier(.16, 1, .3, 1) .2s both;
 }
 
 @keyframes bvbtCapIn {
-    from { opacity: 0; transform: translateY(-50%) scale(.88); }
-    to   { opacity: 1; transform: translateY(-50%) scale(1); }
+    from { opacity: 0; transform: translateY(-50%) scale(.92); letter-spacing: 10px; }
+    to   { opacity: 1; transform: translateY(-50%) scale(1); letter-spacing: normal; }
 }
 
-#bv-battle-transition .bvbt-ico {
-    font-size: 2rem;
-    line-height: 1;
-    filter: drop-shadow(0 0 12px rgba(120, 190, 255, .65));
+#bv-battle-transition .bvbt-kicker {
+    font-size: .62rem;
+    letter-spacing: 6px;
+    color: rgba(190, 215, 255, .6);
+    text-transform: uppercase;
+}
+
+#bv-battle-transition .bvbt-rule {
+    width: 190px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(190, 215, 255, .55), transparent);
 }
 
 #bv-battle-transition .bvbt-title {
-    font-size: 1.8rem;
-    letter-spacing: 7px;
-    color: #eaf4ff;
-    text-shadow: 0 0 18px rgba(90, 170, 255, .8);
+    font-size: 2.1rem;
+    letter-spacing: 9px;
+    color: #fff;
+    text-shadow:
+        0 0 10px rgba(130, 180, 255, .95),
+        0 0 34px rgba(60, 120, 255, .75),
+        0 2px 0 #0a1240;
 }
 
 #bv-battle-transition .bvbt-sub {
+    margin-top: 2px;
     font-size: .8rem;
     letter-spacing: 2px;
-    color: rgba(190, 220, 255, .6);
+    color: rgba(200, 222, 255, .68);
 }
 
-/* --- Variante 1: Diagonale Schnitte --- */
-#bv-battle-transition .bvbt-beam {
+/* --- Variante 1: Wirbel (FF-Begegnung) --- */
+#bv-battle-transition .bvbt-swirl {
     position: absolute;
-    left: -30%;
-    top: var(--t, 40%);
-    width: 160%;
-    height: 13%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .92) 45%, rgba(110, 180, 255, .85) 65%, transparent);
-    transform: translateX(-120%) rotate(-14deg);
-    animation: bvbtBeam .6s cubic-bezier(.2, .8, .2, 1) forwards;
-    animation-delay: calc(var(--i) * 85ms);
+    left: 50%;
+    top: 50%;
+    width: 165vmax;
+    height: 165vmax;
+    border-radius: 50%;
+    will-change: transform, opacity;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.6);
+    opacity: 0;
 }
 
-@keyframes bvbtBeam {
-    0%   { opacity: 0; transform: translateX(-120%) rotate(-14deg); }
-    20%  { opacity: 1; }
-    55%  { opacity: 1; }
-    100% { opacity: 0; transform: translateX(120%) rotate(-14deg); }
+#bv-battle-transition .bvbt-swirl.s1 {
+    background: repeating-conic-gradient(from 0deg,
+        rgba(120, 180, 255, 0) 0deg 6deg,
+        rgba(150, 200, 255, .85) 6deg 9deg,
+        rgba(120, 180, 255, 0) 9deg 16deg);
+    animation: bvbtSwirlA .72s cubic-bezier(.45, 0, .25, 1) forwards;
 }
 
+#bv-battle-transition .bvbt-swirl.s2 {
+    width: 130vmax;
+    height: 130vmax;
+    background: repeating-conic-gradient(from 12deg,
+        rgba(90, 150, 255, 0) 0deg 10deg,
+        rgba(190, 225, 255, .55) 10deg 14deg,
+        rgba(90, 150, 255, 0) 14deg 26deg);
+    animation: bvbtSwirlB .68s cubic-bezier(.45, 0, .25, 1) .04s forwards;
+}
+
+#bv-battle-transition .bvbt-swirl.s3 {
+    width: 95vmax;
+    height: 95vmax;
+    background: repeating-conic-gradient(from 24deg,
+        rgba(40, 70, 180, 0) 0deg 14deg,
+        rgba(60, 110, 230, .75) 14deg 20deg,
+        rgba(40, 70, 180, 0) 20deg 36deg);
+    animation: bvbtSwirlC .62s cubic-bezier(.45, 0, .25, 1) .08s forwards;
+}
+
+@keyframes bvbtSwirlA {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-50deg) scale(1.7); }
+    22%  { opacity: 1; }
+    100% { opacity: .95; transform: translate(-50%, -50%) rotate(150deg) scale(.05); }
+}
+
+@keyframes bvbtSwirlB {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(40deg) scale(1.5); }
+    22%  { opacity: 1; }
+    100% { opacity: .9; transform: translate(-50%, -50%) rotate(-170deg) scale(.04); }
+}
+
+@keyframes bvbtSwirlC {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-20deg) scale(1.3); }
+    25%  { opacity: 1; }
+    100% { opacity: .85; transform: translate(-50%, -50%) rotate(210deg) scale(.03); }
+}
+
+/* Dunkler Kern, in den der Wirbel läuft */
+#bv-battle-transition .bvbt-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40vmax;
+    height: 40vmax;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(6, 10, 26, .95), rgba(2, 3, 10, .98) 62%, transparent 72%);
+    transform: translate(-50%, -50%) scale(.2);
+    opacity: 0;
+    animation: bvbtCoreIn .55s ease .18s forwards;
+}
+
+@keyframes bvbtCoreIn {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.2); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(4.2); }
+}
+
+/* --- Variante 2: Splitter --- */
+#bv-battle-transition .bvbt-shard {
+    position: absolute;
+    top: -20%;
+    left: calc(var(--i) * 11% - 6%);
+    width: 15%;
+    height: 145%;
+    background: linear-gradient(180deg, rgba(18, 30, 76, .98), rgba(4, 8, 26, .99));
+    border-left: 2px solid rgba(170, 210, 255, .55);
+    border-right: 2px solid rgba(170, 210, 255, .25);
+    transform: translateY(-105%) skewX(-9deg);
+    animation: bvbtShardIn .34s cubic-bezier(.2, .9, .2, 1) forwards;
+    animation-delay: calc(var(--i) * 26ms);
+}
+
+@keyframes bvbtShardIn {
+    to { transform: translateY(0) skewX(-9deg); }
+}
+
+/* --- Variante 3: Zoom --- */
+#bv-battle-transition .bvbt-zoomring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    border: 2px solid rgba(170, 210, 255, .55);
+    transform: translate(-50%, -50%) scale(.05);
+    opacity: 0;
+    animation: bvbtRingOut .5s ease-out forwards;
+}
+
+#bv-battle-transition .bvbt-zoomring.r1 { width: 40vmax; height: 40vmax; }
+#bv-battle-transition .bvbt-zoomring.r2 { width: 80vmax; height: 80vmax; animation-delay: .07s; }
+#bv-battle-transition .bvbt-zoomring.r3 { width: 130vmax; height: 130vmax; animation-delay: .14s; }
+
+@keyframes bvbtRingOut {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.05); }
+    25%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+#bv-battle-transition .bvbt-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, transparent 12%, rgba(2, 3, 10, .98) 62%);
+    opacity: 0;
+    animation: bvbtVignetteIn .55s ease .1s forwards;
+}
+
+@keyframes bvbtVignetteIn {
+    to { opacity: 1; }
+}
+
+/* --- Blitz --- */
 #bv-battle-transition .bvbt-flash {
     position: absolute;
     inset: 0;
     background: #fff;
     opacity: 0;
-    animation: bvbtWhiteFlash .5s ease-out .1s forwards;
+    animation: bvbtWhiteFlash .42s ease-out forwards;
+}
+
+#bv-battle-transition .bvbt-flash.short {
+    animation-duration: .3s;
 }
 
 @keyframes bvbtWhiteFlash {
     0%   { opacity: 0; }
-    18%  { opacity: .85; }
+    14%  { opacity: .92; }
     100% { opacity: 0; }
 }
 
-/* --- Variante 2: Comic-Streifen --- */
-#bv-battle-transition .bvbt-strip {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: calc(var(--i) * 25%);
-    width: 25.5%;
-    background: linear-gradient(180deg, #0d1526, #070a12);
-    border-right: 2px solid rgba(120, 190, 255, .35);
-    transform: translateY(101%);
-    animation: bvbtStripUp .4s cubic-bezier(.16, 1, .3, 1) forwards;
-    animation-delay: calc(var(--i) * 55ms);
+/* --- Boss: roter Vortex --- */
+#bv-battle-transition .bvbt-swirl.boss.s1 {
+    background: repeating-conic-gradient(from 0deg,
+        rgba(255, 60, 40, 0) 0deg 7deg,
+        rgba(255, 90, 60, .85) 7deg 11deg,
+        rgba(255, 60, 40, 0) 11deg 19deg);
+    animation: bvbtSwirlA .78s cubic-bezier(.45, 0, .25, 1) forwards;
 }
 
-@keyframes bvbtStripUp {
-    to { transform: translateY(0); }
+#bv-battle-transition .bvbt-swirl.boss.s2 {
+    background: repeating-conic-gradient(from 30deg,
+        rgba(180, 20, 10, 0) 0deg 12deg,
+        rgba(255, 140, 60, .7) 12deg 17deg,
+        rgba(180, 20, 10, 0) 17deg 30deg);
+    animation: bvbtSwirlB .72s cubic-bezier(.45, 0, .25, 1) .05s forwards;
 }
 
-#bv-battle-transition .bvbt-burst {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    font-size: 3.6rem;
-    line-height: 1;
-    transform: translate(-50%, -50%) scale(.2) rotate(-18deg);
-    opacity: 0;
-    animation: bvbtBurstIn .5s cubic-bezier(.16, 1, .3, 1) .3s forwards;
-    text-shadow: 0 0 24px rgba(255, 220, 120, .8);
+#bv-battle-transition .bvbt-core.boss {
+    background: radial-gradient(circle, rgba(120, 10, 6, .95), rgba(10, 2, 3, .98) 60%, transparent 72%);
 }
 
-@keyframes bvbtBurstIn {
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(-18deg); }
-    60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(6deg); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4) rotate(0deg); }
-}
-
-/* --- Variante 3: Pixel-Raster --- */
-#bv-battle-transition .bvbt-cell {
-    position: absolute;
-    width: 16.7%;
-    height: 20%;
-    background: #060a14;
-    transform: scale(0);
-    animation: bvbtCellIn .3s cubic-bezier(.16, 1, .3, 1) forwards;
-    animation-delay: var(--d, 0ms);
-}
-
-@keyframes bvbtCellIn {
-    to { transform: scale(1.02); }
-}
-
-/* --- Variante 4: Speedlines --- */
-#bv-battle-transition .bvbt-line {
-    position: absolute;
-    left: var(--x, 50%);
-    top: -30%;
-    width: 2px;
-    height: 160%;
-    background: linear-gradient(180deg, transparent, rgba(150, 210, 255, .6), transparent);
-    transform: translateY(-60%);
-    animation: bvbtLineIn .55s cubic-bezier(.2, .8, .2, 1) forwards;
-    animation-delay: var(--d, 0ms);
-}
-
-@keyframes bvbtLineIn {
-    0%   { opacity: 0; transform: translateY(-60%) scaleY(.4); }
-    35%  { opacity: 1; }
-    100% { opacity: .55; transform: translateY(20%) scaleY(1); }
-}
-
-#bv-battle-transition .bvbt-zoom {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 60vmax;
-    height: 60vmax;
-    border-radius: 50%;
-    border: 2px solid rgba(120, 190, 255, .35);
-    transform: translate(-50%, -50%) scale(.2);
-    opacity: 0;
-    animation: bvbtZoomIn .6s ease-out forwards;
-}
-
-@keyframes bvbtZoomIn {
-    0%   { opacity: .8; transform: translate(-50%, -50%) scale(.2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
-}
-
-/* --- Variante 5: BOSS --- */
 #bv-battle-transition .bvbt-hazard {
     position: absolute;
     left: 0;
     right: 0;
-    height: 84px;
-    background: repeating-linear-gradient(115deg, #e5352b 0 26px, #14141a 26px 52px);
-    box-shadow: 0 0 28px rgba(229, 53, 43, .55);
+    height: 74px;
+    background: repeating-linear-gradient(115deg, rgba(229, 53, 43, .92) 0 24px, rgba(12, 12, 18, .95) 24px 48px);
+    box-shadow: 0 0 26px rgba(229, 53, 43, .5);
     transform: scaleY(0);
-    animation: bvbtHazardIn .34s cubic-bezier(.16, 1, .3, 1) forwards;
+    animation: bvbtHazardIn .3s cubic-bezier(.16, 1, .3, 1) forwards;
 }
 
 #bv-battle-transition .bvbt-hazard.top { top: 0; transform-origin: top center; }
-#bv-battle-transition .bvbt-hazard.bottom { bottom: 0; transform-origin: bottom center; animation-delay: .06s; }
+#bv-battle-transition .bvbt-hazard.bottom { bottom: 0; transform-origin: bottom center; animation-delay: .05s; }
 
 @keyframes bvbtHazardIn {
     to { transform: scaleY(1); }
@@ -57888,9 +57996,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 #bv-battle-transition .bvbt-redflash {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(255, 40, 30, .35), transparent 65%);
+    background: radial-gradient(circle at 50% 50%, rgba(255, 40, 30, .38), transparent 64%);
     opacity: 0;
-    animation: bvbtRedFlash .9s ease-out .1s 2;
+    animation: bvbtRedFlash .8s ease-out .08s 2;
 }
 
 @keyframes bvbtRedFlash {
@@ -57899,52 +58007,28 @@ body.bv-settings-particles-off .title-canvas-bg {
     100% { opacity: 0; }
 }
 
-#bv-battle-transition .bvbt-warnring {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 46vmin;
-    height: 46vmin;
-    border-radius: 50%;
-    border: 3px dashed rgba(255, 70, 60, .55);
-    transform: translate(-50%, -50%) rotate(0deg) scale(.6);
-    animation: bvbtWarnRing .9s ease-out forwards;
-}
-
-@keyframes bvbtWarnRing {
-    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(0deg) scale(.55); }
-    30%  { opacity: 1; }
-    100% { opacity: 0; transform: translate(-50%, -50%) rotate(35deg) scale(1.1); }
-}
-
 #bv-battle-transition.v-bt-boss .bvbt-title {
-    color: #ffe2e0;
-    letter-spacing: 9px;
-    text-shadow: 0 0 20px rgba(255, 60, 50, .95), 0 0 60px rgba(255, 0, 0, .55);
+    color: #ffe9e6;
+    text-shadow:
+        0 0 12px rgba(255, 70, 50, .95),
+        0 0 40px rgba(255, 20, 10, .7),
+        0 2px 0 #2a0503;
 }
 
-#bv-battle-transition.v-bt-boss .bvbt-ico {
-    filter: drop-shadow(0 0 16px rgba(255, 60, 50, .95));
+#bv-battle-transition.v-bt-boss .bvbt-kicker { color: rgba(255, 170, 160, .8); }
+#bv-battle-transition.v-bt-boss .bvbt-rule {
+    background: linear-gradient(90deg, transparent, rgba(255, 120, 100, .65), transparent);
 }
+#bv-battle-transition.v-bt-boss .bvbt-sub { color: rgba(255, 200, 195, .75); }
 
-#bv-battle-transition.v-bt-boss .bvbt-sub {
-    color: rgba(255, 190, 185, .75);
-}
-
-/* --- Low-Spec: nur ruhiger Vorhang + Text --- */
-#bv-battle-transition.bt-low .bvbt-beam,
+/* --- Low-Spec: ruhiger Vorhang + Text --- */
 #bv-battle-transition.bt-low .bvbt-flash,
-#bv-battle-transition.bt-low .bvbt-strip,
-#bv-battle-transition.bt-low .bvbt-burst,
-#bv-battle-transition.bt-low .bvbt-cell,
-#bv-battle-transition.bt-low .bvbt-line,
-#bv-battle-transition.bt-low .bvbt-zoom,
-#bv-battle-transition.bt-low .bvbt-warnring {
+#bv-battle-transition.bt-low .bvbt-swirl,
+#bv-battle-transition.bt-low .bvbt-core,
+#bv-battle-transition.bt-low .bvbt-shard,
+#bv-battle-transition.bt-low .bvbt-zoomring,
+#bv-battle-transition.bt-low .bvbt-vignette {
     display: none !important;
-}
-
-#bv-battle-transition.bt-low .bvbt-ico {
-    filter: none;
 }
 
 #bv-battle-transition.bt-low .bvbt-caption {
@@ -57953,7 +58037,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #bv-battle-transition.bt-low.v-bt-boss .bvbt-veil {
-    background: radial-gradient(ellipse at 50% 45%, rgba(90, 16, 14, .95), rgba(6, 4, 8, .99) 72%), #05070f;
+    background: radial-gradient(ellipse at 50% 50%, rgba(88, 14, 12, .96), rgba(4, 3, 8, .995) 70%), #05030a;
 }
 
 #bv-battle-transition.bt-low .bvbt-hazard {
