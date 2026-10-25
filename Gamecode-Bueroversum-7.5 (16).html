@@ -22608,7 +22608,14 @@
                     const mapWidth = using3D ? BV3D.bounds.width : (currentMap[0]?.length || VIEW_COLS) * TILE;
                     const mapHeight = using3D ? BV3D.bounds.height : currentMap.length * TILE;
                     // Für Kamera immer den echten Tile-Mittelpunkt nehmen, nicht die DOM-Sprite-TopLeft-Position.
-                    const playerPx = using3D ? BV3D.project(player.x + 0.5, player.y + 0.5, 0) : { x: player.x * TILE + TILE / 2, y: player.y * TILE + TILE / 2 };
+                    // v7.10.15: Position wird über den laufenden Schritt interpoliert.
+                    // Vorher sprang das Ziel alle ~104 ms um ein ganzes Tile – die
+                    // gedämpfte Kamera jagte dieser Treppe nach und pulsierte im
+                    // Tile-Takt (das "unspielbare" Gefühl beim Laufen).
+                    const vp = getPlayerVisualTile();
+                    const playerPx = using3D
+                        ? BV3D.project(vp.x + 0.5, vp.y + 0.5, 0)
+                        : { x: vp.x * TILE + TILE / 2, y: vp.y * TILE + TILE / 2 };
 
                     // Mobile Deadzone: Kamera bewegt sich erst wenn Spieler außerhalb der Deadzone ist
                     if (isMobile && DEADZONE_PERCENT > 0) {
@@ -22702,6 +22709,12 @@
                 }
 
                 function animateCamera() {
+                    // v7.10.15: Während eines Schritts das Ziel JEDEN Frame neu aus
+                    // der interpolierten Spielerposition berechnen. Sonst bleibt das
+                    // Ziel 104 ms konstant (Tile-Treppe) und die Kamera pulsiert.
+                    // Günstig: reine Mathematik, keine Layout-Reads.
+                    if (gameState === "MAP" && isMoving && playerStep) updateCamera();
+
                     const diffX = targetCameraX - cameraX;
                     const diffY = targetCameraY - cameraY;
                     const moving = Math.abs(diffX) > 0.35 || Math.abs(diffY) > 0.35;
@@ -24573,6 +24586,30 @@
                     KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0]
                 };
 
+                // ===== v7.10.15: Kontinuierliche Bewegung & Kamera-Interpolation =====
+                // playerStep beschreibt den gerade laufenden Tile-Schritt. Die Kamera
+                // liest daraus die interpolierte Position (statt des Raster-Tiles).
+                var playerStep = null; // var: ist vor der Definition harmlos (falsy) lesbar
+
+                function getPlayerVisualTile() {
+                    if (!playerStep) return { x: player.x, y: player.y };
+                    const t = (performance.now() - playerStep.startAt) / playerStep.dur;
+                    if (t >= 1) return { x: player.x, y: player.y };
+                    const k = t > 0 ? t : 0;
+                    return {
+                        x: playerStep.fx + (playerStep.tx - playerStep.fx) * k,
+                        y: playerStep.fy + (playerStep.ty - playerStep.fy) * k
+                    };
+                }
+
+                function hasHeldMoveKey() {
+                    for (let i = directionHistory.length - 1; i >= 0; i--) {
+                        const code = directionHistory[i];
+                        if (keysHeld[code] && MOVE_KEY_DIRS[code]) return true;
+                    }
+                    return Object.keys(keysHeld).some(code => keysHeld[code] && MOVE_KEY_DIRS[code]);
+                }
+
                 function getMoveInputCode(e) {
                     if (!e) return null;
                     if (MOVE_KEY_DIRS[e.code]) return e.code;
@@ -24652,12 +24689,17 @@
 
                     isMoving = true;
                     lastMoveTimestamp = now;
+                    const fromX = player.x, fromY = player.y; // v7.10.15: Ausgangstile für die Kamera-Interpolation
                     player.x = nx;
                     player.y = ny;
                     if (typeof checkSecretDocumentTile === "function") checkSecretDocumentTile();
                     if (typeof checkSecretRoomEntrance === "function") checkSecretRoomEntrance();
 
                     const stepMs = isLowSpecMap() ? 78 : MOVE_DURATION;
+                    // v7.10.15: Der Schritt wird für die Kamera linear interpoliert
+                    // (genau wie die CSS-Transition des Sprites). Dadurch läuft das
+                    // Kameraziel kontinuierlich statt im Tile-Takt zu springen.
+                    playerStep = { fx: fromX, fy: fromY, tx: nx, ty: ny, startAt: now, dur: stepMs };
                     if (!isLowSpecMap()) playerEl.classList.add("walking");
                     placeMapElement(playerEl, player.x, player.y, "player", `left ${stepMs}ms linear, top ${stepMs}ms linear`);
 
@@ -24667,9 +24709,17 @@
 
                     setTimeout(() => {
                         isMoving = false;
+                        playerStep = null;
                         playerEl.classList.remove("walking");
                         playerEl.style.transition = "";
+                        updateCamera(); // Endziel exakt auf das Zieltile setzen
                         checkNearbyInteractables();
+                        // v7.10.15: Nahtlos weiterlaufen statt auf den nächsten
+                        // Interval-Tick zu warten (der konnte einen Schritt
+                        // überspringen -> doppelte Schrittzeit = Stocken).
+                        if (gameState === "MAP" && !isTransitioning && !isBattleStarting && hasHeldMoveKey()) {
+                            scheduleNextMoveStep(stepMs);
+                        }
                     }, stepMs);
 
                     return true;
@@ -28815,6 +28865,7 @@
                     const spawnPoint = findNearestValidSpawnTile(mapData.start.x, mapData.start.y);
                     player.x = spawnPoint.x;
                     player.y = spawnPoint.y;
+                    playerStep = null; // v7.10.15: keine Interpolation aus der alten Map übernehmen
                     if (spawnPoint.x !== mapData.start.x || spawnPoint.y !== mapData.start.y) {
                         console.warn(`[BüroVersum] Startpunkt ${mapData.start.x}/${mapData.start.y} auf "${(TILES[mapData.tiles?.[mapData.start.y]?.[mapData.start.x]] || {}).name || '?'}" blockiert – Spieler startet auf ${spawnPoint.x}/${spawnPoint.y}`);
                     }
@@ -34510,17 +34561,41 @@ window.respawnPlayer = function () {
                 }
 
                 function startMoveLoop() {
-                    if (!moveInterval && gameState === "MAP") {
-                        const speed = Math.max(0.5, player.moveSpeed || 1);
-                        // INPUT FIX: Loop-Intervall orientiert sich an der echten Schrittzeit,
-                        // dadurch keine schnellen Doppelsteps nach Autorepeat/FPS-Spikes.
-                        const interval = Math.max(80, Math.floor((MOVE_DURATION + MOVE_LOOP_BUFFER) / speed));
-                        moveInterval = setInterval(processHeldKeys, interval);
-                    }
+                    // v7.10.15: Kein setInterval mehr. Früher lief ein Poll alle
+                    // (MOVE_DURATION + Puffer) ms und tat nichts, solange isMoving
+                    // noch true war – fiel ein Tick knapp vor das Timeout, wurde ein
+                    // ganzer Schritt verschluckt (doppelte Schrittzeit = Stocken).
+                    // Jetzt verkettet sich die Bewegung selbst (scheduleNextMoveStep).
+                    if (moveInterval || gameState !== "MAP") return;
+                    if (!isMoving) processHeldKeys();
                 }
 
                 function stopMoveLoop() {
-                    if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+                    if (moveInterval) { clearTimeout(moveInterval); clearInterval(moveInterval); moveInterval = null; }
+                }
+
+                // Plant den nächsten Schritt, sobald der aktuelle fertig ist.
+                // delay hält das alte Tempo (Intervall - Schrittzeit), aber ohne Lücke.
+                function scheduleNextMoveStep(stepMs) {
+                    if (cheatConsoleVisible || gameState !== "MAP" || isTransitioning || isBattleStarting) return;
+                    const speed = Math.max(0.5, player.moveSpeed || 1);
+                    const interval = Math.max(80, Math.floor((MOVE_DURATION + MOVE_LOOP_BUFFER) / speed));
+                    scheduleHeldKeyStep(Math.max(0, interval - (stepMs || 0)));
+                }
+
+                // Einheitlicher Ketten-Timer: versucht bei gehaltener Taste den
+                // nächsten Schritt. Blockiert etwas (Wand/NPC/Tür), wird weiter
+                // versucht – so bleibt das Verhalten wie früher, nur ohne
+                // verschluckte Schritte.
+                function scheduleHeldKeyStep(delay) {
+                    if (moveInterval) { clearTimeout(moveInterval); moveInterval = null; }
+                    moveInterval = setTimeout(() => {
+                        moveInterval = null;
+                        if (!hasHeldMoveKey()) return;
+                        if (cheatConsoleVisible || gameState !== "MAP" || isTransitioning || isBattleStarting) return;
+                        if (!isMoving) processHeldKeys();
+                        if (!isMoving && hasHeldMoveKey()) scheduleHeldKeyStep(90);
+                    }, delay);
                 }
 
                 // ===== MOBILE TOUCH CONTROLS =====
