@@ -32176,11 +32176,14 @@
                 };
 
                 // ===== BATTLE SYSTEM =====
-                function triggerBumpEffect(el = null) {
+                function triggerBumpEffect(el = null, opts = null) {
                     const gameWin = document.getElementById("rpg-game-window");
                     const camera = document.getElementById("rpg-camera");
+                    // v5.3: Bei aktivem Fenster-Übergang keinen zweiten Vollbild-Blitz
+                    // und kein Screen-Shake auf dem ganzen Fenster (Kosten + Doppelung).
+                    const skipCinematic = !!(opts && opts.skipCinematic);
 
-                    if (gameWin) {
+                    if (gameWin && !skipCinematic) {
                         // 1. FLASH & SHOCKWAVE (Immediate)
                         const flash = document.createElement("div");
                         flash.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;background:white;opacity:0;";
@@ -32193,16 +32196,11 @@
 
                         gameWin.classList.add("screen-shake");
 
-                        // Wait 0.5s for the flash before starting the zoom effect
-                        setTimeout(() => {
-                            // 2. PRECISE ZOOM-IN TO PLAYER (Using viewport center)
-                            if (camera && playerEl) {
-                                // Zoom from viewport center for consistent zoom effect
-                                camera.style.transformOrigin = "50% 50%";
-                                camera.classList.add("battle-zoom-in");
-                                camera.classList.add("battle-spiral-blur");
-                            }
-                        }, 500); // Give the flash 0.5s time before the transition kicks in
+                        // v5.3 PERFORMANCE: Der Kamera-Zoom auf 16x mit animiertem
+                        // Blur/Hue-Filter wurde hier entfernt - er lief exakt während
+                        // des Vor-Kampf-Übergangs und war (zusammen mit dem 16x-Scale)
+                        // die Ursache für die Ruckler. Der Übergang im Gamefenster
+                        // deckt das Bild ohnehin komplett ab.
 
                         setTimeout(() => {
                             gameWin.classList.remove("screen-shake");
@@ -32381,7 +32379,9 @@
                         const idx = npcs.indexOf(npc);
                         if (idx !== -1) npcEl = npcLayer.children[idx];
                     }
-                    triggerBumpEffect(npcEl);
+                    triggerBumpEffect(npcEl, {
+                        skipCinematic: typeof window.BVPlayBattleTransition === "function"
+                    });
 
                     const enemyData = npc?.isEditorTest ? { ...npc } : ENEMIES[npc.enemyId];
                     if (!enemyData) {
@@ -32456,8 +32456,13 @@
                     const extraVsDelay = Math.min(2300, vsMessageText.length * 30);
                     // Sichtbare Standzeit des Splash (Einblenden + Halten), danach Fade-Out.
                     const vsSplashDuration = VS_BASE_DURATION + extraVsDelay;
+                    // v5.3: Der Fenster-Übergang hat jetzt eine eigene Info-Phase
+                    // (ca. 1 s länger). Der VS-Splash startet entsprechend später,
+                    // damit sich beide nicht überschneiden.
+                    const BT_EXTRA = (typeof window.BVPlayBattleTransition === "function" && !currentEnemy.isEditorTest)
+                        ? 950 : 0;
                     // Gesamte Battle-Intro-Dauer = Vorlauf bis Splash + Standzeit + Fade-Out.
-                    const battleIntroDuration = 1300 + vsSplashDuration + VS_FADE_OUT;
+                    const battleIntroDuration = 1300 + vsSplashDuration + VS_FADE_OUT + BT_EXTRA;
 
                     // ===== BATTLE PANELS SEQUENCE =====
                     // v5.1: Der Vor-Kampf-Übergang läuft komplett IM Gamefenster.
@@ -32471,7 +32476,12 @@
                         try {
                             window.BVPlayBattleTransition({
                                 boss: !!currentEnemy.isBoss,
-                                name: currentEnemy.displayName || currentEnemy.name || ""
+                                name: currentEnemy.displayName || currentEnemy.name || "",
+                                level: currentEnemy.level || 1,
+                                hp: enemyMaxHp,
+                                atk: currentEnemy.atk || 0,
+                                def: currentEnemy.def || 0,
+                                sprite: currentEnemy.sprite || "👾"
                             });
                         } catch (e) {}
                     } else if (typeof window.BVClearBattleTransition === "function") {
@@ -32564,7 +32574,7 @@
                                 if (mapTrans) {
                                     mapTrans.classList.remove("active", "opening");
                                 }
-                            }, 250); // 1050 + 250 = 1300
+                            }, 250 + BT_EXTRA); // 1050 + 250 = 1300 (+ Extra für den Fenster-Übergang)
                         }, 150); // Wait 150ms before closing panels
 
                     }, 850);
@@ -57689,11 +57699,12 @@ body.bv-settings-particles-off .title-canvas-bg {
             out += '<i class="bvbt-shock"></i>';
         } else if (v === 'mosaic') {
             out += '<i class="bvbt-vig"></i>';
-            for (i = 0; i < 48; i++) {
-                var c = i % 8, r = Math.floor(i / 8);
-                var dist = Math.abs(c - 3.5) + Math.abs(r - 2.5);
-                out += '<i class="bvbt-tile" style="left:' + (c * 12.5) + '%;top:' + (r * 16.6) +
-                    '%;--d:' + Math.round(dist * 20) + 'ms"></i>';
+            /* 24 statt 48 Kacheln - halber Knoten-Aufwand, gleiche Optik */
+            for (i = 0; i < 24; i++) {
+                var c = i % 6, r = Math.floor(i / 6);
+                var dist = Math.abs(c - 2.5) + Math.abs(r - 1.5);
+                out += '<i class="bvbt-tile" style="left:' + (c * 16.7) + '%;top:' + (r * 25) +
+                    '%;--d:' + Math.round(dist * 22) + 'ms"></i>';
             }
             out += '<i class="bvbt-shock"></i>';
         } else if (v === 'scan') {
@@ -57717,7 +57728,45 @@ body.bv-settings-particles-off .title-canvas-bg {
         return out;
     }
 
-    function captionHtml(v, name) {
+    function threatOf(opts) {
+        if (opts.boss) return 5;
+        var lvl = Number(opts.level || 1);
+        return Math.max(1, Math.min(5, Math.ceil(lvl / 4)));
+    }
+
+    function infoHtml(v, opts) {
+        var boss = v === 'boss';
+        var threat = threatOf(opts);
+        var pips = '';
+        for (var i = 0; i < 5; i++) {
+            pips += '<i class="' + (i < threat ? 'on' : '') + '"></i>';
+        }
+        var level = Number(opts.level || 1);
+        var hp = Number(opts.hp || 0);
+        var atk = Number(opts.atk || 0);
+        var def = Number(opts.def || 0);
+        return '<div class="bvbt-info">' +
+            '<div class="bvbt-portrait">' +
+                '<span class="bvbt-face">' + esc(opts.sprite || '👾') + '</span>' +
+                '<span class="bvbt-lv">LV ' + level + '</span>' +
+            '</div>' +
+            '<div class="bvbt-facts">' +
+                '<div class="bvbt-name">' + esc(opts.name || 'Gegner') + '</div>' +
+                '<div class="bvbt-hpbar"><i class="bvbt-hpfill"></i></div>' +
+                '<div class="bvbt-stats">' +
+                    '<span class="bvbt-chip">HP <b>' + (hp > 0 ? hp : '?') + '</b></span>' +
+                    '<span class="bvbt-chip">ANG <b>' + atk + '</b></span>' +
+                    '<span class="bvbt-chip">VER <b>' + def + '</b></span>' +
+                '</div>' +
+                '<div class="bvbt-threat' + (boss ? ' is-boss' : '') + '">' +
+                    '<span class="bvbt-threat-label">GEFAHR</span>' +
+                    '<span class="bvbt-pips">' + pips + '</span>' +
+                '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function captionHtml(v, opts) {
         var boss = v === 'boss';
         return '<div class="bvbt-caption' + (boss ? ' is-boss' : '') + '">' +
             '<span class="bvbt-tick tl"></span><span class="bvbt-tick tr"></span>' +
@@ -57725,7 +57774,7 @@ body.bv-settings-particles-off .title-canvas-bg {
             '<span class="bvbt-kicker">' + (boss ? 'WARNING' : 'ENCOUNTER') + '</span>' +
             '<span class="bvbt-title">' + (boss ? 'BOSS-KAMPF' : 'KAMPF') + '</span>' +
             '<span class="bvbt-rule"></span>' +
-            (name ? '<span class="bvbt-sub">' + esc(name) + '</span>' : '') +
+            infoHtml(v, opts) +
             '</div>';
     }
 
@@ -57750,15 +57799,17 @@ body.bv-settings-particles-off .title-canvas-bg {
         el.setAttribute('aria-hidden', 'true');
         el.innerHTML = '<i class="bvbt-veil"></i>' +
             (low ? lowArtHtml() : artHtml(variant)) +
-            captionHtml(variant, opts.name);
+            captionHtml(variant, opts);
 
         host.appendChild(el);
 
-        var outAt = low ? 820 : 1000;
+        /* v5.3: gut eine Sekunde mehr Zeit - die Info-Karte bekommt ihren
+           eigenen Auftritt, danach wird ausgeblendet. Low-Spec bleibt kürzer. */
+        var outAt = low ? 1500 : 1900;
         setTimeout(function () { el.classList.add('bt-out'); }, outAt);
         setTimeout(function () {
             if (el.parentNode) el.parentNode.removeChild(el);
-        }, outAt + 420);
+        }, outAt + 380);
 
         try { window.BVBattleTransitionVariant = variant; } catch (e) {}
         return variant;
@@ -57784,6 +57835,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     font-family: 'VT323', monospace;
     opacity: 1;
     transition: opacity .3s ease;
+    /* Performance: eigener Compositing-Layer, Paint bleibt im Layer */
+    contain: layout style paint;
+    transform: translateZ(0);
+    backface-visibility: hidden;
     /* Beschneidung übernimmt das Gamefenster (overflow: hidden) */
 }
 
@@ -57828,8 +57883,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: min(74%, 460px);
-    padding: 14px 8px 12px;
+    width: min(88%, 520px);
+    padding: 14px 10px 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -57875,8 +57930,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     line-height: 1.15;
     color: #fff;
     text-shadow:
-        0 0 10px rgba(140, 190, 255, .95),
-        0 0 30px rgba(60, 120, 255, .7),
+        0 0 8px rgba(140, 190, 255, .9),
+        0 0 18px rgba(60, 120, 255, .6),
         0 2px 0 #0a1240;
 }
 
@@ -57891,6 +57946,176 @@ body.bv-settings-particles-off .title-canvas-bg {
     font-size: .8rem;
     letter-spacing: 2px;
     color: rgba(200, 222, 255, .7);
+}
+
+/* --- Info-Karte: Gegner, Level, HP, Werte, Gefahr --- */
+#bv-battle-transition .bvbt-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 7px;
+    padding: 8px 10px;
+    border: 1px solid rgba(160, 200, 255, .3);
+    border-radius: 6px;
+    background: linear-gradient(180deg, rgba(22, 34, 82, .84), rgba(5, 9, 26, .9));
+    text-align: left;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: bvbtInfoIn .45s cubic-bezier(.16, 1, .3, 1) .8s forwards;
+}
+
+@keyframes bvbtInfoIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#bv-battle-transition .bvbt-caption.is-boss .bvbt-info {
+    border-color: rgba(255, 120, 100, .4);
+    background: linear-gradient(180deg, rgba(72, 18, 20, .82), rgba(20, 4, 6, .9));
+}
+
+#bv-battle-transition .bvbt-portrait {
+    position: relative;
+    flex: 0 0 auto;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #22307e, #070d30);
+    border: 1px solid rgba(170, 210, 255, .5);
+}
+
+#bv-battle-transition .bvbt-caption.is-boss .bvbt-portrait {
+    background: linear-gradient(180deg, #6e1a18, #26060a);
+    border-color: rgba(255, 150, 130, .6);
+}
+
+#bv-battle-transition .bvbt-face {
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+#bv-battle-transition .bvbt-lv {
+    font-size: .48rem;
+    letter-spacing: 1px;
+    color: #ffd479;
+}
+
+#bv-battle-transition .bvbt-facts {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#bv-battle-transition .bvbt-name {
+    font-size: .95rem;
+    color: #eaf2ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#bv-battle-transition .bvbt-hpbar {
+    position: relative;
+    height: 7px;
+    border: 1px solid rgba(170, 210, 255, .35);
+    border-radius: 2px;
+    background: #050b1e;
+    overflow: hidden;
+}
+
+#bv-battle-transition .bvbt-hpfill {
+    position: absolute;
+    inset: 0;
+    transform-origin: left center;
+    transform: scaleX(0);
+    background: linear-gradient(90deg, #ff5a5a, #ffb457);
+    animation: bvbtHpFill .6s cubic-bezier(.16, 1, .3, 1) 1.05s forwards;
+}
+
+#bv-battle-transition .bvbt-caption.is-boss .bvbt-hpfill {
+    background: linear-gradient(90deg, #ff2f22, #ff8a3d);
+}
+
+@keyframes bvbtHpFill {
+    to { transform: scaleX(1); }
+}
+
+#bv-battle-transition .bvbt-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: .58rem;
+    letter-spacing: .5px;
+}
+
+#bv-battle-transition .bvbt-chip {
+    padding: 0 5px;
+    border: 1px solid rgba(160, 200, 255, .22);
+    border-radius: 3px;
+    color: rgba(205, 224, 255, .72);
+}
+
+#bv-battle-transition .bvbt-chip b {
+    font-weight: normal;
+    color: #fff;
+}
+
+#bv-battle-transition .bvbt-threat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .54rem;
+    letter-spacing: 1.6px;
+    color: rgba(200, 220, 255, .5);
+}
+
+#bv-battle-transition .bvbt-threat.is-boss {
+    color: rgba(255, 160, 148, .9);
+}
+
+#bv-battle-transition .bvbt-pips {
+    display: flex;
+    gap: 3px;
+}
+
+#bv-battle-transition .bvbt-pips i {
+    width: 7px;
+    height: 7px;
+    transform: rotate(45deg);
+    background: rgba(120, 150, 220, .16);
+    border: 1px solid rgba(160, 200, 255, .28);
+}
+
+#bv-battle-transition .bvbt-pips i.on {
+    background: #ffd479;
+    border-color: #fff0c4;
+    box-shadow: 0 0 6px rgba(255, 200, 90, .65);
+    opacity: 0;
+    animation: bvbtPipIn .24s ease forwards;
+}
+
+#bv-battle-transition .bvbt-caption.is-boss .bvbt-pips i.on {
+    background: #ff5a4a;
+    border-color: #ffd0c8;
+    box-shadow: 0 0 7px rgba(255, 80, 60, .8);
+}
+
+#bv-battle-transition .bvbt-pips i.on:nth-child(1) { animation-delay: 1.15s; }
+#bv-battle-transition .bvbt-pips i.on:nth-child(2) { animation-delay: 1.22s; }
+#bv-battle-transition .bvbt-pips i.on:nth-child(3) { animation-delay: 1.29s; }
+#bv-battle-transition .bvbt-pips i.on:nth-child(4) { animation-delay: 1.36s; }
+#bv-battle-transition .bvbt-pips i.on:nth-child(5) { animation-delay: 1.43s; }
+
+@keyframes bvbtPipIn {
+    from { opacity: 0; transform: rotate(45deg) scale(.4); }
+    to   { opacity: 1; transform: rotate(45deg) scale(1); }
 }
 
 /* --- Variante: Klingenkreuz --- */
@@ -57985,8 +58210,7 @@ body.bv-settings-particles-off .title-canvas-bg {
     height: 5px;
     margin: -2.5px 0 0 -2.5px;
     border-radius: 50%;
-    background: #dff0ff;
-    box-shadow: 0 0 8px rgba(160, 210, 255, .9);
+    background: radial-gradient(circle, #ffffff 0 40%, rgba(170, 215, 255, .9) 62%, rgba(120, 180, 255, 0) 100%);
     opacity: 0;
     transform: rotate(var(--a, 0deg)) translateY(0) scale(.4);
     animation: bvbtSpark .55s cubic-bezier(.2, .8, .2, 1) .16s forwards;
@@ -58003,10 +58227,11 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 240%;
-    height: 240%;
+    width: 170%;
+    height: 170%;
     border-radius: 50%;
     will-change: transform, opacity;
+    backface-visibility: hidden;
     opacity: 0;
 }
 
@@ -58019,8 +58244,8 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #bv-battle-transition .bvbt-swirl.s2 {
-    width: 200%;
-    height: 200%;
+    width: 145%;
+    height: 145%;
     background: repeating-conic-gradient(from 12deg,
         rgba(90, 150, 255, 0) 0deg 10deg,
         rgba(200, 230, 255, .6) 10deg 14deg,
@@ -58029,8 +58254,8 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #bv-battle-transition .bvbt-swirl.s3 {
-    width: 150%;
-    height: 150%;
+    width: 120%;
+    height: 120%;
     background: repeating-conic-gradient(from 24deg,
         rgba(40, 70, 180, 0) 0deg 14deg,
         rgba(70, 120, 235, .8) 14deg 20deg,
@@ -58127,10 +58352,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 190%;
-    padding-top: 190%;
-    margin-left: -95%;
-    margin-top: -95%;
+    width: 140%;
+    padding-top: 140%;
+    margin-left: -70%;
+    margin-top: -70%;
     border-radius: 50%;
     background: radial-gradient(circle, transparent 0 46%, rgba(3, 5, 14, .97) 49%);
     transform: scale(1.5);
@@ -58147,10 +58372,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 170%;
-    padding-top: 170%;
-    margin-left: -85%;
-    margin-top: -85%;
+    width: 130%;
+    padding-top: 130%;
+    margin-left: -65%;
+    margin-top: -65%;
     border-radius: 50%;
     background: repeating-conic-gradient(from 0deg,
         rgba(180, 215, 255, .22) 0deg 2deg,
@@ -58168,10 +58393,12 @@ body.bv-settings-particles-off .title-canvas-bg {
 /* --- Variante: Mosaik (Retro-Raster) --- */
 #bv-battle-transition .bvbt-tile {
     position: absolute;
-    width: 12.5%;
-    height: 16.7%;
-    background: linear-gradient(150deg, #16204f, #04060f 75%);
-    box-shadow: inset 0 0 0 1px rgba(120, 190, 255, .16);
+    width: 16.7%;
+    height: 25%;
+    /* schlichte Fläche + dünne Kante = deutlich weniger Paint als Innen-Schatten */
+    background: linear-gradient(150deg, #18224f, #04060f 78%);
+    border-right: 1px solid rgba(120, 190, 255, .12);
+    border-bottom: 1px solid rgba(120, 190, 255, .1);
     transform: scale(0);
     animation: bvbtTileIn .28s cubic-bezier(.2, .9, .2, 1) forwards;
     animation-delay: var(--d, 0ms);
@@ -58391,6 +58618,24 @@ body.bv-settings-particles-off .title-canvas-bg {
     animation-delay: .04s;
 }
 
+/* v5.3 Low-Spec: die Info-Karte bleibt, erscheint aber sofort fertig -
+   keine Staffel-Animationen, kein Paint-Aufwand. */
+#bv-battle-transition.bt-low .bvbt-info {
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+
+#bv-battle-transition.bt-low .bvbt-hpfill {
+    animation: none;
+    transform: scaleX(1);
+}
+
+#bv-battle-transition.bt-low .bvbt-pips i.on {
+    animation: none;
+    opacity: 1;
+}
+
 #bv-battle-transition.bt-low.v-bt-boss .bvbt-veil {
     background: radial-gradient(ellipse at 50% 50%, rgba(84, 14, 12, .96), rgba(4, 3, 8, .995) 70%), #05030a;
 }
@@ -58406,6 +58651,17 @@ body.bv-settings-particles-off .title-canvas-bg {
 @media (prefers-reduced-motion: reduce) {
     #bv-battle-transition .bvbt-caption,
     #bv-battle-transition .bvbt-veil { animation-duration: .12s !important; }
+
+    #bv-battle-transition .bvbt-info,
+    #bv-battle-transition .bvbt-hpfill,
+    #bv-battle-transition .bvbt-pips i.on {
+        animation: none !important;
+        opacity: 1;
+        transform: none;
+    }
+
+    #bv-battle-transition .bvbt-hpfill { transform: scaleX(1); }
+    #bv-battle-transition .bvbt-pips i.on { transform: rotate(45deg); }
 }
 
 /* --- Kleine Fenster: Schriftzug kompakter --- */
@@ -58416,7 +58672,38 @@ body.bv-settings-particles-off .title-canvas-bg {
     }
 
     #bv-battle-transition .bvbt-caption {
-        width: 86%;
+        width: 94%;
+    }
+
+    #bv-battle-transition .bvbt-portrait {
+        width: 42px;
+        height: 42px;
+    }
+
+    #bv-battle-transition .bvbt-face {
+        font-size: 1.15rem;
+    }
+
+    #bv-battle-transition .bvbt-name {
+        font-size: .82rem;
+    }
+}
+
+/* Sehr flache Fenster: Info-Reihe straffen */
+@media (max-height: 460px) {
+    #bv-battle-transition .bvbt-title {
+        font-size: 1.35rem;
+        letter-spacing: 6px;
+    }
+
+    #bv-battle-transition .bvbt-info {
+        padding: 5px 8px;
+        margin-top: 4px;
+    }
+
+    #bv-battle-transition .bvbt-portrait {
+        width: 38px;
+        height: 38px;
     }
 }
 </style>
