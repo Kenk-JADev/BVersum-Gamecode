@@ -1191,6 +1191,13 @@
                 <!-- ===== KONFETTI ===== -->
                 <div class="bvq-confetti" id="bvq-confetti" aria-hidden="true"></div>
 
+                <!-- ===== START-VORHANG ===== -->
+                <div class="bvq-enter" id="bvq-enter" aria-hidden="true">
+                    <div class="bvq-enter-bar left"></div>
+                    <div class="bvq-enter-bar right"></div>
+                    <div class="bvq-enter-flash"></div>
+                </div>
+
                 <!-- ===== VERLASSEN-ÜBERGANG ===== -->
                 <div class="bvq-exit" id="bvq-exit" aria-hidden="true">
                     <div class="bvq-exit-bar"></div>
@@ -29628,6 +29635,9 @@
                 let bvqIntroTimer = null;
                 let bvqTickTimer = null;
                 let bvqExitTimer = null;
+                let bvqEnterTimer = null;
+                let bvqCheerTimer = null;
+                let bvqCheerToken = 0;
                 let bvqExiting = false;
 
                 const BVQ_TOTAL_QUESTIONS = 7;
@@ -29780,7 +29790,9 @@
                     return bvqPick([].concat(good ? judge.verdictOk : judge.verdictBad));
                 }
 
-                // ---- Publikum anziehen (Büro-Gesichter) ----
+                // ---- Publikum anziehen (Büro-Gesichter wie auf der Map) ----
+                // Wird einmal pro Runde aufgebaut; Gesichter bleiben stabil,
+                // damit beim Jubeln nichts "durchrutscht".
                 function bvqDressAudience(cheer) {
                     const host = bvqEl('bvq-audience');
                     if (!host) return;
@@ -29790,34 +29802,103 @@
                         sp.textContent = cheer
                             ? bvqPick(BVQ_CHEER_FACES)
                             : BVQ_AUDIENCE_FACES[(i * 5 + seed * 3) % BVQ_AUDIENCE_FACES.length];
-                        sp.style.animationDelay = (-(i % 7) * 0.18).toFixed(2) + 's';
+                        // versetzte Wipp-Phase pro Zuschauer (nur einmal setzen -> kein Springen)
+                        if (!sp.dataset.delaySet) {
+                            sp.style.setProperty('--bob-delay', (-(i % 9) * 0.19).toFixed(2) + 's');
+                            sp.dataset.delaySet = '1';
+                        }
                     });
                     if (typeof parseEmojis === 'function') parseEmojis(host);
                 }
 
+                // Jubel: ein Durchlauf mit gestaffeltem Hüpfen, sauber aufgeräumt.
+                function bvqAudienceCheer() {
+                    const host = bvqEl('bvq-audience');
+                    if (!host || bvqReducedMotion()) return;
+                    bvqCheerToken++;
+                    const token = bvqCheerToken;
+                    if (bvqCheerTimer) { clearTimeout(bvqCheerTimer); bvqCheerTimer = null; }
+                    bvqDressAudience(true);
+                    host.classList.add('cheer');
+                    Array.prototype.forEach.call(host.children, (sp, i) => {
+                        sp.style.setProperty('--jump-delay', ((i % 6) * 55).toFixed(0) + 'ms');
+                        sp.classList.add('jump');
+                    });
+                    bvqCheerTimer = setTimeout(() => {
+                        bvqCheerTimer = null;
+                        if (token !== bvqCheerToken) return;
+                        host.classList.remove('cheer');
+                        Array.prototype.forEach.call(host.children, sp => {
+                            sp.classList.remove('jump');
+                            sp.style.removeProperty('--jump-delay');
+                        });
+                        if (quizState) bvqDressAudience(false);
+                    }, 1500);
+                }
+
+                function bvqStopAudienceCheer() {
+                    bvqCheerToken++;
+                    if (bvqCheerTimer) { clearTimeout(bvqCheerTimer); bvqCheerTimer = null; }
+                    const host = bvqEl('bvq-audience');
+                    if (!host) return;
+                    host.classList.remove('cheer');
+                    Array.prototype.forEach.call(host.children, sp => {
+                        sp.classList.remove('jump');
+                        sp.style.removeProperty('--jump-delay');
+                    });
+                }
+
                 // ---- Konfetti (reines CSS/DOM, keine Assets) ----
+                // opts.rain = von oben über die ganze Bühne regnen lassen (Finale),
+                // sonst ein Bogen aus der Bühnenmitte.
                 function bvqConfetti(opts) {
                     const layer = bvqEl('bvq-confetti');
                     if (!layer || bvqReducedMotion()) return;
-                    const cfg = Object.assign({ count: 32, spread: 44, fall: 72, fromX: 50, fromY: 40 }, opts || {});
-                    if (bvqIsLowSpec()) cfg.count = Math.max(8, Math.round(cfg.count * 0.45));
+                    const cfg = Object.assign({
+                        count: 34, spread: 40, fall: 78, fromX: 50, fromY: 44, rain: false
+                    }, opts || {});
+                    if (bvqIsLowSpec()) cfg.count = Math.max(10, Math.round(cfg.count * 0.45));
+                    if (cfg.rain) cfg.fall = Math.max(cfg.fall, 112);
+
                     const frag = document.createDocumentFragment();
                     for (let i = 0; i < cfg.count; i++) {
                         const el = document.createElement('i');
                         const dx = (Math.random() - 0.5) * 2 * cfg.spread;
+                        const dur = 2700 + Math.random() * 1800;      // gemütlich: ~2,7–4,5 s
                         el.style.setProperty('--dx', dx.toFixed(1) + 'vw');
-                        el.style.setProperty('--dy', (cfg.fall + Math.random() * 40).toFixed(0) + 'vh');
-                        el.style.setProperty('--rot', (Math.random() * 900 - 450).toFixed(0) + 'deg');
-                        el.style.setProperty('--dur', (1000 + Math.random() * 900).toFixed(0) + 'ms');
-                        el.style.setProperty('--delay', (Math.random() * 200).toFixed(0) + 'ms');
+                        el.style.setProperty('--dy', (cfg.fall + Math.random() * 35).toFixed(0) + 'vh');
+                        el.style.setProperty('--rot', (Math.random() * 1080 - 540).toFixed(0) + 'deg');
+                        el.style.setProperty('--dur', dur.toFixed(0) + 'ms');
+                        el.style.setProperty('--delay', (Math.random() * (cfg.rain ? 700 : 240)).toFixed(0) + 'ms');
+                        el.style.setProperty('--size', (7 + Math.random() * 7).toFixed(0) + 'px');
                         el.style.setProperty('--c', BVQ_CONFETTI_COLORS[i % BVQ_CONFETTI_COLORS.length]);
-                        el.style.left = (cfg.fromX + (Math.random() - 0.5) * 10).toFixed(1) + '%';
-                        el.style.top = (cfg.fromY + (Math.random() - 0.5) * 10).toFixed(1) + '%';
+                        if (cfg.rain) {
+                            el.style.left = (Math.random() * 100).toFixed(1) + '%';
+                            el.style.top = (-8 - Math.random() * 10).toFixed(0) + '%';
+                        } else {
+                            el.style.left = (cfg.fromX + (Math.random() - 0.5) * 12).toFixed(1) + '%';
+                            el.style.top = (cfg.fromY + (Math.random() - 0.5) * 12).toFixed(1) + '%';
+                        }
                         frag.appendChild(el);
                     }
                     layer.appendChild(frag);
                     const nodes = Array.prototype.slice.call(layer.children, -cfg.count);
-                    setTimeout(() => nodes.forEach(n => n.remove()), 2400);
+                    setTimeout(() => nodes.forEach(n => n.remove()), 5400);
+                }
+
+                // ---- Start-Vorhang: Vorhang aufgeht, Show startet ----
+                function bvqPlayEnter() {
+                    const el = bvqEl('bvq-enter');
+                    if (!el) return;
+                    if (bvqEnterTimer) { clearTimeout(bvqEnterTimer); bvqEnterTimer = null; }
+                    el.classList.remove('visible');
+                    void el.offsetWidth;
+                    el.classList.add('visible');
+                    const dur = bvqReducedMotion() ? 140 : 1150;
+                    bvqEnterTimer = setTimeout(() => {
+                        el.classList.remove('visible');
+                        bvqEnterTimer = null;
+                    }, dur);
                 }
 
                 function bvqClearConfetti() {
@@ -29879,15 +29960,7 @@
                     const val = bvqEl('bvq-crowd-val');
                     if (fill) fill.style.width = quizState.crowd + '%';
                     if (val) val.textContent = quizState.crowd + '%';
-                    const aud = bvqEl('bvq-audience');
-                    if (aud && animate && !bvqReducedMotion()) {
-                        aud.classList.add('cheer');
-                        bvqDressAudience(true);
-                        setTimeout(() => {
-                            aud.classList.remove('cheer');
-                            if (quizState) bvqDressAudience(false);
-                        }, 1200);
-                    }
+                    if (animate) bvqAudienceCheer();
                 }
 
                 function bvqFlashScreen() {
@@ -29954,6 +30027,7 @@
                     bvqSet('quiz-total', quizState.questions.length);
                     bvqSet('quiz-gold', '0');
                     bvqSet('quiz-current', '1');
+                    bvqStopAudienceCheer();
                     bvqRenderJudges();
                     bvqDressAudience(false);
                     bvqSetCrowd(cfg.crowd, false);
@@ -29961,6 +30035,7 @@
                     bvqWireUi();
                     bvqUpdateLifelines();
                     bvqShowIntro();
+                    bvqPlayEnter();
                 }
 
                 // ---- Schwierigkeits-Chip oben rechts ----
@@ -30049,6 +30124,7 @@
                     if (!quizState) return;
                     quizState.index = 0;
                     showQuizQuestion();
+                    bvqConfetti({ count: 24, fromY: 58, spread: 34 });
                 }
 
                 // ---- Eine Frage präsentieren ----
@@ -30199,7 +30275,7 @@
                         }
                         bvqFlashScreen();
                         bvqFloatGold(gained);
-                        bvqConfetti({ count: quizState.streak >= 3 ? 46 : 30, fromY: 42 });
+                        bvqConfetti({ count: quizState.streak >= 3 ? 44 : 28, fromY: 46, spread: 38 });
                         bvqJudgeReact('good');
                         bvqSetCrowd(quizState.crowd + 9 + bonus / 5, true);
                         const chip = bvqEl('bvq-gold-chip');
@@ -30316,9 +30392,12 @@
                     }
 
                     if (perfect || quizState.score >= total - 1) {
-                        bvqConfetti({ count: 120, fromY: 26, spread: 54, fall: 78 });
+                        bvqConfetti({ count: 70, rain: true, spread: 30 });
+                        setTimeout(() => bvqConfetti({ count: 44, fromY: 40, spread: 52 }), 260);
+                    } else if (quizState.score >= Math.ceil(total / 2)) {
+                        bvqConfetti({ count: 46, rain: true, spread: 26 });
                     } else {
-                        bvqConfetti({ count: quizState.score >= Math.ceil(total / 2) ? 52 : 20, fromY: 32 });
+                        bvqConfetti({ count: 20, fromY: 34, spread: 34 });
                     }
                     bvqSetCrowd(perfect ? 100 : quizState.crowd, true);
                     bvqEl('quiz-end')?.classList.add('visible');
@@ -30340,7 +30419,10 @@
                     const aud = bvqEl('bvq-audience');
                     if (aud) aud.classList.remove('cheer');
                     bvqClearConfetti();
+                    bvqStopAudienceCheer();
+                    if (bvqEnterTimer) { clearTimeout(bvqEnterTimer); bvqEnterTimer = null; }
                     bvqEl('bvq-exit')?.classList.remove('visible');
+                    bvqEl('bvq-enter')?.classList.remove('visible');
                     const intro = bvqEl('bvq-intro');
                     if (intro) intro.classList.remove('choosing', 'counting');
                 }
@@ -55541,22 +55623,38 @@ body.bv-settings-particles-off .title-canvas-bg {
     animation: bvqHaze 7s ease-in-out infinite; }
 @keyframes bvqHaze { 50% { opacity: .8; } }
 
-.bvq-audience { position: absolute; left: 0; right: 0; bottom: 0; height: 104px; display: flex; flex-wrap: wrap;
-    align-items: flex-end; align-content: flex-end; justify-content: space-around;
-    padding: 0 1.5% 2px; row-gap: 2px; pointer-events: none; }
-.bvq-audience span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
-    font-size: 1.25rem; line-height: 1;
+/* Zwei feste Reihen: hinten 10 kleinere, vorne 10 größere Zuschauer.
+   Feste Rasterzellen -> nichts verrutscht beim Ein-/Ausblenden der Gesichter. */
+.bvq-audience { position: absolute; left: 0; right: 0; bottom: 0; height: 78px;
+    display: grid; grid-template-columns: repeat(10, 1fr); grid-auto-rows: 1fr;
+    align-content: end; align-items: end; justify-items: center;
+    padding: 0 2% 3px; pointer-events: none; z-index: 1; }
+/* Mittlere Höhen: Bühne bekommt etwas mehr Platz, Publikum bleibt flacher */
+@media (max-height: 780px) {
+    .bvq-stage { padding-bottom: 66px; }
+    .bvq-audience { height: 64px; }
+}
+.bvq-audience::before { content: ''; position: absolute; inset: -22px 0 0; pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(3,6,14,.62) 60%, rgba(3,6,14,.9)); }
+.bvq-audience span { position: relative; display: grid; place-items: center; width: 30px; height: 30px;
+    border-radius: 50%; font-size: 1.12rem; line-height: 1;
     background: radial-gradient(circle at 50% 135%, rgba(90,150,255,.38), rgba(10,18,34,.94));
     border: 1px solid rgba(120,180,255,.22); box-shadow: 0 6px 14px rgba(0,0,0,.5);
-    animation: bvqBob 1.6s ease-in-out infinite; }
+    animation: bvqBob 1.9s ease-in-out var(--bob-delay, 0s) infinite; will-change: transform; }
 .bvq-audience span img.emoji { width: 1em; height: 1em; margin: 0; }
-/* hintere Reihe (erste 10) etwas kleiner und dunkler */
-.bvq-audience span:nth-child(-n+10) { width: 28px; height: 28px; font-size: 1rem; opacity: .68; }
-.bvq-audience span:nth-child(3n) { animation-duration: 1.9s; }
-.bvq-audience span:nth-child(4n) { animation-duration: 1.35s; }
-@keyframes bvqBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-.bvq-audience.cheer span { animation-duration: .48s; border-color: rgba(255,212,94,.55);
-    box-shadow: 0 0 18px rgba(255,200,60,.45), 0 6px 14px rgba(0,0,0,.5); }
+.bvq-audience span:nth-child(-n+10) { width: 24px; height: 24px; font-size: .92rem; opacity: .58; }
+.bvq-audience span:nth-child(n+11) { width: 32px; height: 32px; font-size: 1.22rem; }
+@keyframes bvqBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+/* Jubel: kurzes, versetztes Hüpfen – über eine eigene Klasse statt animation-duration,
+   damit nichts mitten in der Bewegung umschaltet. */
+.bvq-audience.cheer span { border-color: rgba(255,212,94,.55);
+    box-shadow: 0 0 18px rgba(255,200,60,.4), 0 6px 14px rgba(0,0,0,.5); }
+.bvq-audience span.jump { animation: bvqJump .52s ease-out var(--jump-delay, 0ms) 2; }
+@keyframes bvqJump {
+    0%, 100% { transform: translateY(0) scale(1); }
+    35% { transform: translateY(-11px) scale(1.12); }
+    70% { transform: translateY(-2px) scale(1.02); }
+}
 
 .bvq-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0;
     background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.55), transparent 62%); }
@@ -55572,7 +55670,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* ---------------- Bühne / Layout ---------------- */
 .bvq-stage { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 12px; padding: 18px 22px 26px; }
+    align-items: center; justify-content: center; gap: 12px; padding: 18px 22px 76px; }
 #rpg-quiz-screen.quiz-starting .bvq-stage { animation: bvqStageIn .6s cubic-bezier(.16,1,.3,1) both; }
 #rpg-quiz-screen.quiz-exiting .bvq-stage { animation: bvqStageOut .4s ease-in forwards; }
 @keyframes bvqStageIn { from { opacity: 0; transform: translateY(18px) scale(.985); } }
@@ -55800,17 +55898,42 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* ---------------- Konfetti ---------------- */
 .bvq-confetti { position: absolute; inset: 0; z-index: 16; pointer-events: none; overflow: hidden; }
-.bvq-confetti i { position: absolute; width: 8px; height: 12px; border-radius: 2px; opacity: 0;
-    background: var(--c, #ffd54a); box-shadow: 0 0 8px rgba(255,255,255,.22);
-    animation: bvqConf var(--dur, 1500ms) cubic-bezier(.25,.6,.35,1) var(--delay, 0ms) forwards; }
-.bvq-confetti i:nth-child(3n) { width: 6px; height: 6px; border-radius: 50%; }
-.bvq-confetti i:nth-child(4n) { width: 11px; height: 5px; }
-.bvq-confetti i:nth-child(7n) { width: 5px; height: 9px; }
+.bvq-confetti i { position: absolute; width: var(--size, 9px); height: calc(var(--size, 9px) * 1.45);
+    border-radius: 2px; opacity: 0; background: var(--c, #ffd54a);
+    box-shadow: 0 0 6px rgba(255,255,255,.16);
+    animation: bvqConf var(--dur, 3200ms) cubic-bezier(.2,.55,.35,1) var(--delay, 0ms) forwards; }
+/* Formenvielfalt: Plättchen, Punkte, lange Streifen */
+.bvq-confetti i:nth-child(3n) { border-radius: 50%; width: calc(var(--size, 9px) * .8); height: calc(var(--size, 9px) * .8); }
+.bvq-confetti i:nth-child(4n) { width: calc(var(--size, 9px) * 1.7); height: calc(var(--size, 9px) * .42); border-radius: 1px; }
+.bvq-confetti i:nth-child(5n) { border-radius: 45% 55% 50% 50%; }
+/* Ruhiger Bogen: aufsteigen, dann schwerer Fall mit Drehung */
 @keyframes bvqConf {
-    0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); }
-    70% { opacity: 1; }
-    100% { opacity: 0; transform: translate3d(var(--dx, 10vw), var(--dy, 80vh), 0) rotate(var(--rot, 540deg)); }
+    0%   { opacity: 0; transform: translate3d(0, 0, 0) rotate(0deg) scale(.55); }
+    10%  { opacity: 1; transform: translate3d(calc(var(--dx) * .12), -6vh, 0) rotate(calc(var(--rot) * .12)) scale(1); }
+    55%  { opacity: 1; transform: translate3d(calc(var(--dx) * .62), calc(var(--dy) * .52), 0) rotate(calc(var(--rot) * .55)) scale(1); }
+    100% { opacity: 0; transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--rot)) scale(.92); }
 }
+
+/* ---------------- Start-Vorhang ---------------- */
+.bvq-enter { position: absolute; inset: 0; z-index: 35; display: none; pointer-events: none; }
+.bvq-enter.visible { display: block; }
+.bvq-enter-bar { position: absolute; top: 0; bottom: 0; width: 50.5%;
+    background: linear-gradient(180deg, #04070f, #0a1224 55%, #050a14);
+    box-shadow: inset 0 0 80px rgba(0,0,0,.85); }
+.bvq-enter-bar::after { content: ''; position: absolute; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, transparent, rgba(140,200,255,.75), transparent); }
+.bvq-enter-bar.left { left: 0; }
+.bvq-enter-bar.left::after { right: 0; }
+.bvq-enter-bar.right { right: 0; }
+.bvq-enter-bar.right::after { left: 0; }
+.bvq-enter.visible .bvq-enter-bar.left { animation: bvqEnterLeft .8s cubic-bezier(.66,0,.34,1) .12s forwards; }
+.bvq-enter.visible .bvq-enter-bar.right { animation: bvqEnterRight .8s cubic-bezier(.66,0,.34,1) .12s forwards; }
+@keyframes bvqEnterLeft { to { transform: translateX(-101%); } }
+@keyframes bvqEnterRight { to { transform: translateX(101%); } }
+.bvq-enter-flash { position: absolute; inset: 0; opacity: 0;
+    background: radial-gradient(circle at 50% 46%, rgba(210,235,255,.9), transparent 62%); }
+.bvq-enter.visible .bvq-enter-flash { animation: bvqEnterFlash .9s ease-out .55s forwards; }
+@keyframes bvqEnterFlash { 0% { opacity: 0; } 22% { opacity: .85; } 100% { opacity: 0; } }
 
 /* ---------------- Verlassen-Übergang (Vorhang) ---------------- */
 .bvq-exit { position: absolute; inset: 0; z-index: 40; display: none; pointer-events: none; }
@@ -55868,6 +55991,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 #rpg-quiz-screen.bvq-lowspec .bvq-intro-rays,
 #rpg-quiz-screen.bvq-lowspec .bvq-finale-rays { display: none; }
 #rpg-quiz-screen.bvq-lowspec .bvq-room::before { opacity: .55; }
+#rpg-quiz-screen.bvq-lowspec .bvq-enter-flash { display: none; }
 
 /* ---------------- Reduced Motion ---------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -55881,6 +56005,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     #rpg-quiz-screen .bvq-streak.on,
     #rpg-quiz-screen .bvq-timer-row.urgent .bvq-timer-num { animation: none !important; }
     #rpg-quiz-screen .bvq-confetti { display: none !important; }
+    #rpg-quiz-screen .bvq-enter { display: none !important; }
+    #rpg-quiz-screen .bvq-audience span { animation: none !important; }
     #rpg-quiz-screen .bvq-exit-bar { animation: none !important; }
     #rpg-game-screen.bvq-arrive { animation: none !important; }
 }
@@ -55898,13 +56024,14 @@ body.bv-settings-particles-off .title-canvas-bg {
     .bvq-diff-btn b { font-size: 1.1rem; }
     .bvq-diff-btn i { font-size: .8rem; }
     .bvq-answers { grid-template-columns: 1fr; gap: 8px; }
-    .bvq-audience { height: 76px; }
+    .bvq-stage { padding-bottom: 70px; }
+    .bvq-audience { height: 64px; }
     .bvq-question { font-size: clamp(10px, 2.4vw, 13px); }
     .bvq-ans { font-size: 1.1rem; padding: 11px 12px; }
     .bvq-life .bvq-life-txt { display: none; }
     .bvq-logo small { display: none; }
-    .bvq-audience { height: 54px; }
-    .bvq-audience span { width: 22px; height: 34px; }
+    .bvq-audience span:nth-child(-n+10) { width: 20px; height: 20px; font-size: .8rem; }
+    .bvq-audience span:nth-child(n+11) { width: 26px; height: 26px; font-size: 1rem; }
 }
 @media (max-height: 640px) {
     .bvq-judges { display: none; }
@@ -55914,5 +56041,6 @@ body.bv-settings-particles-off .title-canvas-bg {
     .bvq-answers { gap: 7px; }
     .bvq-ans { padding: 9px 11px; }
     .bvq-audience { display: none; }
+    .bvq-stage { padding-bottom: 20px; }
 }
 </style>
