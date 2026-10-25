@@ -24581,6 +24581,67 @@
                 const MOVE_DURATION = 104; // INPUT FIX: gleichmäßiger Tile-Step, weniger Speed-Schwankung
                 const MOVE_COOLDOWN = 92; // INPUT FIX: verhindert Doppel-/Auto-Step durch zu kurzen Cooldown
                 const MOVE_LOOP_BUFFER = 12;
+
+                // ===== v7.10.16: Shift-Sprint =====
+                // Sprint verkuerzt die Schrittzeit (nicht die Distanz) - der Spieler
+                // laeuft also schneller ueber die Map, Kollisionen/Dialoge bleiben
+                // unveraendert. Die Effektstufe haengt an Low-Spec/Reduced-Motion.
+                const SPRINT_FACTOR = 1.6;        // Schrittzeit / 1.6 = ~62% der Zeit
+                const SPRINT_MIN_STEP_MS = 56;    // Untergrenze: lesbar & CPU-schonend
+                let sprintHeld = false;
+                let isSprinting = false;
+
+                // Reine Rechenfunktionen - kein Layout-Read, kein DOM-Zugriff.
+                function getBaseStepMs() { return isLowSpecMap() ? 78 : MOVE_DURATION; }
+                function getMoveStepMs() {
+                    const base = getBaseStepMs();
+                    if (!isSprinting) return base;
+                    return Math.max(SPRINT_MIN_STEP_MS, Math.round(base / SPRINT_FACTOR));
+                }
+                function getMoveCooldown(stepMs) { return Math.max(38, Math.round(stepMs * 0.85)); }
+
+                function getSprintFxLevel() {
+                    if (document.body.classList.contains('bv-settings-reduced-motion')) return 'off';
+                    if (isLowSpecMap() || document.body.classList.contains('bv-settings-lowspec')) return 'minimal';
+                    return 'full';
+                }
+
+                // Schaltet Sprint-Zustand und Effektklassen um.
+                function setSprinting(on) {
+                    on = !!on;
+                    if (on === isSprinting) return;
+                    isSprinting = on;
+                    if (playerEl) playerEl.classList.toggle('sprinting', on);
+                    const fx = on ? getSprintFxLevel() : 'off';
+                    document.body.classList.toggle('bv-sprint-fx-full', fx === 'full');
+                    document.body.classList.toggle('bv-sprint-fx-minimal', fx === 'minimal');
+                    if (fx === 'full') ensureSprintFxNodes();
+                    // Ein laufender Schritt behaelt seine Dauer; Folgeschritte nutzen
+                    // automatisch die kuerzere Sprint-Schrittzeit.
+                }
+
+                function updateSprintState() {
+                    // "recentlyMoved" verhindert Sprint-Effekte gegen eine Wand
+                    // (Taste gehalten, aber es geht nicht weiter).
+                    const recentlyMoved = (performance.now() - lastMoveTimestamp) < 400;
+                    const canSprint = sprintHeld && gameState === 'MAP' && !cheatConsoleVisible &&
+                        !isTransitioning && !isBattleStarting && !isMoving &&
+                        hasHeldMoveKey() && recentlyMoved;
+                    setSprinting(canSprint);
+                }
+
+                // Effekt-Knoten einmalig anlegen (nur bei voller Effektstufe).
+                // Alles danach ist reines CSS (transform/opacity) - kein JS pro Frame.
+                function ensureSprintFxNodes() {
+                    if (!playerEl || playerEl.querySelector('.sprint-fx')) return;
+                    const fx = document.createElement('div');
+                    fx.className = 'sprint-fx';
+                    fx.setAttribute('aria-hidden', 'true');
+                    fx.innerHTML =
+                        '<span class="sp-line l1"></span><span class="sp-line l2"></span><span class="sp-line l3"></span>' +
+                        '<span class="sp-dust d1"></span><span class="sp-dust d2"></span><span class="sp-dust d3"></span>';
+                    playerEl.insertBefore(fx, playerEl.firstChild);
+                }
                 const MOVE_KEY_DIRS = {
                     ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
                     KeyW: [0, -1], KeyS: [0, 1], KeyA: [-1, 0], KeyD: [1, 0]
@@ -24636,6 +24697,8 @@
                 function clearMoveInputState() {
                     keysHeld = {};
                     directionHistory = [];
+                    sprintHeld = false;
+                    setSprinting(false);
                     stopMoveLoop();
                 }
 
@@ -24646,7 +24709,13 @@
                 // ===== SMOOTH MOVEMENT - PROFESSIONAL DIRECTION SYSTEM =====
                 function smoothMove(dx, dy) {
                     const now = performance.now();
-                    if (now - lastMoveTimestamp < MOVE_COOLDOWN) return false;
+                    // v7.10.16: Sprint-Status VOR der Schrittzeit-Berechnung
+                    // aktualisieren - sonst waere der erste Sprint-Schritt normal schnell.
+                    const wantSprint = sprintHeld && gameState === "MAP";
+                    if (wantSprint !== isSprinting) setSprinting(wantSprint);
+                    // Cooldown an die aktuelle Schrittzeit koppeln - sonst wuerde der
+                    // alte Fixwert (92 ms) Sprint-Schritte (56-65 ms) blocken.
+                    if (now - lastMoveTimestamp < getMoveCooldown(getMoveStepMs())) return false;
                     if (isMoving || gameState !== "MAP" || isTransitioning || isBattleStarting) return false;
 
                     const nx = player.x + dx;
@@ -24695,12 +24764,14 @@
                     if (typeof checkSecretDocumentTile === "function") checkSecretDocumentTile();
                     if (typeof checkSecretRoomEntrance === "function") checkSecretRoomEntrance();
 
-                    const stepMs = isLowSpecMap() ? 78 : MOVE_DURATION;
+                    const stepMs = getMoveStepMs();
                     // v7.10.15: Der Schritt wird für die Kamera linear interpoliert
                     // (genau wie die CSS-Transition des Sprites). Dadurch läuft das
                     // Kameraziel kontinuierlich statt im Tile-Takt zu springen.
                     playerStep = { fx: fromX, fy: fromY, tx: nx, ty: ny, startAt: now, dur: stepMs };
-                    if (!isLowSpecMap()) playerEl.classList.add("walking");
+                    // Low-Spec zeigt keine Walk-Bounce-Animation, beim Sprint aber
+                    // schon (dort ist die Bewegung das einzige Feedback).
+                    if (!isLowSpecMap() || isSprinting) playerEl.classList.add("walking");
                     placeMapElement(playerEl, player.x, player.y, "player", `left ${stepMs}ms linear, top ${stepMs}ms linear`);
 
                     updateCamera();
@@ -28506,7 +28577,7 @@
                             showMessage(`Willkommen bei BüroVersum GmbH, ${player.name}! 🏢`, "📋 System", "📋");
                             queueMessage(`Du bist jetzt ${genderWord} in der Abteilung ${DEPT_NAMES[playerDept]}.`, "📋 System", "📋");
                             queueMessage("Deine Mission: Besiege alle Gegner und den Geschäftsführer!", "📋 System", "📋");
-                            queueMessage("[Pfeiltasten] Bewegen • [Enter] Interagieren • [E] Menü • [C] Cheats", "📋 System", "📋");
+                            queueMessage("[Pfeiltasten] Bewegen • [Shift] Rennen • [Enter] Interagieren • [E] Menü • [C] Cheats", "📋 System", "📋");
                         }
                     }, 40);
                 }
@@ -29563,7 +29634,7 @@
                         { label: "Nichts", value: "no", hint: "✖" }
                     ], npc.name, npc.sprite, (val) => {
                         if (val === "tip") { showMessage("Tipp: Heile lieber 1 Zug zu früh als 1 zu spät.", npc.name, npc.sprite); }
-                        else if (val === "controls") { showMessage("Pfeiltasten/WASD: laufen, ENTER: interagieren, E: Menü, C: Cheats", npc.name, npc.sprite); }
+                        else if (val === "controls") { showMessage("Pfeiltasten/WASD: laufen, SHIFT: rennen, ENTER: interagieren, E: Menü, C: Cheats", npc.name, npc.sprite); }
                         else if (val === "cheats") { showMessage("Drücke [C] für die Cheat-Konsole! /help für Befehle.", npc.name, npc.sprite); }
                         else { showMessage("Alles klar. Viel Erfolg! 🏢", npc.name, npc.sprite); }
                     });
@@ -34531,6 +34602,28 @@ window.respawnPlayer = function () {
                     releaseMoveInput(getMoveInputCode(e));
                 });
 
+                // ===== v7.10.16: Sprint-Taste (Shift links/rechts) =====
+                // Capture-Phase, damit die Umschaltung vor anderen Handlern greift.
+                function isSprintKey(e) {
+                    return e.code === "ShiftLeft" || e.code === "ShiftRight" || e.key === "Shift";
+                }
+                document.addEventListener("keydown", (e) => {
+                    if (!isSprintKey(e)) return;
+                    if (cheatConsoleVisible || isCheatInputFocused()) return;
+                    if (isTypingInField(document.activeElement)) return; // Grossbuchstaben tippen
+                    if (gameState !== "MAP") return;
+                    if (sprintHeld) return;
+                    sprintHeld = true;
+                    updateSprintState();
+                }, true);
+                document.addEventListener("keyup", (e) => {
+                    if (!isSprintKey(e)) return;
+                    if (!sprintHeld) return;
+                    sprintHeld = false;
+                    setSprinting(false);
+                }, true);
+                window.addEventListener("blur", () => { sprintHeld = false; setSprinting(false); });
+
                 // BUGFIX: Wenn das Fenster den Fokus verliert, kommt keyup manchmal nicht an.
                 // Das verursachte Auto-Movement (z.B. nach links). Deshalb immer hart resetten.
                 window.addEventListener("blur", clearMoveInputState);
@@ -34579,8 +34672,9 @@ window.respawnPlayer = function () {
                 function scheduleNextMoveStep(stepMs) {
                     if (cheatConsoleVisible || gameState !== "MAP" || isTransitioning || isBattleStarting) return;
                     const speed = Math.max(0.5, player.moveSpeed || 1);
-                    const interval = Math.max(80, Math.floor((MOVE_DURATION + MOVE_LOOP_BUFFER) / speed));
-                    scheduleHeldKeyStep(Math.max(0, interval - (stepMs || 0)));
+                    const baseStep = stepMs || getMoveStepMs();
+                    const interval = Math.max(70, Math.floor((baseStep + MOVE_LOOP_BUFFER) / speed));
+                    scheduleHeldKeyStep(Math.max(0, interval - baseStep));
                 }
 
                 // Einheitlicher Ketten-Timer: versucht bei gehaltener Taste den
@@ -34594,6 +34688,7 @@ window.respawnPlayer = function () {
                         if (!hasHeldMoveKey()) return;
                         if (cheatConsoleVisible || gameState !== "MAP" || isTransitioning || isBattleStarting) return;
                         if (!isMoving) processHeldKeys();
+                        updateSprintState();
                         if (!isMoving && hasHeldMoveKey()) scheduleHeldKeyStep(90);
                     }, delay);
                 }
@@ -53942,6 +54037,95 @@ body.bv-settings-particles-off .title-canvas-bg {
 #rpg-camera.bv-cam-following {
     transition: none !important;
 }
+/* ============================================================
+   FEATURE v7.10.16: Shift-Sprint (mit Low-Spec-Stufe)
+   Effektstufen (vom Spiel per Body-Klasse gesetzt):
+     .bv-sprint-fx-full     -> Speed-Lines + Staub + Lean
+     .bv-sprint-fx-minimal  -> nur Lean (transform, kein Filter, kein Extra-DOM)
+     (keine Klasse)          -> kein Effekt (Reduced Motion)
+   Es laufen ausschliesslich transform/opacity-Animationen und nur,
+   solange .sprinting gesetzt ist -> im Ruhezustand null Kosten.
+   ============================================================ */
+
+/* ---- Stufe 1: Lean / Vorlage (auch Low-Spec, sehr guenstig) ---- */
+#rpg-player.sprinting .sprite-body {
+    animation-duration: .12s !important;
+}
+.bv-sprint-fx-full #rpg-player.sprinting .sprite-body,
+.bv-sprint-fx-minimal #rpg-player.sprinting .sprite-body {
+    animation-name: bvSprintBounceV71016 !important;
+}
+@keyframes bvSprintBounceV71016 {
+    0%, 100% { transform: scaleX(var(--player-face)) translate(2px, 0) rotate(3deg) scale(1.02, .98); }
+    50%      { transform: scaleX(var(--player-face)) translate(4px, -5px) rotate(6deg) scale(1.06, .96); }
+}
+
+/* ---- Stufe 2: Speed-Lines (nur full) ---- */
+.sprint-fx { display: none; }
+.bv-sprint-fx-full #rpg-player.sprinting .sprint-fx {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+.sprint-fx .sp-line {
+    position: absolute;
+    width: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, rgba(160,220,255,0), rgba(160,220,255,.85));
+    opacity: 0;
+    will-change: transform, opacity;
+}
+.bv-sprint-fx-full #rpg-player.sprinting .sp-line {
+    animation: bvSprintLineV71016 .42s linear infinite;
+}
+.sprint-fx .sp-line.l1 { top: 46%; left: -6px; animation-delay: 0s; }
+.sprint-fx .sp-line.l2 { top: 62%; left: -2px; width: 24px; animation-delay: .14s; }
+.sprint-fx .sp-line.l3 { top: 76%; left: -8px; width: 14px; animation-delay: .27s; }
+@keyframes bvSprintLineV71016 {
+    0%   { opacity: 0; transform: translateX(6px) scaleX(.4); }
+    25%  { opacity: .9; }
+    100% { opacity: 0; transform: translateX(-26px) scaleX(1.6); }
+}
+
+/* ---- Stufe 3: Staub (nur full, 3 Elemente) ---- */
+.sprint-fx .sp-dust {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(226,236,255,.7), rgba(180,200,230,0) 70%);
+    opacity: 0;
+    will-change: transform, opacity;
+}
+.bv-sprint-fx-full #rpg-player.sprinting .sp-dust {
+    animation: bvSprintDustV71016 .5s ease-out infinite;
+}
+.sprint-fx .sp-dust.d1 { animation-delay: 0s; }
+.sprint-fx .sp-dust.d2 { animation-delay: .17s; }
+.sprint-fx .sp-dust.d3 { animation-delay: .34s; }
+@keyframes bvSprintDustV71016 {
+    0%   { opacity: .55; transform: translate(-50%, 0) scale(.5); }
+    100% { opacity: 0; transform: translate(calc(-50% - 16px), 12px) scale(1.5); }
+}
+
+/* ---- Low-Spec: Filter/Box-Shadow am Sprint komplett aus ---- */
+.bv-sprint-fx-minimal #rpg-player.sprinting,
+.bv-sprint-fx-minimal #rpg-player.sprinting .sprite-body {
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+/* ---- Reduced Motion: keine Sprint-Animationen ---- */
+@media (prefers-reduced-motion: reduce) {
+    .bv-sprint-fx-full #rpg-player.sprinting .sp-line,
+    .bv-sprint-fx-full #rpg-player.sprinting .sp-dust { animation: none !important; opacity: 0 !important; }
+}
+
 /* ---- Laufender Spieler: kein drop-shadow-Filter ----
    `filter: drop-shadow()` muss bei jeder Positionsänderung neu gerastert
    werden (bei left/top-Transition also jeden Frame). Der Schlagschatten
