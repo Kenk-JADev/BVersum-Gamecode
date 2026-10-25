@@ -29849,8 +29849,16 @@
                 }
 
                 // ---- Konfetti (reines CSS/DOM, keine Assets) ----
-                // opts.rain = von oben über die ganze Bühne regnen lassen (Finale),
-                // sonst ein Bogen aus der Bühnenmitte.
+                // Zwei Ebenen pro Plättchen:
+                //   <i> = Fallbahn (Bogen, seitliches Schwanken, Streuung)
+                //   <b> = taumelndes Papier (eigene Drehachse + Quetschung)
+                // Alles (Startpunkt, Weite, Tempo, Achse, Form) ist zufällig.
+                const BVQ_CONF_EASES = [
+                    'cubic-bezier(.20,.55,.35,1)',
+                    'cubic-bezier(.15,.70,.40,1)',
+                    'cubic-bezier(.32,.45,.45,1)'
+                ];
+
                 function bvqConfetti(opts) {
                     const layer = bvqEl('bvq-confetti');
                     if (!layer || bvqReducedMotion()) return;
@@ -29863,27 +29871,39 @@
                     const frag = document.createDocumentFragment();
                     for (let i = 0; i < cfg.count; i++) {
                         const el = document.createElement('i');
+                        const inner = document.createElement('b');
+
                         const dx = (Math.random() - 0.5) * 2 * cfg.spread;
-                        const dur = 2700 + Math.random() * 1800;      // gemütlich: ~2,7–4,5 s
                         el.style.setProperty('--dx', dx.toFixed(1) + 'vw');
-                        el.style.setProperty('--dy', (cfg.fall + Math.random() * 35).toFixed(0) + 'vh');
-                        el.style.setProperty('--rot', (Math.random() * 1080 - 540).toFixed(0) + 'deg');
-                        el.style.setProperty('--dur', dur.toFixed(0) + 'ms');
-                        el.style.setProperty('--delay', (Math.random() * (cfg.rain ? 700 : 240)).toFixed(0) + 'ms');
-                        el.style.setProperty('--size', (7 + Math.random() * 7).toFixed(0) + 'px');
-                        el.style.setProperty('--c', BVQ_CONFETTI_COLORS[i % BVQ_CONFETTI_COLORS.length]);
+                        el.style.setProperty('--dy', (cfg.fall + Math.random() * 40).toFixed(0) + 'vh');
+                        el.style.setProperty('--sway', ((Math.random() - 0.5) * 22).toFixed(1) + 'vw');
+                        el.style.setProperty('--size', (7 + Math.random() * 8).toFixed(0) + 'px');
+                        el.style.setProperty('--dur', (2800 + Math.random() * 1800).toFixed(0) + 'ms');
+                        el.style.setProperty('--delay', (Math.random() * (cfg.rain ? 900 : 320)).toFixed(0) + 'ms');
+                        el.style.setProperty('--ease', BVQ_CONF_EASES[i % BVQ_CONF_EASES.length]);
+                        el.style.setProperty('--c', BVQ_CONFETTI_COLORS[Math.floor(Math.random() * BVQ_CONFETTI_COLORS.length)]);
+
+                        // Papier: Form, Drehachse, Taumel-Tempo
+                        el.style.setProperty('--br', Math.random() < 0.3 ? '50%' : (Math.random() < 0.5 ? '2px' : '1px 6px'));
+                        el.style.setProperty('--ax', Math.random() < 0.5 ? '1' : '-1');
+                        el.style.setProperty('--ay', Math.random() < 0.5 ? '1' : '-1');
+                        el.style.setProperty('--spin', (700 + Math.random() * 1100).toFixed(0) + 'ms');
+                        el.style.setProperty('--spin-dir', Math.random() < 0.5 ? 'normal' : 'reverse');
+
                         if (cfg.rain) {
                             el.style.left = (Math.random() * 100).toFixed(1) + '%';
-                            el.style.top = (-8 - Math.random() * 10).toFixed(0) + '%';
+                            el.style.top = (-8 - Math.random() * 12).toFixed(0) + '%';
                         } else {
-                            el.style.left = (cfg.fromX + (Math.random() - 0.5) * 12).toFixed(1) + '%';
-                            el.style.top = (cfg.fromY + (Math.random() - 0.5) * 12).toFixed(1) + '%';
+                            el.style.left = (cfg.fromX + (Math.random() - 0.5) * 22).toFixed(1) + '%';
+                            el.style.top = (cfg.fromY + (Math.random() - 0.5) * 18).toFixed(1) + '%';
                         }
+
+                        el.appendChild(inner);
                         frag.appendChild(el);
                     }
                     layer.appendChild(frag);
                     const nodes = Array.prototype.slice.call(layer.children, -cfg.count);
-                    setTimeout(() => nodes.forEach(n => n.remove()), 5400);
+                    setTimeout(() => nodes.forEach(n => n.remove()), 5600);
                 }
 
                 // ---- Start-Vorhang: Vorhang aufgeht, Show startet ----
@@ -29899,6 +29919,32 @@
                         el.classList.remove('visible');
                         bvqEnterTimer = null;
                     }, dur);
+                }
+
+                // ---- Bühne leeren: beim Start darf keine alte Frage zu sehen sein ----
+                function bvqResetBoard() {
+                    bvqSet('quiz-category', 'Bereit?');
+                    bvqSet('bvq-stars', '☆☆☆');
+                    bvqSet('bvq-value', '—');
+                    bvqSet('quiz-question', 'Gleich geht’s los …');
+                    bvqSet('bvq-timer-num', '–');
+
+                    const bar = bvqEl('quiz-timer-bar');
+                    if (bar) { bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)'; }
+                    const row = document.querySelector('#rpg-quiz-screen .bvq-timer-row');
+                    if (row) row.classList.remove('urgent');
+
+                    const answers = bvqEl('quiz-answers');
+                    if (answers) answers.innerHTML = '';
+                    const fb = bvqEl('quiz-feedback');
+                    if (fb) fb.innerHTML = '';
+                    const streak = bvqEl('quiz-streak');
+                    if (streak) { streak.textContent = ''; streak.classList.remove('on'); }
+
+                    const qcard = bvqEl('bvq-qcard');
+                    if (qcard) qcard.classList.remove('in');
+                    const board = bvqEl('bvq-board');
+                    if (board) board.classList.add('idle');
                 }
 
                 function bvqClearConfetti() {
@@ -30024,6 +30070,7 @@
                     bvqEl('quiz-end')?.classList.remove('visible');
                     bvqEl('bvq-exit')?.classList.remove('visible');
                     bvqClearConfetti();
+                    bvqResetBoard();
                     bvqSet('quiz-total', quizState.questions.length);
                     bvqSet('quiz-gold', '0');
                     bvqSet('quiz-current', '1');
@@ -30152,6 +30199,7 @@
                     bvqUpdateStreak();
 
                     // Fragekarte neu animieren
+                    bvqEl('bvq-board')?.classList.remove('idle');
                     const card = bvqEl('bvq-qcard');
                     if (card) { card.classList.remove('in'); void card.offsetWidth; card.classList.add('in'); }
 
@@ -55753,6 +55801,13 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bvq-timer-row.urgent .bvq-timer-fill { box-shadow: 0 0 16px rgba(239,68,68,.75); }
 @keyframes bvqUrgent { 50% { opacity: .45; } }
 
+/* ---------------- Ruhezustand vor der ersten Frage ---------------- */
+.bvq-board.idle .bvq-question { color: rgba(198,218,250,.55); }
+.bvq-board.idle .bvq-cat { opacity: .5; }
+.bvq-board.idle .bvq-stars, .bvq-board.idle .bvq-value { opacity: .4; }
+.bvq-board.idle .bvq-lifelines { opacity: .55; }
+.bvq-answers:empty { min-height: 112px; }
+
 /* ---------------- Antworten ---------------- */
 .bvq-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .bvq-ans { position: relative; display: flex; align-items: center; gap: 11px; width: 100%;
@@ -55898,20 +55953,31 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* ---------------- Konfetti ---------------- */
 .bvq-confetti { position: absolute; inset: 0; z-index: 16; pointer-events: none; overflow: hidden; }
-.bvq-confetti i { position: absolute; width: var(--size, 9px); height: calc(var(--size, 9px) * 1.45);
-    border-radius: 2px; opacity: 0; background: var(--c, #ffd54a);
-    box-shadow: 0 0 6px rgba(255,255,255,.16);
-    animation: bvqConf var(--dur, 3200ms) cubic-bezier(.2,.55,.35,1) var(--delay, 0ms) forwards; }
-/* Formenvielfalt: Plättchen, Punkte, lange Streifen */
-.bvq-confetti i:nth-child(3n) { border-radius: 50%; width: calc(var(--size, 9px) * .8); height: calc(var(--size, 9px) * .8); }
-.bvq-confetti i:nth-child(4n) { width: calc(var(--size, 9px) * 1.7); height: calc(var(--size, 9px) * .42); border-radius: 1px; }
-.bvq-confetti i:nth-child(5n) { border-radius: 45% 55% 50% 50%; }
-/* Ruhiger Bogen: aufsteigen, dann schwerer Fall mit Drehung */
-@keyframes bvqConf {
-    0%   { opacity: 0; transform: translate3d(0, 0, 0) rotate(0deg) scale(.55); }
-    10%  { opacity: 1; transform: translate3d(calc(var(--dx) * .12), -6vh, 0) rotate(calc(var(--rot) * .12)) scale(1); }
-    55%  { opacity: 1; transform: translate3d(calc(var(--dx) * .62), calc(var(--dy) * .52), 0) rotate(calc(var(--rot) * .55)) scale(1); }
-    100% { opacity: 0; transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--rot)) scale(.92); }
+/* <i> = Flugbahn (Bogen + seitliches Schwanken), <b> = taumelndes Papier */
+.bvq-confetti i { position: absolute; width: var(--size, 9px); height: calc(var(--size, 9px) * 1.25);
+    opacity: 0; will-change: transform, opacity;
+    animation: bvqConfFall var(--dur, 3200ms) var(--ease, cubic-bezier(.2,.55,.35,1)) var(--delay, 0ms) forwards; }
+.bvq-confetti i > b { display: block; width: 100%; height: 100%;
+    background: var(--c, #ffd54a); border-radius: var(--br, 2px);
+    box-shadow: 0 0 6px rgba(255,255,255,.14);
+    animation: bvqConfSpin var(--spin, 1100ms) linear var(--delay, 0ms) infinite var(--spin-dir, normal); }
+
+/* Flugbahn: kurzer Aufstieg, Schwanken nach links/rechts, dann schwerer Fall */
+@keyframes bvqConfFall {
+    0%   { opacity: 0; transform: translate3d(0, 0, 0) scale(.5); }
+    8%   { opacity: 1; }
+    28%  { transform: translate3d(calc(var(--dx) * .28 + var(--sway) * .55), -5vh, 0) scale(1); }
+    58%  { transform: translate3d(calc(var(--dx) * .64 - var(--sway) * .85), calc(var(--dy) * .52), 0) scale(1); }
+    84%  { transform: translate3d(calc(var(--dx) * .9 + var(--sway) * .45), calc(var(--dy) * .86), 0) scale(.98); }
+    100% { opacity: 0; transform: translate3d(calc(var(--dx) + var(--sway)), var(--dy), 0) scale(.92); }
+}
+/* Taumeln um eine zufällige Achse, mit Quetschung wie echtes Papier im Fall */
+@keyframes bvqConfSpin {
+    0%   { transform: rotate3d(var(--ax, 1), var(--ay, 1), 0, 0deg) scaleX(1); }
+    25%  { transform: rotate3d(var(--ax, 1), var(--ay, 1), 0, 90deg) scaleX(.4); }
+    50%  { transform: rotate3d(var(--ax, 1), var(--ay, 1), 0, 180deg) scaleX(1); }
+    75%  { transform: rotate3d(var(--ax, 1), var(--ay, 1), 0, 270deg) scaleX(.4); }
+    100% { transform: rotate3d(var(--ax, 1), var(--ay, 1), 0, 360deg) scaleX(1); }
 }
 
 /* ---------------- Start-Vorhang ---------------- */
