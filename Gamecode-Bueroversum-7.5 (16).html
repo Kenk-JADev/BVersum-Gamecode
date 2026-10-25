@@ -1140,13 +1140,13 @@
                         </div>
 
                         <div class="bvq-feedback" id="quiz-feedback"></div>
-                    </div>
 
-                    <!-- Publikumsstimmung -->
-                    <div class="bvq-crowd">
-                        <span class="bvq-crowd-label">Publikum</span>
-                        <div class="bvq-crowd-track"><div class="bvq-crowd-fill" id="bvq-crowd-fill"></div></div>
-                        <span class="bvq-crowd-val" id="bvq-crowd-val">50%</span>
+                        <!-- Publikumsstimmung: sitzt jetzt im Brett, damit unten kein Leerraum bleibt -->
+                        <div class="bvq-crowd">
+                            <span class="bvq-crowd-label">Publikum</span>
+                            <div class="bvq-crowd-track"><div class="bvq-crowd-fill" id="bvq-crowd-fill"></div></div>
+                            <span class="bvq-crowd-val" id="bvq-crowd-val">50%</span>
+                        </div>
                     </div>
                 </div>
 
@@ -29848,11 +29848,10 @@
                     });
                 }
 
-                // ---- Konfetti (reines CSS/DOM, keine Assets) ----
-                // Zwei Ebenen pro Plättchen:
-                //   <i> = Fallbahn (Bogen, seitliches Schwanken, Streuung)
-                //   <b> = taumelndes Papier (eigene Drehachse + Quetschung)
-                // Alles (Startpunkt, Weite, Tempo, Achse, Form) ist zufällig.
+                // ---- Konfetti mit echter Physik (Web Animations API) ----
+                // Jedes Plättchen bekommt eine eigene Bahn: Abschuss nach oben,
+                // Luftwiderstand, Schwerkraft, seitliches Flattern und taumelnde Drehung.
+                // Ohne Web Animations API greifen die CSS-Keyframes als Fallback.
                 const BVQ_CONF_EASES = [
                     'cubic-bezier(.20,.55,.35,1)',
                     'cubic-bezier(.15,.70,.40,1)',
@@ -29863,46 +29862,105 @@
                     const layer = bvqEl('bvq-confetti');
                     if (!layer || bvqReducedMotion()) return;
                     const cfg = Object.assign({
-                        count: 34, spread: 40, fall: 78, fromX: 50, fromY: 44, rain: false
+                        count: 30, spread: 40, fall: 78, fromX: 50, fromY: 44, rain: false
                     }, opts || {});
                     if (bvqIsLowSpec()) cfg.count = Math.max(10, Math.round(cfg.count * 0.45));
-                    if (cfg.rain) cfg.fall = Math.max(cfg.fall, 112);
 
-                    const frag = document.createDocumentFragment();
+                    const W = layer.clientWidth || 900;
+                    const H = layer.clientHeight || 620;
+                    const canAnimate = typeof document.createElement('i').animate === 'function';
+                    const nodes = [];
+
                     for (let i = 0; i < cfg.count; i++) {
                         const el = document.createElement('i');
                         const inner = document.createElement('b');
+                        const size = 7 + Math.random() * 9;
+                        const color = BVQ_CONFETTI_COLORS[(Math.random() * BVQ_CONFETTI_COLORS.length) | 0];
 
-                        const dx = (Math.random() - 0.5) * 2 * cfg.spread;
-                        el.style.setProperty('--dx', dx.toFixed(1) + 'vw');
-                        el.style.setProperty('--dy', (cfg.fall + Math.random() * 40).toFixed(0) + 'vh');
-                        el.style.setProperty('--sway', ((Math.random() - 0.5) * 22).toFixed(1) + 'vw');
-                        el.style.setProperty('--size', (7 + Math.random() * 8).toFixed(0) + 'px');
-                        el.style.setProperty('--dur', (2800 + Math.random() * 1800).toFixed(0) + 'ms');
-                        el.style.setProperty('--delay', (Math.random() * (cfg.rain ? 900 : 320)).toFixed(0) + 'ms');
-                        el.style.setProperty('--ease', BVQ_CONF_EASES[i % BVQ_CONF_EASES.length]);
-                        el.style.setProperty('--c', BVQ_CONFETTI_COLORS[Math.floor(Math.random() * BVQ_CONFETTI_COLORS.length)]);
+                        el.style.width = size.toFixed(1) + 'px';
+                        el.style.height = (size * (0.75 + Math.random() * 0.85)).toFixed(1) + 'px';
+                        inner.style.background = color;
+                        inner.style.borderRadius = Math.random() < 0.3 ? '50%' : (Math.random() < 0.5 ? '2px' : '1px 6px');
+                        el.appendChild(inner);
 
-                        // Papier: Form, Drehachse, Taumel-Tempo
-                        el.style.setProperty('--br', Math.random() < 0.3 ? '50%' : (Math.random() < 0.5 ? '2px' : '1px 6px'));
-                        el.style.setProperty('--ax', Math.random() < 0.5 ? '1' : '-1');
-                        el.style.setProperty('--ay', Math.random() < 0.5 ? '1' : '-1');
-                        el.style.setProperty('--spin', (700 + Math.random() * 1100).toFixed(0) + 'ms');
-                        el.style.setProperty('--spin-dir', Math.random() < 0.5 ? 'normal' : 'reverse');
+                        // Startpunkt: beim Regen über die ganze Breite, sonst aus der Bühnenmitte
+                        const spawnX = cfg.rain
+                            ? Math.random() * W
+                            : W * (cfg.fromX / 100) + (Math.random() - 0.5) * W * 0.22;
+                        const spawnY = cfg.rain
+                            ? -20 - Math.random() * H * 0.12
+                            : H * (cfg.fromY / 100) + (Math.random() - 0.5) * H * 0.16;
+                        el.style.left = spawnX.toFixed(0) + 'px';
+                        el.style.top = spawnY.toFixed(0) + 'px';
 
-                        if (cfg.rain) {
-                            el.style.left = (Math.random() * 100).toFixed(1) + '%';
-                            el.style.top = (-8 - Math.random() * 12).toFixed(0) + '%';
-                        } else {
-                            el.style.left = (cfg.fromX + (Math.random() - 0.5) * 22).toFixed(1) + '%';
-                            el.style.top = (cfg.fromY + (Math.random() - 0.5) * 18).toFixed(1) + '%';
+                        if (!canAnimate) {
+                            // Fallback: CSS-Bahn (falls der Browser keine WAAPI hat)
+                            el.className = 'conf-css';
+                            el.style.setProperty('--dx', ((Math.random() - 0.5) * 2 * cfg.spread).toFixed(1) + 'vw');
+                            el.style.setProperty('--dy', (cfg.fall + Math.random() * 35).toFixed(0) + 'vh');
+                            el.style.setProperty('--sway', ((Math.random() - 0.5) * 22).toFixed(1) + 'vw');
+                            el.style.setProperty('--dur', (2800 + Math.random() * 1800).toFixed(0) + 'ms');
+                            el.style.setProperty('--delay', (Math.random() * 300).toFixed(0) + 'ms');
+                            el.style.setProperty('--ease', BVQ_CONF_EASES[i % BVQ_CONF_EASES.length]);
+                            el.style.setProperty('--c', color);
+                            el.style.setProperty('--br', inner.style.borderRadius);
+                            el.style.setProperty('--ax', Math.random() < 0.5 ? '1' : '-1');
+                            el.style.setProperty('--ay', Math.random() < 0.5 ? '1' : '-1');
+                            el.style.setProperty('--spin', (700 + Math.random() * 1100).toFixed(0) + 'ms');
+                            nodes.push(el);
+                            layer.appendChild(el);
+                            continue;
                         }
 
-                        el.appendChild(inner);
-                        frag.appendChild(el);
+                        // Physik-Parameter
+                        const vx = (Math.random() - 0.5) * (cfg.rain ? 140 : 640);          // px/s seitlich
+                        const vy = cfg.rain ? (40 + Math.random() * 120) : -(360 + Math.random() * 470); // px/s nach oben
+                        const grav = 1150 + Math.random() * 520;                            // px/s²
+                        const drag = 0.30 + Math.random() * 0.40;                           // Luftwiderstand
+                        const amp = 6 + Math.random() * 22;                                 // Flattern: Weite
+                        const freq = 2.0 + Math.random() * 4.2;                             // Flattern: Frequenz
+                        const phase = Math.random() * Math.PI * 2;
+                        const spinSpeed = (Math.random() < 0.5 ? -1 : 1) * (260 + Math.random() * 520);
+                        const ax = Math.random() < 0.5 ? 1 : -1;
+                        const ay = Math.random() < 0.5 ? 1 : -1;
+
+                        // Bahn in 1/24-s-Schritten vorausrechnen, bis sie unten rausfällt
+                        const frames = [];
+                        const step = 1 / 24;
+                        let tEnd = 0;
+                        for (let k = 0; k < 170; k++) {
+                            const t = k * step;
+                            const damp = 1 / (1 + drag * t);
+                            const x = spawnX + vx * t * damp + Math.sin(t * freq + phase) * amp * Math.min(1, t * 3);
+                            const y = spawnY + vy * t + 0.5 * grav * t * t;
+                            frames.push({ x, y, t });
+                            tEnd = t;
+                            if (y > H + 60) break;
+                        }
+                        if (frames.length < 3) { nodes.push(el); layer.appendChild(el); continue; }
+
+                        const dur = Math.max(900, tEnd * 1000);
+                        const keys = frames.map((f, k) => {
+                            const prog = k / (frames.length - 1);
+                            return {
+                                transform: 'translate3d(' + (f.x - spawnX).toFixed(1) + 'px,' + (f.y - spawnY).toFixed(1) + 'px,0)',
+                                opacity: prog < 0.04 ? 0 : (prog > 0.92 ? 0 : 1)
+                            };
+                        });
+                        el.animate(keys, { duration: dur, easing: 'linear', fill: 'forwards' });
+
+                        // Drehung: halbe Umdrehung pro Intervall, mit Papier-Quetschung
+                        const half = (spinSpeed * tEnd) / 2;
+                        inner.animate([
+                            { transform: 'rotate3d(' + ax + ',' + ay + ',0,0deg) scaleY(1)' },
+                            { transform: 'rotate3d(' + ax + ',' + ay + ',0,' + half.toFixed(0) + 'deg) scaleY(.35)' },
+                            { transform: 'rotate3d(' + ax + ',' + ay + ',0,' + (half * 2).toFixed(0) + 'deg) scaleY(1)' }
+                        ], { duration: Math.max(300, dur / 2), iterations: 2, easing: 'linear' });
+
+                        nodes.push(el);
+                        layer.appendChild(el);
                     }
-                    layer.appendChild(frag);
-                    const nodes = Array.prototype.slice.call(layer.children, -cfg.count);
+
                     setTimeout(() => nodes.forEach(n => n.remove()), 5600);
                 }
 
@@ -30231,10 +30289,12 @@
                     if (!el || !quizState) return;
                     if (quizState.streak >= 2) {
                         el.textContent = '🔥 ' + quizState.streak + 'er Serie';
+                        el.classList.remove('hint');
                         el.classList.add('on');
                     } else {
-                        el.textContent = '';
+                        el.textContent = 'Tasten 1–4 antworten · J = Joker · Esc = beenden';
                         el.classList.remove('on');
+                        el.classList.add('hint');
                     }
                 }
 
@@ -55673,7 +55733,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* Zwei feste Reihen: hinten 10 kleinere, vorne 10 größere Zuschauer.
    Feste Rasterzellen -> nichts verrutscht beim Ein-/Ausblenden der Gesichter. */
-.bvq-audience { position: absolute; left: 0; right: 0; bottom: 0; height: 78px;
+.bvq-audience { position: absolute; left: 0; right: 0; bottom: 0; height: 84px;
     display: grid; grid-template-columns: repeat(10, 1fr); grid-auto-rows: 1fr;
     align-content: end; align-items: end; justify-items: center;
     padding: 0 2% 3px; pointer-events: none; z-index: 1; }
@@ -55690,8 +55750,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     border: 1px solid rgba(120,180,255,.22); box-shadow: 0 6px 14px rgba(0,0,0,.5);
     animation: bvqBob 1.9s ease-in-out var(--bob-delay, 0s) infinite; will-change: transform; }
 .bvq-audience span img.emoji { width: 1em; height: 1em; margin: 0; }
-.bvq-audience span:nth-child(-n+10) { width: 24px; height: 24px; font-size: .92rem; opacity: .58; }
-.bvq-audience span:nth-child(n+11) { width: 32px; height: 32px; font-size: 1.22rem; }
+.bvq-audience span:nth-child(-n+10) { width: 26px; height: 26px; font-size: 1rem; opacity: .6; }
+.bvq-audience span:nth-child(n+11) { width: 36px; height: 36px; font-size: 1.35rem; }
 @keyframes bvqBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 /* Jubel: kurzes, versetztes Hüpfen – über eine eigene Klasse statt animation-duration,
    damit nichts mitten in der Bewegung umschaltet. */
@@ -55718,7 +55778,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* ---------------- Bühne / Layout ---------------- */
 .bvq-stage { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 12px; padding: 18px 22px 76px; }
+    align-items: center; justify-content: center; gap: 10px; padding: 14px 20px 78px; }
 #rpg-quiz-screen.quiz-starting .bvq-stage { animation: bvqStageIn .6s cubic-bezier(.16,1,.3,1) both; }
 #rpg-quiz-screen.quiz-exiting .bvq-stage { animation: bvqStageOut .4s ease-in forwards; }
 @keyframes bvqStageIn { from { opacity: 0; transform: translateY(18px) scale(.985); } }
@@ -55746,8 +55806,8 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* ---------------- Jury ---------------- */
 .bvq-judges { width: min(1080px, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.bvq-judge { position: relative; display: flex; align-items: flex-start; gap: 9px; padding: 8px 11px; min-width: 0;
-    min-height: 62px; overflow: hidden;
+.bvq-judge { position: relative; display: flex; align-items: flex-start; gap: 9px; padding: 7px 10px; min-width: 0;
+    min-height: 58px; overflow: hidden;
     border-radius: 14px; background: linear-gradient(150deg, rgba(28,44,78,.85), rgba(10,18,34,.9));
     border: 1px solid rgba(130,180,255,.20); box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
     transition: border-color .2s ease, transform .2s ease, background .2s ease; }
@@ -55770,7 +55830,7 @@ body.bv-settings-particles-off .title-canvas-bg {
     background: #1d4ed8; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
 
 /* ---------------- Spielbrett ---------------- */
-.bvq-board { position: relative; width: min(1080px, 100%); padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 12px;
+.bvq-board { position: relative; width: min(1080px, 100%); padding: 14px 16px 11px; display: flex; flex-direction: column; gap: 10px;
     border-radius: 22px; background: linear-gradient(155deg, rgba(18,32,58,.92), rgba(8,14,28,.95));
     border: 1px solid rgba(130,180,255,.22);
     box-shadow: 0 26px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
@@ -55778,7 +55838,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bvq-board-rail { position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
     background: linear-gradient(180deg, #5aa0ff, #a855f7 55%, #ffd45e); box-shadow: 0 0 18px rgba(90,160,255,.6); }
 
-.bvq-qcard { display: flex; flex-direction: column; gap: 8px; }
+.bvq-qcard { display: flex; flex-direction: column; gap: 6px; }
 .bvq-qcard.in { animation: bvqQIn .38s cubic-bezier(.16,1,.3,1) both; }
 @keyframes bvqQIn { from { opacity: 0; transform: translateY(10px); } }
 .bvq-qmeta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -55809,9 +55869,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bvq-answers:empty { min-height: 112px; }
 
 /* ---------------- Antworten ---------------- */
-.bvq-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bvq-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .bvq-ans { position: relative; display: flex; align-items: center; gap: 11px; width: 100%;
-    padding: 13px 14px; border-radius: 15px; cursor: pointer; text-align: left;
+    padding: 14px 15px; border-radius: 15px; cursor: pointer; text-align: left;
     font-family: 'VT323', monospace; font-size: 1.22rem; line-height: 1.2; color: #f2f7ff;
     background: linear-gradient(150deg, rgba(38,58,98,.75), rgba(14,24,44,.85));
     border: 1px solid rgba(130,180,255,.24); box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
@@ -55850,6 +55910,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bvq-underrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .bvq-streak { font-family: 'VT323', monospace; font-size: 1.15rem; color: #ffb86b; opacity: 0; transition: opacity .2s ease; }
 .bvq-streak.on { opacity: 1; animation: bvqStreak 1.1s ease-in-out infinite; }
+.bvq-streak.hint { opacity: .42; font-size: .92rem; letter-spacing: .3px; }
 @keyframes bvqStreak { 50% { transform: scale(1.06); opacity: .85; } }
 .bvq-lifelines { display: flex; gap: 8px; margin-left: auto; }
 .bvq-life { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px 8px 12px;
@@ -55865,8 +55926,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     background: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.45); }
 .bvq-life.used .bvq-life-count { background: #475569; }
 
-.bvq-feedback { min-height: 34px; font-family: 'VT323', monospace; font-size: 1.2rem; text-align: center;
-    color: #ffd45e; line-height: 1.25; }
+.bvq-feedback { min-height: 32px; font-family: 'VT323', monospace; font-size: 1.18rem; text-align: center;
+    color: #ffd45e; line-height: 1.22; }
 .bvq-fb-good { color: #8ef7b0; }
 .bvq-fb-bad { color: #ffa0a0; }
 .bvq-fb-tip { color: #d8b4fe; }
@@ -55879,9 +55940,10 @@ body.bv-settings-particles-off .title-canvas-bg {
 @keyframes bvqFloat { 0% { opacity: 0; transform: translateY(10px) scale(.8); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-46px) scale(1.12); } }
 
 /* ---------------- Publikumsmeter ---------------- */
-.bvq-crowd { width: min(1080px, 100%); display: flex; align-items: center; gap: 10px; }
+.bvq-crowd { width: 100%; display: flex; align-items: center; gap: 10px;
+    padding-top: 7px; border-top: 1px solid rgba(140,190,255,.12); }
 .bvq-crowd-label, .bvq-crowd-val { font-family: 'VT323', monospace; font-size: .95rem; color: rgba(190,215,255,.6); }
-.bvq-crowd-track { flex: 1; height: 6px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bvq-crowd-track { flex: 1; height: 5px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
 .bvq-crowd-fill { height: 100%; width: 50%; border-radius: 999px;
     background: linear-gradient(90deg, #ef4444, #facc15 45%, #22c55e);
     transition: width .5s cubic-bezier(.16,1,.3,1); }
@@ -55953,13 +56015,14 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* ---------------- Konfetti ---------------- */
 .bvq-confetti { position: absolute; inset: 0; z-index: 16; pointer-events: none; overflow: hidden; }
-/* <i> = Flugbahn (Bogen + seitliches Schwanken), <b> = taumelndes Papier */
-.bvq-confetti i { position: absolute; width: var(--size, 9px); height: calc(var(--size, 9px) * 1.25);
-    opacity: 0; will-change: transform, opacity;
-    animation: bvqConfFall var(--dur, 3200ms) var(--ease, cubic-bezier(.2,.55,.35,1)) var(--delay, 0ms) forwards; }
+/* <i> = Flugbahn (wird per Web Animations API bewegt), <b> = taumelndes Papier */
+.bvq-confetti i { position: absolute; left: 0; top: 0; opacity: 0; will-change: transform, opacity; }
 .bvq-confetti i > b { display: block; width: 100%; height: 100%;
-    background: var(--c, #ffd54a); border-radius: var(--br, 2px);
-    box-shadow: 0 0 6px rgba(255,255,255,.14);
+    box-shadow: 0 0 6px rgba(255,255,255,.14); }
+/* Fallback ohne Web Animations API */
+.bvq-confetti i.conf-css { width: var(--size, 9px); height: calc(var(--size, 9px) * 1.25);
+    animation: bvqConfFall var(--dur, 3200ms) var(--ease, cubic-bezier(.2,.55,.35,1)) var(--delay, 0ms) forwards; }
+.bvq-confetti i.conf-css > b { background: var(--c, #ffd54a); border-radius: var(--br, 2px);
     animation: bvqConfSpin var(--spin, 1100ms) linear var(--delay, 0ms) infinite var(--spin-dir, normal); }
 
 /* Flugbahn: kurzer Aufstieg, Schwanken nach links/rechts, dann schwerer Fall */
