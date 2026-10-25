@@ -32471,6 +32471,16 @@
                         mapTrans.classList.add("active", "battle-hold", "no-content");
                     }
 
+                    // v4.0: eigener Vor-Kampf-Übergang (zufällige Variante, Boss extra)
+                    if (typeof window.BVPlayBattleTransition === "function") {
+                        try {
+                            window.BVPlayBattleTransition({
+                                boss: !!currentEnemy.isBoss,
+                                name: currentEnemy.displayName || currentEnemy.name || ""
+                            });
+                        } catch (e) {}
+                    }
+
                     // Timeline: Panels open(0-600ms) → Zoom(500-1700ms) → Screen swap(900ms) → Panels close(1050-1650ms) → VS-Splash(1300ms)
                     battleStartTimeout = setTimeout(() => {
                         showScreen("rpg-battle-screen");
@@ -52428,25 +52438,30 @@ body.bv-settings-particles-off .title-canvas-bg {
    BV FEATURE v1.0: Level-Up Choice Screen + Achievements
    ============================================================ */
 
-/* ===== KARRIEREPFAD v3.0 (Neufassung) =====
-   Aufbau: Himmel (statischer Verlauf + Raster), ein einziger Lichtstreifen,
-   Panel mit Level-Badge, Rang-Leiter, Fortschritt und vier Pfad-Karten.
-   Performance: keine filter/backdrop-filter-Ebenen, keine Dauer-Animation
-   auf vielen Elementen - nur transform/opacity. Low-Spec schaltet den
-   Lichtstreifen, Partikel und Kipp-Effekte ab. */
+/* ===== KARRIEREPFAD v4.0 (im Gamefenster) =====
+   Der Screen liegt in #rpg-game-window (absolute), nicht mehr über der
+   ganzen Seite. Nur transform/opacity-Animationen, keine Blur-Ebenen.
+   Low-Spec (Einstellungen / prefers-reduced-motion) schaltet Effekte ab. */
 #levelup-choice-overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    z-index: 9999999;
+    z-index: 9000;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 14px;
+    padding: 10px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .28s ease;
-    font-family: 'VT323', monospace;
     overflow: hidden;
+    transition: opacity .24s ease;
+    font-family: 'VT323', monospace;
+    color: #e8eeff;
+}
+
+/* Falls das Gamefenster (theoretisch) fehlt: bildschirmfüllend */
+#levelup-choice-overlay.bvk-floating {
+    position: fixed;
+    z-index: 9999999;
 }
 
 #levelup-choice-overlay.active {
@@ -52457,67 +52472,37 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay.closing {
     opacity: 0;
     pointer-events: none;
-    transition-duration: .24s;
+    transition-duration: .2s;
 }
 
-/* --- Hintergrund: ein Element, statischer Verlauf + Raster --- */
-#levelup-choice-overlay .bvk-sky {
+/* --- Hintergrund im Fenster --- */
+#levelup-choice-overlay .bvk-veil {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 50% -10%, rgba(255, 190, 70, .18), transparent 58%),
-        radial-gradient(ellipse at 50% 115%, rgba(74, 159, 255, .16), transparent 55%),
-        linear-gradient(rgba(255, 215, 0, .028) 1px, transparent 1px) 0 0 / 58px 58px,
-        linear-gradient(90deg, rgba(255, 215, 0, .028) 1px, transparent 1px) 0 0 / 58px 58px,
-        linear-gradient(180deg, #0a0a18, #05060d 60%, #0a0a18);
-    opacity: 0;
-    transition: opacity .35s ease;
-}
-
-#levelup-choice-overlay.active .bvk-sky {
-    opacity: 1;
-}
-
-/* --- Ein einzelner Lichtstreifen (nur ohne Low-Spec) --- */
-#levelup-choice-overlay .bvk-sweep {
-    position: absolute;
-    top: -20%;
-    bottom: -20%;
-    left: 0;
-    width: 26vw;
-    pointer-events: none;
-    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, .06), transparent);
-    transform: translateX(-40vw) skewX(-12deg);
-    opacity: 0;
-    will-change: transform;
-}
-
-#levelup-choice-overlay.active .bvk-sweep {
-    opacity: 1;
-    animation: bvkSweep 6s ease-in-out infinite;
-}
-
-@keyframes bvkSweep {
-    0%        { transform: translateX(-40vw) skewX(-12deg); }
-    60%, 100% { transform: translateX(120vw) skewX(-12deg); }
+        radial-gradient(ellipse at 50% 0%, rgba(255, 190, 70, .14), transparent 58%),
+        radial-gradient(ellipse at 50% 110%, rgba(74, 159, 255, .14), transparent 55%),
+        linear-gradient(rgba(255, 215, 0, .025) 1px, transparent 1px) 0 0 / 52px 52px,
+        linear-gradient(90deg, rgba(255, 215, 0, .025) 1px, transparent 1px) 0 0 / 52px 52px,
+        linear-gradient(180deg, rgba(6, 8, 16, .96), rgba(4, 5, 12, .985));
 }
 
 /* --- Panel --- */
 #levelup-choice-overlay .bvk-panel {
     position: relative;
     z-index: 2;
-    width: min(780px, 100%);
+    width: min(760px, 100%);
     max-height: 100%;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 14px 16px 12px;
-    border-radius: 16px;
-    border: 1.5px solid rgba(255, 205, 90, .32);
+    padding: 12px 14px 10px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(255, 205, 90, .3);
     background: linear-gradient(180deg, rgba(20, 26, 48, .97), rgba(9, 11, 22, .98));
-    box-shadow: 0 18px 52px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .06);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .05);
     opacity: 0;
-    transform: translateY(16px) scale(.97);
-    transition: transform .32s cubic-bezier(.16, 1, .3, 1), opacity .24s ease;
+    transform: translateY(14px) scale(.97);
+    transition: transform .3s cubic-bezier(.16, 1, .3, 1), opacity .22s ease;
 }
 
 #levelup-choice-overlay.active .bvk-panel {
@@ -52527,61 +52512,79 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 #levelup-choice-overlay.closing .bvk-panel {
     opacity: 0;
-    transform: translateY(-10px) scale(.985);
-    transition-duration: .26s;
+    transform: translateY(-8px) scale(.985);
+    transition-duration: .22s;
 }
 
-/* --- Kopfzeile --- */
-#levelup-choice-overlay .bvk-top {
+/* Goldene Oberkante */
+#levelup-choice-overlay .bvk-panel::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #ffd166, transparent);
+    opacity: .8;
+    pointer-events: none;
+}
+
+/* --- Kopf --- */
+#levelup-choice-overlay .bvk-head {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 #levelup-choice-overlay .bvk-badge {
+    position: relative;
     flex: 0 0 auto;
-    width: 54px;
-    height: 54px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at 50% 28%, #2b3763, #0d1226 70%);
+    background:
+        radial-gradient(circle at 50% 28%, #2b3763, #0d1226 72%);
     border: 2px solid rgba(255, 205, 90, .55);
-    box-shadow: 0 0 16px rgba(255, 190, 60, .16);
-}
-
-#levelup-choice-overlay .bvk-badge-k {
-    font-size: .46rem;
-    letter-spacing: 1.5px;
-    color: #ffd166;
-    opacity: .85;
-    line-height: 1;
+    box-shadow: 0 0 14px rgba(255, 190, 60, .16);
 }
 
 #levelup-choice-overlay .bvk-badge-n {
-    font-size: 1.35rem;
-    line-height: 1.05;
+    font-size: 1.3rem;
+    line-height: 1;
     color: #fff;
+    font-weight: normal;
 }
 
-#levelup-choice-overlay .bvk-titles {
+#levelup-choice-overlay .bvk-badge-k {
+    font-size: .42rem;
+    font-style: normal;
+    letter-spacing: 1.4px;
+    color: #ffd166;
+    opacity: .85;
+    line-height: 1.2;
+}
+
+#levelup-choice-overlay .bvk-headmain {
     flex: 1 1 auto;
     min-width: 0;
 }
 
 #levelup-choice-overlay .bvk-title {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     letter-spacing: 3px;
     color: #ffd166;
-    text-shadow: 0 0 14px rgba(255, 190, 60, .35);
+    text-shadow: 0 0 12px rgba(255, 190, 60, .32);
     line-height: 1.1;
 }
 
 #levelup-choice-overlay .bvk-rankline {
-    margin-top: 3px;
-    font-size: .82rem;
+    margin-top: 2px;
+    font-size: .78rem;
     color: rgba(255, 255, 255, .42);
     white-space: nowrap;
     overflow: hidden;
@@ -52593,54 +52596,49 @@ body.bv-settings-particles-off .title-canvas-bg {
     color: #9ad0ff;
 }
 
-#levelup-choice-overlay .bvk-rankline b:empty {
-    display: none;
-}
-
 #levelup-choice-overlay .bvk-sep {
-    margin: 0 6px;
+    margin: 0 5px;
     opacity: .5;
 }
 
 #levelup-choice-overlay .bvk-counter {
     flex: 0 0 auto;
-    font-size: .72rem;
-    padding: 3px 9px;
+    font-size: .7rem;
+    padding: 3px 8px;
     border-radius: 20px;
     color: #ffe08a;
     background: rgba(255, 205, 90, .12);
     border: 1px solid rgba(255, 205, 90, .3);
 }
 
-/* --- Rang-Leiter --- */
+/* --- Rang-Leiter (schmal) --- */
 #levelup-choice-overlay .bvk-rail {
     display: flex;
     align-items: flex-start;
-    margin: 12px 0 2px;
+    margin: 9px 0 1px;
 }
 
 #levelup-choice-overlay .bvk-step {
     flex: 0 0 auto;
-    width: 78px;
+    width: 72px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
 }
 
 #levelup-choice-overlay .bvk-step i {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: #232a44;
     border: 1.5px solid #3a4368;
-    transition: background .2s ease, border-color .2s ease;
 }
 
 #levelup-choice-overlay .bvk-step span {
-    font-size: .58rem;
+    font-size: .55rem;
     white-space: nowrap;
-    color: rgba(255, 255, 255, .28);
+    color: rgba(255, 255, 255, .26);
 }
 
 #levelup-choice-overlay .bvk-step.done i {
@@ -52649,16 +52647,16 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #levelup-choice-overlay .bvk-step.done span {
-    color: rgba(160, 230, 190, .6);
+    color: rgba(160, 230, 190, .55);
 }
 
 #levelup-choice-overlay .bvk-step.now i {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     margin-top: -2px;
     background: #ffd166;
     border-color: #fff3c4;
-    box-shadow: 0 0 10px rgba(255, 200, 60, .65);
+    box-shadow: 0 0 9px rgba(255, 200, 60, .6);
 }
 
 #levelup-choice-overlay .bvk-step.now span {
@@ -52668,9 +52666,9 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay .bvk-link {
     flex: 1 1 auto;
     height: 2px;
-    margin: 4px -6px 0;
-    background: #232a44;
+    margin: 4px -5px 0;
     border-radius: 2px;
+    background: #232a44;
 }
 
 #levelup-choice-overlay .bvk-link.done {
@@ -52679,8 +52677,8 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 /* --- Rang-Fortschritt --- */
 #levelup-choice-overlay .bvk-progress {
-    height: 5px;
-    margin: 6px 0 12px;
+    height: 4px;
+    margin: 5px 0 10px;
     border-radius: 4px;
     background: #161c30;
     overflow: hidden;
@@ -52692,14 +52690,14 @@ body.bv-settings-particles-off .title-canvas-bg {
     width: 0;
     border-radius: 4px;
     background: linear-gradient(90deg, #4a9fff, #ffd166);
-    transition: width .5s cubic-bezier(.16, 1, .3, 1);
+    transition: width .45s cubic-bezier(.16, 1, .3, 1);
 }
 
 /* --- Karten --- */
 #levelup-choice-overlay .bvk-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 9px;
 }
 
 #levelup-choice-overlay .bvk-card {
@@ -52708,8 +52706,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     flex-direction: column;
     align-items: center;
     gap: 1px;
-    padding: 13px 8px 11px;
-    border-radius: 12px;
+    padding: 11px 7px 9px;
+    border-radius: 11px;
     border: 1.5px solid rgba(255, 255, 255, .08);
     background: linear-gradient(170deg, rgba(28, 34, 60, .96), rgba(11, 14, 26, .98));
     color: inherit;
@@ -52717,11 +52715,11 @@ body.bv-settings-particles-off .title-canvas-bg {
     text-align: center;
     cursor: pointer;
     opacity: 0;
-    transform: translateY(14px) scale(.97);
-    transition: transform .26s cubic-bezier(.16, 1, .3, 1),
-                opacity .24s ease,
-                border-color .18s ease,
-                box-shadow .22s ease;
+    transform: translateY(12px) scale(.97);
+    transition: transform .24s cubic-bezier(.16, 1, .3, 1),
+                opacity .22s ease,
+                border-color .16s ease,
+                box-shadow .2s ease;
     -webkit-tap-highlight-color: transparent;
     will-change: transform;
 }
@@ -52734,8 +52732,8 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay .bvk-card::before {
     content: '';
     position: absolute;
-    left: 10px;
-    right: 10px;
+    left: 9px;
+    right: 9px;
     top: 0;
     height: 2px;
     border-radius: 2px;
@@ -52750,14 +52748,14 @@ body.bv-settings-particles-off .title-canvas-bg {
     border-radius: inherit;
     pointer-events: none;
     opacity: 0;
-    background: linear-gradient(115deg, transparent 36%, rgba(255, 255, 255, .13) 50%, transparent 64%);
+    background: linear-gradient(115deg, transparent 36%, rgba(255, 255, 255, .12) 50%, transparent 64%);
     transform: translateX(-60%);
 }
 
 #levelup-choice-overlay .bvk-card:hover::after,
 #levelup-choice-overlay .bvk-card.kbd-focus::after {
     opacity: 1;
-    animation: bvkSheen .6s ease-out;
+    animation: bvkSheen .55s ease-out;
 }
 
 @keyframes bvkSheen {
@@ -52768,7 +52766,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 #levelup-choice-overlay .bvk-card:hover,
 #levelup-choice-overlay .bvk-card.kbd-focus {
     border-color: var(--accent, #ffd166);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, .45), inset 0 0 0 1px var(--accent, #ffd166);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .4), inset 0 0 0 1px var(--accent, #ffd166);
 }
 
 #levelup-choice-overlay .bvk-card.kbd-focus {
@@ -52783,71 +52781,71 @@ body.bv-settings-particles-off .title-canvas-bg {
 
 #levelup-choice-overlay .bvk-card.chosen {
     border-color: var(--accent, #ffd166);
-    box-shadow: 0 0 26px -6px var(--accent, #ffd166), inset 0 0 0 2px var(--accent, #ffd166);
-    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 0 22px -6px var(--accent, #ffd166), inset 0 0 0 2px var(--accent, #ffd166);
+    transform: translateY(-2px) scale(1.02);
     cursor: default;
 }
 
 #levelup-choice-overlay .bvk-card.dim {
-    opacity: .32;
+    opacity: .3;
     transform: scale(.96);
     pointer-events: none;
-    transition: opacity .2s ease, transform .2s ease;
+    transition: opacity .18s ease, transform .18s ease;
 }
 
 #levelup-choice-overlay .bvk-key {
     position: absolute;
-    top: 5px;
-    left: 6px;
-    font-size: .55rem;
+    top: 4px;
+    left: 5px;
+    font-size: .52rem;
     line-height: 1.3;
     padding: 0 3px;
-    color: rgba(255, 255, 255, .3);
+    color: rgba(255, 255, 255, .28);
     border: 1px solid rgba(255, 255, 255, .14);
     border-radius: 4px;
 }
 
 #levelup-choice-overlay .bvk-medal {
-    width: 44px;
-    height: 44px;
-    margin-bottom: 3px;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 2px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at 42% 30%, rgba(255, 255, 255, .13), transparent 62%), #171d33;
+    background: radial-gradient(circle at 42% 30%, rgba(255, 255, 255, .12), transparent 62%), #171d33;
     border: 1.5px solid var(--accent, #ffd166);
-    box-shadow: 0 0 12px -3px var(--accent, #ffd166);
-    transition: transform .26s cubic-bezier(.16, 1, .3, 1);
+    box-shadow: 0 0 10px -3px var(--accent, #ffd166);
+    transition: transform .24s cubic-bezier(.16, 1, .3, 1);
 }
 
 #levelup-choice-overlay .bvk-ico {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     line-height: 1;
 }
 
 #levelup-choice-overlay .bvk-card:hover .bvk-medal {
-    transform: scale(1.08) rotate(-6deg);
+    transform: scale(1.07) rotate(-6deg);
 }
 
 #levelup-choice-overlay .bvk-name {
-    font-size: .86rem;
-    letter-spacing: .4px;
+    font-size: .82rem;
+    letter-spacing: .3px;
     color: #dfe6ff;
 }
 
 #levelup-choice-overlay .bvk-bonus {
-    font-size: 1.05rem;
-    color: var(--accent, #ffd166);
+    font-size: 1rem;
     line-height: 1.15;
+    color: var(--accent, #ffd166);
 }
 
 #levelup-choice-overlay .bvk-delta {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: .64rem;
-    color: rgba(255, 255, 255, .38);
+    font-size: .62rem;
+    color: rgba(255, 255, 255, .36);
 }
 
 #levelup-choice-overlay .bvk-delta b {
@@ -52862,8 +52860,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     position: relative;
     display: block;
     width: 100%;
-    height: 5px;
-    margin: 5px 0 4px;
+    height: 4px;
+    margin: 4px 0 3px;
     border-radius: 3px;
     background: #141a2c;
     overflow: hidden;
@@ -52885,19 +52883,19 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #levelup-choice-overlay .bvk-desc {
-    font-size: .6rem;
-    line-height: 1.25;
-    color: rgba(255, 255, 255, .32);
+    font-size: .58rem;
+    line-height: 1.2;
+    color: rgba(255, 255, 255, .3);
 }
 
 #levelup-choice-overlay .bvk-stamp {
     position: absolute;
     top: 50%;
     left: 50%;
-    padding: 2px 8px;
+    padding: 2px 7px;
     border-radius: 4px;
-    font-size: .6rem;
-    letter-spacing: 1.5px;
+    font-size: .56rem;
+    letter-spacing: 1.4px;
     color: #10141f;
     background: #ffd166;
     opacity: 0;
@@ -52906,7 +52904,7 @@ body.bv-settings-particles-off .title-canvas-bg {
 }
 
 #levelup-choice-overlay .bvk-card.chosen .bvk-stamp {
-    animation: bvkStamp .34s cubic-bezier(.16, 1, .3, 1) .06s forwards;
+    animation: bvkStamp .32s cubic-bezier(.16, 1, .3, 1) .05s forwards;
 }
 
 @keyframes bvkStamp {
@@ -52921,53 +52919,53 @@ body.bv-settings-particles-off .title-canvas-bg {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-top: 10px;
-    font-size: .62rem;
-    color: rgba(255, 255, 255, .3);
+    margin-top: 9px;
+    font-size: .58rem;
+    color: rgba(255, 255, 255, .28);
 }
 
 #levelup-choice-overlay .bvk-foot kbd {
     display: inline-block;
-    min-width: 13px;
+    min-width: 12px;
     margin: 0 1px;
     padding: 0 3px;
     border-radius: 3px;
-    border: 1px solid rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .15);
     background: rgba(255, 255, 255, .05);
     font-family: inherit;
-    font-size: .58rem;
-    color: rgba(255, 255, 255, .5);
+    font-size: .55rem;
+    color: rgba(255, 255, 255, .48);
     text-align: center;
 }
 
 #levelup-choice-overlay .bvk-foot-r {
     white-space: nowrap;
-    color: rgba(255, 255, 255, .38);
+    color: rgba(255, 255, 255, .36);
 }
 
-/* --- Auswahl-Effekte --- */
-.bvk-ring {
-    position: fixed;
-    width: 40px;
-    height: 40px;
+/* --- Auswahl-Effekte (im Overlay, nicht am Bildschirm) --- */
+#levelup-choice-overlay .bvk-ring {
+    position: absolute;
+    width: 34px;
+    height: 34px;
     border: 3px solid #ffd166;
     border-radius: 50%;
     pointer-events: none;
-    z-index: 99999998;
-    animation: bvkRing .62s cubic-bezier(.16, 1, .3, 1) forwards;
+    z-index: 5;
+    animation: bvkRing .6s cubic-bezier(.16, 1, .3, 1) forwards;
 }
 
 @keyframes bvkRing {
     0%   { opacity: .85; transform: translate(-50%, -50%) scale(.35); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(4); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(3.6); }
 }
 
-.bvk-spark {
-    position: fixed;
+#levelup-choice-overlay .bvk-spark {
+    position: absolute;
     border-radius: 50%;
     pointer-events: none;
-    z-index: 99999998;
-    animation: bvkSparkFly .68s cubic-bezier(.16, 1, .3, 1) forwards;
+    z-index: 5;
+    animation: bvkSparkFly .66s cubic-bezier(.16, 1, .3, 1) forwards;
     will-change: transform, opacity;
 }
 
@@ -52976,32 +52974,26 @@ body.bv-settings-particles-off .title-canvas-bg {
     100% { opacity: 0; transform: translate(calc(-50% + var(--bx, 0px)), calc(-50% + var(--by, 0px))) scale(.2); }
 }
 
-.bvk-float {
-    position: fixed;
-    z-index: 99999999;
+#levelup-choice-overlay .bvk-float {
+    position: absolute;
+    z-index: 6;
     pointer-events: none;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     color: #ffd166;
-    text-shadow: 0 0 18px rgba(255, 190, 60, .7), 0 3px 10px rgba(0, 0, 0, .5);
-    animation: bvkFloatUp 1.05s cubic-bezier(.16, 1, .3, 1) forwards;
+    text-shadow: 0 0 14px rgba(255, 190, 60, .7), 0 2px 8px rgba(0, 0, 0, .5);
+    animation: bvkFloatUp 1s cubic-bezier(.16, 1, .3, 1) forwards;
 }
 
 @keyframes bvkFloatUp {
     0%   { opacity: 0; transform: translate(-50%, -50%) scale(.8); }
     25%  { opacity: 1; transform: translate(-50%, -70%) scale(1.1); }
-    100% { opacity: 0; transform: translate(-50%, -190%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -180%) scale(1); }
 }
 
-/* --- Low-Spec: ruhig, ohne Partikel/Hintergrund-Bewegung --- */
-#levelup-choice-overlay.bvk-lowspec .bvk-sweep,
-body.bv-settings-lowspec #levelup-choice-overlay .bvk-sweep,
-body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
-    display: none !important;
-}
-
+/* --- Low-Spec --- */
 #levelup-choice-overlay.bvk-lowspec .bvk-panel,
 #levelup-choice-overlay.bvk-lowspec .bvk-card {
-    transition-duration: .12s;
+    transition-duration: .1s;
 }
 
 #levelup-choice-overlay.bvk-lowspec .bvk-card:hover .bvk-medal {
@@ -53014,23 +53006,23 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
     display: none !important;
 }
 
-/* --- Kleine Bildschirme --- */
+/* --- Enge Fenster --- */
 @media (max-width: 720px) {
     #levelup-choice-overlay .bvk-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
     #levelup-choice-overlay .bvk-title {
-        font-size: 1.1rem;
+        font-size: 1rem;
         letter-spacing: 2px;
     }
 
     #levelup-choice-overlay .bvk-step {
-        width: 58px;
+        width: 56px;
     }
 
     #levelup-choice-overlay .bvk-step span {
-        font-size: .52rem;
+        font-size: .5rem;
     }
 
     #levelup-choice-overlay .bvk-desc {
@@ -53038,21 +53030,13 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
     }
 }
 
-@media (max-width: 460px) {
-    #levelup-choice-overlay {
-        padding: 8px;
-    }
-
-    #levelup-choice-overlay .bvk-panel {
-        padding: 10px 10px 9px;
-    }
-
+@media (max-width: 470px) {
     #levelup-choice-overlay .bvk-step span {
         display: none;
     }
 
     #levelup-choice-overlay .bvk-step {
-        width: 26px;
+        width: 22px;
     }
 
     #levelup-choice-overlay .bvk-hint {
@@ -53060,34 +53044,37 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
     }
 
     #levelup-choice-overlay .bvk-badge {
-        width: 46px;
-        height: 46px;
+        width: 42px;
+        height: 42px;
     }
 }
 
-@media (max-height: 560px) {
-    #levelup-choice-overlay .bvk-rail,
-    #levelup-choice-overlay .bvk-progress {
+@media (max-height: 520px) {
+    #levelup-choice-overlay .bvk-rail {
+        display: none;
+    }
+
+    #levelup-choice-overlay .bvk-desc,
+    #levelup-choice-overlay .bvk-delta {
         display: none;
     }
 
     #levelup-choice-overlay .bvk-medal {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
     }
 
     #levelup-choice-overlay .bvk-ico {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
     }
 }
 
-/* --- Reduced Motion --- */
 @media (prefers-reduced-motion: reduce) {
-    #levelup-choice-overlay .bvk-sweep { display: none !important; }
     #levelup-choice-overlay .bvk-card,
-    #levelup-choice-overlay .bvk-panel { transition-duration: .12s !important; }
+    #levelup-choice-overlay .bvk-panel { transition-duration: .1s !important; }
     #levelup-choice-overlay .bvk-card::after { display: none !important; }
-    .bvk-ring, .bvk-spark { display: none !important; }
+    #levelup-choice-overlay .bvk-ring,
+    #levelup-choice-overlay .bvk-spark { display: none !important; }
 }
 
 /* ===== ACHIEVEMENTS ===== */
@@ -53433,12 +53420,12 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
         showNextLevelChoice();
     };
 
-    /* ===== KARRIEREPFAD v3.0 (Neufassung) ==============================
-       Neuer Beförderungs-Screen mit Rang-Leiter, Live-Stat-Vorschau und
-       Tastaturbedienung. Alle Effekte laufen ausschließlich über
-       transform/opacity - keine Blur-Ebenen, keine Dauer-Repaints.
-       Low-Spec (Einstellungen oder prefers-reduced-motion) reduziert den
-       Screen auf schlichte Übergänge ohne Partikel und Hintergrund-Bewegung.
+    /* ===== KARRIEREPFAD v4.0 (Neufassung, im Gamefenster) ==============
+       Der Screen liegt jetzt INNERHALB von #rpg-game-window (position
+       absolute) statt bildschirmfüllend über der ganzen Seite. Aufbau:
+       Kopf mit Level-Badge und Rang, schmale Rang-Leiter, vier Pfad-Karten
+       mit Live-Stat-Vorschau und eine Fußzeile mit Tastatur-Hinweis.
+       Effekte nutzen nur transform/opacity; Low-Spec schaltet sie ab.
        ================================================================= */
     var BVK_RANKS = [
         { name: 'Azubi',            from: 1 },
@@ -53450,6 +53437,13 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
         { name: 'Direktor',         from: 25 },
         { name: 'Vorstand',         from: 30 }
     ];
+
+    /* Der Screen hängt im Gamefenster - nur dort, nie über der ganzen Seite. */
+    function bvkHost() {
+        return document.getElementById('rpg-game-window') ||
+               document.getElementById('rpg-overlay') ||
+               document.body;
+    }
 
     function bvkLowSpec() {
         try {
@@ -53521,7 +53515,7 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
         if (!r.width || !r.height) return;
         var dx = (ev.clientX - (r.left + r.width / 2)) / r.width;
         var dy = (ev.clientY - (r.top + r.height / 2)) / r.height;
-        card.style.transform = 'translateY(-5px) perspective(640px) rotateY(' +
+        card.style.transform = 'translateY(-4px) perspective(600px) rotateY(' +
             (dx * 6).toFixed(2) + 'deg) rotateX(' + (-dy * 6).toFixed(2) + 'deg)';
         _bvkTiltCard = card;
     }
@@ -53529,13 +53523,14 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
         if (_bvkTiltCard) { _bvkTiltCard.style.transform = ''; _bvkTiltCard = null; }
     }
 
-    /* --- Funken + Ring am gewählten Feld (nur ohne Low-Spec) --- */
-    function bvkSpawnBurst(card) {
-        if (!card || bvkLowSpec()) return;
+    /* --- Funken + Ring am gewählten Feld (relativ zum Overlay) --- */
+    function bvkSpawnBurst(card, overlay) {
+        if (!card || !overlay || bvkLowSpec()) return;
         var r = card.getBoundingClientRect();
+        var base = overlay.getBoundingClientRect();
         if (!r.width) return;
-        var cx = r.left + r.width / 2;
-        var cy = r.top + r.height / 2;
+        var cx = r.left - base.left + r.width / 2;
+        var cy = r.top - base.top + r.height / 2;
         var accent = '#ffd166';
         try {
             var v = getComputedStyle(card).getPropertyValue('--accent');
@@ -53547,40 +53542,42 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
         ring.style.left = cx + 'px';
         ring.style.top = cy + 'px';
         ring.style.borderColor = accent;
-        document.body.appendChild(ring);
+        overlay.appendChild(ring);
         setTimeout(function () { ring.remove(); }, 700);
 
         var colors = ['#ffd166', '#ff8a4c', '#4a9fff', '#9cf7ba'];
-        for (var i = 0; i < 14; i++) {
+        for (var i = 0; i < 12; i++) {
             var sp = document.createElement('span');
             sp.className = 'bvk-spark';
             var a = Math.random() * Math.PI * 2;
-            var d = 34 + Math.random() * 78;
-            var size = 3 + Math.random() * 5;
+            var d = 26 + Math.random() * 60;
+            var size = 3 + Math.random() * 4;
             sp.style.cssText = 'left:' + cx.toFixed(1) + 'px;top:' + cy.toFixed(1) +
                 'px;width:' + size.toFixed(1) + 'px;height:' + size.toFixed(1) +
                 'px;background:' + colors[i % colors.length] +
                 ';--bx:' + (Math.cos(a) * d).toFixed(1) + 'px;--by:' + (Math.sin(a) * d).toFixed(1) + 'px';
-            document.body.appendChild(sp);
+            overlay.appendChild(sp);
             setTimeout(function (node) { node.remove(); }, 720, sp);
         }
     }
 
-    function bvkFloatBonus(card, text) {
-        if (!card || !text) return;
+    function bvkFloatBonus(card, text, overlay) {
+        if (!card || !text || !overlay) return;
         var r = card.getBoundingClientRect();
+        var base = overlay.getBoundingClientRect();
         if (!r.width) return;
         var fl = document.createElement('div');
         fl.className = 'bvk-float';
         fl.textContent = text;
-        fl.style.left = (r.left + r.width / 2) + 'px';
-        fl.style.top = (r.top + r.height / 2) + 'px';
-        document.body.appendChild(fl);
+        fl.style.left = (r.left - base.left + r.width / 2) + 'px';
+        fl.style.top = (r.top - base.top + r.height / 2) + 'px';
+        overlay.appendChild(fl);
         setTimeout(function () { fl.remove(); }, 1100);
     }
 
     function getOrCreateOverlay() {
         var el = document.getElementById('levelup-choice-overlay');
+        var host = bvkHost();
         if (!el) {
             el = document.createElement('div');
             el.id = 'levelup-choice-overlay';
@@ -53588,14 +53585,14 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
             el.setAttribute('aria-modal', 'true');
             el.setAttribute('aria-label', 'Karrierepfad: Level-Bonus wählen');
             el.innerHTML =
-                '<div class="bvk-sky" aria-hidden="true"></div>' +
-                '<div class="bvk-sweep" aria-hidden="true"></div>' +
+                '<div class="bvk-veil" aria-hidden="true"></div>' +
                 '<div class="bvk-panel">' +
-                    '<div class="bvk-top">' +
-                        '<div class="bvk-badge"><span class="bvk-badge-k">LVL</span><span class="bvk-badge-n">1</span></div>' +
-                        '<div class="bvk-titles">' +
+                    '<div class="bvk-head">' +
+                        '<div class="bvk-badge"><b class="bvk-badge-n">1</b><i class="bvk-badge-k">LVL</i></div>' +
+                        '<div class="bvk-headmain">' +
                             '<div class="bvk-title">KARRIEREPFAD</div>' +
-                            '<div class="bvk-rankline"><span class="bvk-rank-now"></span><span class="bvk-sep">·</span><span class="bvk-rank-next"></span></div>' +
+                            '<div class="bvk-rankline"><span class="bvk-rank-now"></span>' +
+                                '<span class="bvk-sep">·</span><span class="bvk-rank-next"></span></div>' +
                         '</div>' +
                         '<div class="bvk-counter"></div>' +
                     '</div>' +
@@ -53603,12 +53600,11 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
                     '<div class="bvk-progress" aria-hidden="true"><i></i></div>' +
                     '<div class="bvk-grid" role="group" aria-label="Bonus wählen"></div>' +
                     '<div class="bvk-foot">' +
-                        '<span class="bvk-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> oder <kbd>←</kbd><kbd>→</kbd> + <kbd>Enter</kbd></span>' +
+                        '<span class="bvk-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> oder' +
+                            ' <kbd>←</kbd><kbd>→</kbd> + <kbd>Enter</kbd></span>' +
                         '<span class="bvk-foot-r"></span>' +
                     '</div>' +
                 '</div>';
-            document.body.appendChild(el);
-
             el.addEventListener('click', function (ev) {
                 var card = ev.target && ev.target.closest ? ev.target.closest('.bvk-card') : null;
                 if (card && !card.classList.contains('chosen') && !el.classList.contains('bvk-selected')) {
@@ -53619,6 +53615,9 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
             el.addEventListener('pointerleave', bvkGridTiltReset);
             document.addEventListener('keydown', bvkKeyHandler);
         }
+        if (el.parentElement !== host) host.appendChild(el);
+        /* Ohne Gamefenster (Fallback) bildschirmfüllend */
+        el.classList.toggle('bvk-floating', host === document.body || host === document.documentElement);
         return el;
     }
 
@@ -53634,19 +53633,18 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
 
         var rank = bvkRankInfo(levelNum);
 
-        /* Kopf: Level, aktueller Rang, nächster Rang */
         overlay.querySelector('.bvk-badge-n').textContent = levelNum;
         overlay.querySelector('.bvk-rank-now').innerHTML = 'Rang <b>' + rank.cur.name + '</b>';
         overlay.querySelector('.bvk-rank-next').innerHTML = rank.next
             ? ('<b>' + rank.next.name + '</b> in ' + rank.toNext + ' Level')
-            : 'höchster Rang erreicht';
+            : 'höchster Rang';
         var counter = overlay.querySelector('.bvk-counter');
         counter.textContent = isMulti
             ? ('Bonus ' + (_currentLevelIndex + 1) + ' / ' + (_currentLevelIndex + _levelsRemaining))
             : '';
         counter.style.display = isMulti ? '' : 'none';
 
-        /* Rang-Leiter: Fenster von 5 Stationen um den aktuellen Rang */
+        /* Rang-Leiter: fünf Stationen rund um den aktuellen Rang */
         var rail = overlay.querySelector('.bvk-rail');
         rail.innerHTML = '';
         var startI = Math.max(0, Math.min(rank.idx - 2, BVK_RANKS.length - 5));
@@ -53665,7 +53663,7 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
 
         overlay.querySelector('.bvk-progress i').style.width = Math.round(rank.prog * 100) + '%';
         overlay.querySelector('.bvk-foot-r').textContent = rank.next
-            ? ('Rang ' + Math.round(rank.prog * 100) + ' % · ' + rank.toNext + ' Level bis ' + rank.next.name)
+            ? ('Rang ' + Math.round(rank.prog * 100) + ' % · noch ' + rank.toNext + ' Level')
             : 'Maximaler Rang';
 
         /* Karten mit Stat-Vorschau */
@@ -53698,7 +53696,6 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
             if (low) {
                 card.classList.add('in');
             } else {
-                card.style.transitionDelay = (i * 60) + 'ms';
                 requestAnimationFrame(function () {
                     setTimeout(function () { card.classList.add('in'); }, 30 + i * 60);
                 });
@@ -53734,10 +53731,9 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
         bvkGridTiltReset();
 
         var chosen = overlay.querySelector('.bvk-card.chosen');
-        bvkSpawnBurst(chosen);
-        bvkFloatBonus(chosen, ch.bonus);
+        bvkSpawnBurst(chosen, overlay);
+        bvkFloatBonus(chosen, ch.bonus, overlay);
 
-        /* Bonus anwenden */
         ch.apply();
         window._pendingLevelUpCount--;
         _levelsRemaining--;
@@ -53746,7 +53742,7 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
         if (typeof window.updateHUD === 'function') window.updateHUD();
         if (typeof window.updateMenuStats === 'function') window.updateMenuStats();
 
-        var wait = bvkLowSpec() ? 460 : 720;
+        var wait = bvkLowSpec() ? 440 : 700;
         setTimeout(function () {
             overlay.classList.remove('bvk-selected');
             overlay.classList.add('closing');
@@ -53754,14 +53750,14 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
                 setTimeout(function () {
                     overlay.classList.remove('active', 'closing');
                     showNextLevelChoice();
-                }, 300);
+                }, 280);
             } else {
                 setTimeout(function () {
                     overlay.classList.remove('active', 'closing');
                     _choiceActive = false;
                     setVictoryBtnDisabled(false);
                     if (typeof window.checkAchievements === 'function') window.checkAchievements('levelup');
-                }, 340);
+                }, 320);
             }
         }, wait);
     }
@@ -57564,5 +57560,414 @@ body.bv-settings-performance #levelup-choice-overlay .bvk-sweep {
     15%  { opacity: 1; }
     80%  { opacity: 1; }
     100% { opacity: 0; }
+}
+</style>
+
+<script>
+/* ============================================================
+   v4.0 – VOR-KAMPF-ÜBERGANG (mehrere Varianten + Boss-Variante)
+   Läuft nur während der Intro-Phase (bis der VS-Splash kommt).
+   Alle Effekte über transform/opacity, Low-Spec bekommt eine ruhige
+   Variante ohne Muster-Bewegung.
+   ============================================================ */
+(function () {
+    'use strict';
+
+    var HOST_ID = 'bv-battle-transition';
+    var NORMAL = ['slash', 'comic', 'grid', 'speed'];
+
+    function btLowSpec() {
+        try {
+            var b = document.body.classList;
+            if (b.contains('bv-settings-lowspec') || b.contains('bv-settings-performance') ||
+                b.contains('bv-settings-reduced-motion')) return true;
+            var st = window.BV_SETTINGS || {};
+            if (st.particles === false || st.reducedMotion === true || st.performance === 'performance') return true;
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+        } catch (e) {}
+        return false;
+    }
+
+    function esc(t) {
+        return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+        });
+    }
+
+    function artHtml(v) {
+        var i, out = '';
+        if (v === 'slash') {
+            out += '<i class="bvbt-flash"></i>';
+            var tops = [16, 38, 60, 80];
+            for (i = 0; i < tops.length; i++) {
+                out += '<i class="bvbt-beam" style="--i:' + i + ';--t:' + tops[i] + '%"></i>';
+            }
+        } else if (v === 'comic') {
+            for (i = 0; i < 4; i++) {
+                out += '<i class="bvbt-strip" style="--i:' + i + '"></i>';
+            }
+            out += '<i class="bvbt-burst">⚡</i>';
+        } else if (v === 'grid') {
+            for (i = 0; i < 30; i++) {
+                var col = i % 6, row = Math.floor(i / 6);
+                out += '<i class="bvbt-cell" style="left:' + (col * 16.7) + '%;top:' + (row * 20) +
+                    '%;--d:' + (i * 18) + 'ms"></i>';
+            }
+        } else if (v === 'speed') {
+            for (i = 0; i < 13; i++) {
+                out += '<i class="bvbt-line" style="--x:' + (i * 7.5 + 2).toFixed(1) + '%;--d:' + (i * 24) + 'ms"></i>';
+            }
+            out += '<i class="bvbt-zoom"></i>';
+        } else if (v === 'boss') {
+            out += '<i class="bvbt-hazard top"></i><i class="bvbt-hazard bottom"></i>' +
+                   '<i class="bvbt-redflash"></i><i class="bvbt-warnring"></i>';
+        }
+        return out;
+    }
+
+    function captionHtml(v, name) {
+        var boss = v === 'boss';
+        return '<div class="bvbt-caption' + (boss ? ' is-boss' : '') + '">' +
+            '<span class="bvbt-ico">' + (boss ? '💀' : '⚔️') + '</span>' +
+            '<span class="bvbt-title">' + (boss ? 'BOSS-KAMPF' : 'KAMPF') + '</span>' +
+            (name ? '<span class="bvbt-sub">' + esc(name) + '</span>' : '') +
+            '</div>';
+    }
+
+    window.BVPlayBattleTransition = function (opts) {
+        opts = opts || {};
+        var low = btLowSpec();
+        var boss = !!opts.boss;
+        var variant = boss ? 'boss' : NORMAL[Math.floor(Math.random() * NORMAL.length)];
+
+        var old = document.getElementById(HOST_ID);
+        if (old && old.parentNode) old.parentNode.removeChild(old);
+
+        var el = document.createElement('div');
+        el.id = HOST_ID;
+        el.className = 'bvbt v-bt-' + variant + (low ? ' bt-low' : '');
+        el.setAttribute('aria-hidden', 'true');
+        el.innerHTML = '<i class="bvbt-veil"></i>' +
+            (low ? '' : artHtml(variant)) +
+            captionHtml(variant, opts.name);
+
+        (document.body || document.documentElement).appendChild(el);
+
+        // Einblenden -> halten -> ausblenden, kurz bevor der VS-Splash übernimmt
+        var outAt = low ? 820 : 1000;
+        setTimeout(function () { el.classList.add('bt-out'); }, outAt);
+        setTimeout(function () {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        }, outAt + 420);
+
+        try { window.BVBattleTransitionVariant = variant; } catch (e) {}
+        return variant;
+    };
+
+    window.BVClearBattleTransition = function () {
+        var e = document.getElementById(HOST_ID);
+        if (e && e.parentNode) e.parentNode.removeChild(e);
+    };
+})();
+</script>
+
+<style>
+/* ============================================================
+   v4.0 – Vor-Kampf-Übergang: Varianten
+   ============================================================ */
+#bv-battle-transition {
+    position: fixed;
+    inset: 0;
+    z-index: 100002;
+    pointer-events: none;
+    overflow: hidden;
+    font-family: 'VT323', monospace;
+    opacity: 1;
+    transition: opacity .3s ease;
+    contain: paint;
+}
+
+#bv-battle-transition.bt-out {
+    opacity: 0;
+}
+
+#bv-battle-transition .bvbt-veil {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(26, 42, 78, .95), rgba(4, 6, 14, .99) 72%),
+        #05070f;
+    opacity: 0;
+    animation: bvbtVeilIn .2s ease forwards;
+}
+
+@keyframes bvbtVeilIn {
+    to { opacity: 1; }
+}
+
+/* --- gemeinsame Caption --- */
+#bv-battle-transition .bvbt-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+    transform: translateY(-50%);
+    animation: bvbtCapIn .42s cubic-bezier(.16, 1, .3, 1) .22s both;
+}
+
+@keyframes bvbtCapIn {
+    from { opacity: 0; transform: translateY(-50%) scale(.88); }
+    to   { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+#bv-battle-transition .bvbt-ico {
+    font-size: 2rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 12px rgba(120, 190, 255, .65));
+}
+
+#bv-battle-transition .bvbt-title {
+    font-size: 1.8rem;
+    letter-spacing: 7px;
+    color: #eaf4ff;
+    text-shadow: 0 0 18px rgba(90, 170, 255, .8);
+}
+
+#bv-battle-transition .bvbt-sub {
+    font-size: .8rem;
+    letter-spacing: 2px;
+    color: rgba(190, 220, 255, .6);
+}
+
+/* --- Variante 1: Diagonale Schnitte --- */
+#bv-battle-transition .bvbt-beam {
+    position: absolute;
+    left: -30%;
+    top: var(--t, 40%);
+    width: 160%;
+    height: 13%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .92) 45%, rgba(110, 180, 255, .85) 65%, transparent);
+    transform: translateX(-120%) rotate(-14deg);
+    animation: bvbtBeam .6s cubic-bezier(.2, .8, .2, 1) forwards;
+    animation-delay: calc(var(--i) * 85ms);
+}
+
+@keyframes bvbtBeam {
+    0%   { opacity: 0; transform: translateX(-120%) rotate(-14deg); }
+    20%  { opacity: 1; }
+    55%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(120%) rotate(-14deg); }
+}
+
+#bv-battle-transition .bvbt-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    animation: bvbtWhiteFlash .5s ease-out .1s forwards;
+}
+
+@keyframes bvbtWhiteFlash {
+    0%   { opacity: 0; }
+    18%  { opacity: .85; }
+    100% { opacity: 0; }
+}
+
+/* --- Variante 2: Comic-Streifen --- */
+#bv-battle-transition .bvbt-strip {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--i) * 25%);
+    width: 25.5%;
+    background: linear-gradient(180deg, #0d1526, #070a12);
+    border-right: 2px solid rgba(120, 190, 255, .35);
+    transform: translateY(101%);
+    animation: bvbtStripUp .4s cubic-bezier(.16, 1, .3, 1) forwards;
+    animation-delay: calc(var(--i) * 55ms);
+}
+
+@keyframes bvbtStripUp {
+    to { transform: translateY(0); }
+}
+
+#bv-battle-transition .bvbt-burst {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    font-size: 3.6rem;
+    line-height: 1;
+    transform: translate(-50%, -50%) scale(.2) rotate(-18deg);
+    opacity: 0;
+    animation: bvbtBurstIn .5s cubic-bezier(.16, 1, .3, 1) .3s forwards;
+    text-shadow: 0 0 24px rgba(255, 220, 120, .8);
+}
+
+@keyframes bvbtBurstIn {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(-18deg); }
+    60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(6deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4) rotate(0deg); }
+}
+
+/* --- Variante 3: Pixel-Raster --- */
+#bv-battle-transition .bvbt-cell {
+    position: absolute;
+    width: 16.7%;
+    height: 20%;
+    background: #060a14;
+    transform: scale(0);
+    animation: bvbtCellIn .3s cubic-bezier(.16, 1, .3, 1) forwards;
+    animation-delay: var(--d, 0ms);
+}
+
+@keyframes bvbtCellIn {
+    to { transform: scale(1.02); }
+}
+
+/* --- Variante 4: Speedlines --- */
+#bv-battle-transition .bvbt-line {
+    position: absolute;
+    left: var(--x, 50%);
+    top: -30%;
+    width: 2px;
+    height: 160%;
+    background: linear-gradient(180deg, transparent, rgba(150, 210, 255, .6), transparent);
+    transform: translateY(-60%);
+    animation: bvbtLineIn .55s cubic-bezier(.2, .8, .2, 1) forwards;
+    animation-delay: var(--d, 0ms);
+}
+
+@keyframes bvbtLineIn {
+    0%   { opacity: 0; transform: translateY(-60%) scaleY(.4); }
+    35%  { opacity: 1; }
+    100% { opacity: .55; transform: translateY(20%) scaleY(1); }
+}
+
+#bv-battle-transition .bvbt-zoom {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 60vmax;
+    height: 60vmax;
+    border-radius: 50%;
+    border: 2px solid rgba(120, 190, 255, .35);
+    transform: translate(-50%, -50%) scale(.2);
+    opacity: 0;
+    animation: bvbtZoomIn .6s ease-out forwards;
+}
+
+@keyframes bvbtZoomIn {
+    0%   { opacity: .8; transform: translate(-50%, -50%) scale(.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* --- Variante 5: BOSS --- */
+#bv-battle-transition .bvbt-hazard {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 84px;
+    background: repeating-linear-gradient(115deg, #e5352b 0 26px, #14141a 26px 52px);
+    box-shadow: 0 0 28px rgba(229, 53, 43, .55);
+    transform: scaleY(0);
+    animation: bvbtHazardIn .34s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+#bv-battle-transition .bvbt-hazard.top { top: 0; transform-origin: top center; }
+#bv-battle-transition .bvbt-hazard.bottom { bottom: 0; transform-origin: bottom center; animation-delay: .06s; }
+
+@keyframes bvbtHazardIn {
+    to { transform: scaleY(1); }
+}
+
+#bv-battle-transition .bvbt-redflash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(255, 40, 30, .35), transparent 65%);
+    opacity: 0;
+    animation: bvbtRedFlash .9s ease-out .1s 2;
+}
+
+@keyframes bvbtRedFlash {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+#bv-battle-transition .bvbt-warnring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 46vmin;
+    height: 46vmin;
+    border-radius: 50%;
+    border: 3px dashed rgba(255, 70, 60, .55);
+    transform: translate(-50%, -50%) rotate(0deg) scale(.6);
+    animation: bvbtWarnRing .9s ease-out forwards;
+}
+
+@keyframes bvbtWarnRing {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(0deg) scale(.55); }
+    30%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(35deg) scale(1.1); }
+}
+
+#bv-battle-transition.v-bt-boss .bvbt-title {
+    color: #ffe2e0;
+    letter-spacing: 9px;
+    text-shadow: 0 0 20px rgba(255, 60, 50, .95), 0 0 60px rgba(255, 0, 0, .55);
+}
+
+#bv-battle-transition.v-bt-boss .bvbt-ico {
+    filter: drop-shadow(0 0 16px rgba(255, 60, 50, .95));
+}
+
+#bv-battle-transition.v-bt-boss .bvbt-sub {
+    color: rgba(255, 190, 185, .75);
+}
+
+/* --- Low-Spec: nur ruhiger Vorhang + Text --- */
+#bv-battle-transition.bt-low .bvbt-beam,
+#bv-battle-transition.bt-low .bvbt-flash,
+#bv-battle-transition.bt-low .bvbt-strip,
+#bv-battle-transition.bt-low .bvbt-burst,
+#bv-battle-transition.bt-low .bvbt-cell,
+#bv-battle-transition.bt-low .bvbt-line,
+#bv-battle-transition.bt-low .bvbt-zoom,
+#bv-battle-transition.bt-low .bvbt-warnring {
+    display: none !important;
+}
+
+#bv-battle-transition.bt-low .bvbt-ico {
+    filter: none;
+}
+
+#bv-battle-transition.bt-low .bvbt-caption {
+    animation-duration: .16s;
+    animation-delay: .04s;
+}
+
+#bv-battle-transition.bt-low.v-bt-boss .bvbt-veil {
+    background: radial-gradient(ellipse at 50% 45%, rgba(90, 16, 14, .95), rgba(6, 4, 8, .99) 72%), #05070f;
+}
+
+#bv-battle-transition.bt-low .bvbt-hazard {
+    animation-duration: .16s;
+}
+
+#bv-battle-transition.bt-low .bvbt-redflash {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #bv-battle-transition .bvbt-caption,
+    #bv-battle-transition .bvbt-veil {
+        animation-duration: .12s !important;
+    }
 }
 </style>
