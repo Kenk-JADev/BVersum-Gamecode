@@ -28432,40 +28432,101 @@
                 // Ensure modal is closed on load
                 document.getElementById("changelog-modal")?.classList.remove("active");
                 
-                // PATCH V: Titel-Partikel-System (viele schwebende Partikel)
+                // ============================================================
+                // v5.6 – TITEL-PARTIKEL MIT QUALITÄTS-STUFEN
+                // Vorher: 120 Partikel, jedes mit
+                //   • box-shadow-Glow (teures Paint pro Partikel)
+                //   • will-change: transform, opacity, filter  (120 Layer!)
+                //   • ZWEI Dauer-Animationen: ttpFloat + ttpSparkleSafe
+                //     (animiertes filter: brightness -> Dauer-Neuzeichnen)
+                // und bei Low-Spec/Performance wurden sie komplett versteckt.
+                // Jetzt: eine Stufe (high/balanced/low), EINE Animation pro
+                //   Partikel (transform/opacity), Glow rein als statischer
+                //   Gradient, kein will-change, kein animierter filter.
+                // Low-Spec zeigt weiterhin Partikel – als ruhige Lichtpunkte.
+                // ============================================================
                 let _titleFxStarted = false;
+                let _titleFxTier = "high";
+
+                function bvTitleTier() {
+                    const s = window.BV_SETTINGS || {};
+                    if (s.particles === false) return "off";
+                    return (typeof bvFxTier === "function") ? bvFxTier() : "balanced";
+                }
+
+                function bvTitleTierClass(screen, tier) {
+                    if (!screen) return;
+                    screen.classList.remove("bv-tt-tier-high", "bv-tt-tier-balanced", "bv-tt-tier-low");
+                    screen.classList.add("bv-tt-tier-" + (tier === "off" ? "low" : tier));
+                }
+
                 function spawnTitleParticles() {
                     const host = document.querySelector("#rpg-title-screen .title-particles");
                     if (!host) return;
+                    const screen = document.getElementById("rpg-title-screen");
+                    const tier = bvTitleTier();
+                    _titleFxTier = tier;
+                    bvTitleTierClass(screen, tier);
+
                     host.innerHTML = "";
+                    if (tier === "off") { _titleFxStarted = false; return; }
+
                     const W = host.clientWidth || 900, H = host.clientHeight || 640;
-                    const N = 120; // PATCH W: mehr Partikel
                     const cols = ["#7ad0ff", "#4a9fff", "#bfe2ff", "#ffffff", "#9fd4ff"];
-                    const rnd = (a,b)=>a+Math.random()*(b-a);
+                    const rnd = (a, b) => a + Math.random() * (b - a);
+                    /* high 64 / balanced 40 / low 18 (statisch) statt 120 */
+                    const N = tier === "high" ? 64 : (tier === "balanced" ? 40 : 18);
                     const frag = document.createDocumentFragment();
-                    for (let i=0; i<N; i++) {
+
+                    for (let i = 0; i < N; i++) {
                         const p = document.createElement("div");
-                        p.className = "title-fxp";
-                        const sz = rnd(1.5, 4.5);
-                        p.style.width = sz.toFixed(1)+"px";
-                        p.style.height = sz.toFixed(1)+"px";
-                        p.style.left = rnd(0,100).toFixed(1)+"%";
-                        p.style.top = rnd(0,100).toFixed(1)+"%";
-                        const c = cols[(Math.random()*cols.length)|0];
-                        p.style.background = c;
-                        p.style.boxShadow = "0 0 "+(sz*2.5).toFixed(0)+"px "+c;
-                        p.style.setProperty("--op", rnd(.35,.9).toFixed(2));
-                        p.style.setProperty("--dur", rnd(9,22).toFixed(1)+"s");
-                        p.style.setProperty("--delay", (-rnd(0,18)).toFixed(2)+"s");
-                        p.style.setProperty("--dx", (rnd(-1,1)*rnd(30,120)).toFixed(0)+"px");
-                        p.style.setProperty("--dy", (-rnd(40,160)).toFixed(0)+"px");
-                        p.style.setProperty("--tw", rnd(1.6,4).toFixed(1)+"s");
+                        const isIdle = tier === "low";
+                        const big = !isIdle && Math.random() < 0.14;
+                        p.className = "title-fxp" + (isIdle ? " idle" : "") + (big ? " big" : "");
+                        const sz = isIdle ? rnd(2, 4) : rnd(1.5, big ? 5.5 : 4.5);
+                        p.style.width = sz.toFixed(1) + "px";
+                        p.style.height = sz.toFixed(1) + "px";
+                        p.style.left = rnd(0, 100).toFixed(1) + "%";
+                        p.style.top = rnd(0, 100).toFixed(1) + "%";
+                        /* Farbe als currentColor – der Glow kommt aus dem
+                           Gradient im CSS, nicht aus box-shadow. */
+                        p.style.color = cols[(Math.random() * cols.length) | 0];
+                        p.style.setProperty("--op", rnd(isIdle ? .45 : .35, isIdle ? .8 : .9).toFixed(2));
+                        p.style.setProperty("--tw", rnd(1.8, 3.6).toFixed(1) + "s");
+                        if (!isIdle) {
+                            p.style.setProperty("--dur", rnd(9, 22).toFixed(1) + "s");
+                            p.style.setProperty("--delay", (-rnd(0, 18)).toFixed(2) + "s");
+                            p.style.setProperty("--dx", (rnd(-1, 1) * rnd(30, 120)).toFixed(0) + "px");
+                            p.style.setProperty("--dy", (-rnd(40, 160)).toFixed(0) + "px");
+                        }
                         frag.appendChild(p);
                     }
                     host.appendChild(frag);
+                    host.dataset.bvTitleTier = tier;
+                    host.dataset.bvTitleCount = String(N);
                     _titleFxStarted = true;
                 }
                 window.BVSpawnTitleParticles = spawnTitleParticles;
+                window.BVTitleFx = {
+                    tier: bvTitleTier,
+                    setTier: function (t) {
+                        try {
+                            if (t === "auto") localStorage.removeItem("bv_fx_tier");
+                            else if (["high", "balanced", "low"].includes(t)) localStorage.setItem("bv_fx_tier", t);
+                        } catch (e) {}
+                        spawnTitleParticles();
+                        return bvTitleTier();
+                    },
+                    stats: function () {
+                        const host = document.querySelector("#rpg-title-screen .title-particles");
+                        return {
+                            tier: bvTitleTier(),
+                            particles: host ? host.querySelectorAll(".title-fxp").length : 0,
+                            idle: host ? host.querySelectorAll(".title-fxp.idle").length : 0,
+                            huge: host ? host.querySelectorAll(".title-fxp.big").length : 0
+                        };
+                    }
+                };
 
                 function openChangelog() {
                     const modal = document.getElementById("changelog-modal");
@@ -48726,6 +48787,10 @@ body.bv-settings-performance .title-light-rays {
     function applySettings() {
         document.body.classList.toggle('bv-settings-reduced-motion', !!settings.reducedMotion);
         document.body.classList.toggle('bv-settings-performance', settings.performance === 'performance');
+        // v5.6: "Partikel aus" wird jetzt an genau einer Stelle gepflegt.
+        // Vorher konnte die Klasse aus dem Titel-Settings-Pfad hängen bleiben,
+        // dann waren Partikel auch nach dem Wiedereinschalten unsichtbar.
+        document.body.classList.toggle('bv-settings-particles-off', settings.particles === false);
 
         const gameWin = document.getElementById('rpg-game-window');
         const lowFx = settings.particles === false || settings.reducedMotion === true || settings.performance === 'performance';
@@ -48737,6 +48802,10 @@ body.bv-settings-performance .title-light-rays {
         if (typeof window.BVSpawnMapParticles === 'function') {
             const rt = (typeof window.syncBvRuntime === 'function') ? window.syncBvRuntime() : {};
             if (rt.currentMapId) window.BVSpawnMapParticles(rt.currentMapId);
+        }
+        // v5.6: Titel-Partikel folgen derselben Stufe (sofort sichtbar geändert)
+        if (typeof window.BVSpawnTitleParticles === 'function') {
+            window.BVSpawnTitleParticles();
         }
         if (typeof window.startNPCMovementLoop === 'function') window.startNPCMovementLoop();
 
@@ -51946,7 +52015,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     }
     function syncParticleVisibility(){
         const s = getSettings();
-        const off = s.particles === false || s.reducedMotion === true || s.performance === 'performance';
+        // v5.6: Nur noch ein echtes "Partikel aus" schaltet die Partikel ab.
+        // Performance-/Reduced-Motion-Modus reduziert sie jetzt über die
+        // Qualitätsstufen (sichtbar bleiben sie trotzdem).
+        const off = s.particles === false;
         document.body.classList.toggle('bv-settings-particles-off', off);
         if (off) {
             document.querySelector('#rpg-title-screen .title-particles')?.replaceChildren();
@@ -58763,5 +58835,121 @@ body.bv-settings-particles-off .title-canvas-bg {
     #bv-battle-transition .bvbt-info { padding: 5px 8px; margin-top: 4px; }
     #bv-battle-transition .bvbt-portrait { width: 38px; height: 38px; }
     #bv-battle-transition .bvbt-stamp { width: 150px; height: 150px; margin: -75px 0 0 -75px; }
+}
+</style>
+
+<style>
+/* ============================================================
+   v5.6 – TITEL-PARTIKEL: optimiert + auch für Low-Spec sichtbar
+   Die Titel-Ebene lief bisher mit 120 Partikeln, jedem eigenen
+   box-shadow-Glow, eigenem will-change (= eigener GPU-Layer) und
+   zwei Dauer-Animationen – die zweite animierte `filter: brightness`
+   und damit jede Frame eine Neuzeichnung aller Partikel.
+   Jetzt: eine Animation pro Partikel (transform/opacity), Glow als
+   statischer Gradient, kein will-change. Stufen high/balanced/low.
+   Low-Spec/Performance/Reduced-Motion werden NICHT mehr versteckt,
+   sondern zeigen ruhige, statische Lichtpunkte.
+   ============================================================ */
+
+#rpg-title-screen .title-particles {
+    contain: layout paint;
+    will-change: auto;
+    display: block;
+    opacity: 1 !important;
+}
+
+#rpg-title-screen .title-fxp {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    will-change: auto !important;
+    box-shadow: none !important;
+    /* Glow als Gradient (einmal gemalt) statt box-shadow pro Frame */
+    background: radial-gradient(circle,
+        #ffffff 0 26%,
+        currentColor 48%,
+        rgba(255, 255, 255, 0) 74%) !important;
+    /* genau EINE Animation: kein brightness-Filter mehr */
+    animation: ttpFloat var(--dur, 14s) ease-in-out var(--delay, 0s) infinite !important;
+}
+
+/* Ruhestufe (Low-Spec): Lichtpunkte ohne Animation, ohne Layer */
+#rpg-title-screen .title-fxp.idle {
+    animation: none !important;
+    opacity: var(--op, .6);
+}
+
+/* Sanftes Aufglühen einiger großer Sterne – nur oberste Stufe,
+   und ausschließlich über transform/opacity (composited). */
+#rpg-title-screen.bv-tt-tier-high .title-fxp.big::before {
+    content: "";
+    position: absolute;
+    inset: -80%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, .5), rgba(160, 215, 255, .22) 45%, transparent 70%);
+    transform: scale(.7);
+    opacity: .35;
+    animation: ttpGlowPulse var(--tw, 2.8s) ease-in-out var(--delay, 0s) infinite;
+}
+
+@keyframes ttpGlowPulse {
+    0%, 100% { transform: scale(.72); opacity: .3; }
+    50%      { transform: scale(1.25); opacity: .85; }
+}
+
+/* Zwei Muster-Ebenen im Hintergrund: oberste Stufe animiert,
+   balanced ruhig, low statisch (keine Dauer-Ticks). */
+#rpg-title-screen .title-particles::before,
+#rpg-title-screen .title-particles::after {
+    will-change: auto;
+}
+#rpg-title-screen.bv-tt-tier-balanced .title-particles::before,
+#rpg-title-screen.bv-tt-tier-balanced .title-particles::after,
+#rpg-title-screen.bv-tt-tier-low .title-particles::before,
+#rpg-title-screen.bv-tt-tier-low .title-particles::after {
+    animation: none !important;
+    opacity: .3;
+}
+
+/* ---------- Sichtbarkeit: Low-Spec bekommt jetzt Partikel ---------- */
+body.bv-settings-performance #rpg-title-screen .title-particles,
+body.bv-settings-lowspec #rpg-title-screen .title-particles,
+body.bv-settings-reduced-motion #rpg-title-screen .title-particles,
+body.bv-low-end #rpg-title-screen .title-particles {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Genauso bei den Karten-Partikeln: die Performance-/Reduced-Regeln
+   weiter oben (und der „Partikel aus"-Hotfix) hatten sie überstimmt. */
+body.bv-settings-performance #rpg-fx-particles,
+body.bv-settings-lowspec #rpg-fx-particles,
+body.bv-settings-reduced-motion #rpg-fx-particles,
+body.bv-low-end #rpg-fx-particles {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Explizit „Partikel aus" gewinnt weiterhin – hat hier die letzte Stimme. */
+body.bv-settings-particles-off #rpg-title-screen .title-particles,
+body.bv-settings-particles-off .title-particles,
+body.bv-settings-particles-off #rpg-fx-particles {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Bei reduzierter Bewegung auch die Muster-Ebenen stilllegen */
+@media (prefers-reduced-motion: reduce) {
+    #rpg-title-screen .title-particles::before,
+    #rpg-title-screen .title-particles::after {
+        animation: none !important;
+    }
+    #rpg-title-screen .title-fxp {
+        animation: none !important;
+        opacity: var(--op, .6);
+    }
 }
 </style>
