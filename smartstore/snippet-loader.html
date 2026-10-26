@@ -19,6 +19,13 @@
     if (window._bvLoaderDone) return;          // kein doppeltes Injizieren
     window._bvLoaderDone = true;
 
+    function showError(e) {
+        window._bvLoaderDone = false;          // Retry nach Fehler ermöglichen
+        console.error("[BüroVersum-Loader] Laden fehlgeschlagen:", e);
+        host.innerHTML = '<p style="font-family:sans-serif;text-align:center;padding:24px">Das Spiel konnte nicht geladen werden. '
+            + '<a href="' + BASE + 'embed.html" target="_blank" rel="noopener">Hier in neuem Tab öffnen</a></p>';
+    }
+
     fetch(BASE + "game-fragment.html", { cache: "no-cache" })  // immer neu validieren
         .then(function (r) {
             if (!r.ok) throw new Error("HTTP " + r.status);
@@ -26,23 +33,53 @@
         })
         .then(function (html) {
             host.innerHTML = html;
-            // <script>-Tags aus innerHTML werden nicht ausgeführt – deshalb
-            // in derselben Reihenfolge neu anlegen und ausführen.
-            Array.prototype.forEach.call(host.querySelectorAll("script"), function (old) {
+
+            // <script>-Tags aus innerHTML werden nicht ausgeführt. Dynamisch
+            // erzeugte externe Scripts sind außerdem standardmäßig async – ein
+            // naives replaceChild() startet alle Inline-Scripts VOR
+            // twemoji.min.js (uneinheitliche Emojis, Race-Conditions). Deshalb
+            // strikt in Dokumentreihenfolge ausführen + Timeout als Notfall.
+            var scripts = Array.prototype.slice.call(host.querySelectorAll("script"));
+            var i = 0;
+
+            function runNext() {
+                if (i >= scripts.length) {
+                    setTimeout(function () {
+                        console.info("[BüroVersum-Loader] Spiel geladen – Build: " + (window.BV_BUILD || "unbekannt"));
+                    }, 300);
+                    return;
+                }
+                var old = scripts[i++];
                 var s = document.createElement("script");
-                if (old.src) { s.src = old.src; if (old.crossOrigin) s.crossOrigin = old.crossOrigin; }
-                else { s.text = old.textContent; }
+                // Attribute übernehmen – aber src/crossorigin nicht: klassische
+                // Scripts brauchen kein CORS (fremde Hosts ohne ACAO sonst blockiert).
+                for (var a = 0; a < old.attributes.length; a++) {
+                    var at = old.attributes[a];
+                    if (at.name === "src" || at.name === "crossorigin") continue;
+                    try { s.setAttribute(at.name, at.value); } catch (err) {}
+                }
+                var done = false;
+                function proceed() {
+                    if (done) return;
+                    done = true;
+                    runNext();
+                }
+                if (old.src) {
+                    s.onload = proceed;
+                    s.onerror = function () {
+                        console.warn("[BüroVersum-Loader] Skript nicht ladbar: " + old.src);
+                        proceed();
+                    };
+                    s.src = old.src;
+                    setTimeout(proceed, 4000);   // kein Endlos-Warten bei Host-Ausfall
+                } else {
+                    s.text = old.textContent;
+                }
                 old.parentNode.replaceChild(s, old);
-            });
-            // Build-Stempel zur Kontrolle ausgeben (Boot-Screen zeigt ihn ebenfalls an)
-            setTimeout(function () {
-                console.info("[BüroVersum-Loader] Spiel geladen – Build: " + (window.BV_BUILD || "unbekannt"));
-            }, 300);
+                if (!old.src) proceed();         // Inline-Scripts laufen synchron
+            }
+            runNext();
         })
-        .catch(function (e) {
-            console.error("[BüroVersum-Loader] Laden fehlgeschlagen:", e);
-            host.innerHTML = '<p style="font-family:sans-serif;text-align:center;padding:24px">Das Spiel konnte nicht geladen werden. '
-                + '<a href="' + BASE + 'embed.html" target="_blank" rel="noopener">Hier in neuem Tab öffnen</a></p>';
-        });
+        .catch(showError);
 })();
 </script>

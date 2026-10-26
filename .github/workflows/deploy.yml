@@ -29,6 +29,19 @@ jobs:
       - name: Build (public/ erzeugen)
         run: python tools/build.py
 
+      - name: Tests (Regression + JS-Syntaxcheck)
+        run: python tools/test_build.py
+
+      - name: Setup Node (für Laufzeit-Smoke-Test)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Runtime-Smoke-Test (jsdom)
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bv-smoke" jsdom@26 --no-audit --no-fund
+          NODE_PATH="$RUNNER_TEMP/bv-smoke/node_modules" node tools/smoke_test.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

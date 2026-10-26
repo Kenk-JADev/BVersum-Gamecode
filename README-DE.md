@@ -58,15 +58,33 @@ Schritt-für-Schritt-Anleitung inkl. Troubleshooting:
 BVersum-Gamecode/
 ├── Gamecode-Bueroversum-7.5 (16).html   # QUELLE – die Spiel-Datei (unverändert!)
 ├── tools/build.py                       # erzeugt public/ + smartstore/generated/
+├── tools/test_build.py                  # Regressionstests (keine Deps, optional Node)
+├── tools/smoke_test.js                  # Laufzeit-Test mit jsdom (optional)
 ├── smartstore/                          # Smartstore-Snippets + Anleitung
 ├── public/                              # Build-Ausgabe (GitHub Pages, gitignored)
-└── .github/workflows/deploy.yml         # Build + Deploy-Pipeline
+└── .github/workflows/deploy.yml         # Test + Build + Deploy-Pipeline
 ```
 
-Build lokal ausführen (Python 3.9+):
+Build und Tests lokal ausführen (Python 3.9+, für den JS-Syntaxcheck Node.js):
 
 ```bash
 python tools/build.py
+python tools/test_build.py
+```
+
+Die Tests prüfen u. a. ausgeglichene DOM-Struktur, gültiges JavaScript in
+allen Inline-Scripts, DSGVO-konforme Assets, isolierte CSS-Variablen,
+spätes Initialisieren (Loader-Variante) und den Build-Stempel. Sie laufen vor
+jedem Deployment automatisch in der GitHub Action – ein fehlgeschlagener Test
+verhindert das Veröffentlichen.
+
+Zusätzlich bootet der **Laufzeit-Smoke-Test** die gebaute Seite in jsdom
+(Scripts, Twemoji, Initialisierung, Klick auf die Promo-Karte) und meldet
+JS-Fehler. Lokal ausführen:
+
+```bash
+npm install --prefix /tmp/bv-smoke jsdom@26
+NODE_PATH=/tmp/bv-smoke/node_modules node tools/smoke_test.js
 ```
 
 Das Skript lädt bei Bedarf automatisch die Vendor-Assets (Twemoji-Emojis +
@@ -87,10 +105,13 @@ protokoll-passend, mit 5-Sekunden-Timeout und einem gestalteten
 
 | Patch | Warum |
 |---|---|
-| Fonts & Twemoji selbst gehostet | DSGVO (keine Anfragen an Google/jsDelivr), offline-fähig |
+| Fonts & Twemoji selbst gehostet (ohne `crossorigin`-Zwang) | DSGVO (keine Anfragen an Google/jsDelivr), offline-fähig, funktioniert auch auf Hosts ohne CORS-Header |
 | Flyer-Bild robust (protokoll-passend, 5-s-Timeout, Fallback-Platzhalter) | kein Mixed Content, keine leeren Lücken bei Host-Ausfall |
-| Robustes Bootstrapping (`__bvMainInit`) | funktioniert auch bei später Injektion, kein Doppel-Start |
+| Robustes Bootstrapping (`__bvMainInit`, bei Nachladen synchron) | funktioniert auch bei später Injektion, kein Doppel-Start, Engine startet vor allen Modulen |
+| Fehlende `</div>`-Abschlüsse ergänzt | Rest der Shop-Seite landet nicht mehr im unsichtbaren `#rpg-overlay` |
 | CSS-Variablen `--bv-*` (Smartstore-Variante) | Shop-Theme wird nicht überschrieben |
+| Loader führt Scripts strikt sequenziell aus | Twemoji ist geladen, bevor die Spiel-Scripts starten; 4-s-Notfall-Timeout |
+| Build-Stempel = Datum + SHA-256-Hash der Quelle | Shop und Website lassen sich wirklich auf denselben Code-Stand prüfen |
 
 ---
 

@@ -27,6 +27,7 @@ Aufruf:  python tools/build.py
 from __future__ import annotations
 
 import datetime
+import hashlib
 import re
 import shutil
 import sys
@@ -72,14 +73,23 @@ def log(msg: str) -> None:
 def _download(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     log(f"lade {url}")
-    urllib.request.urlretrieve(url, dest)  # noqa: S310 – feste, interne URLs
+    # urlretrieve() kennt keinen Timeout – ein hängender Download würde den
+    # gesamten CI-Job blockieren. Deshalb explizit mit Timeout streamen.
+    with urllib.request.urlopen(url, timeout=60) as resp, dest.open("wb") as out:
+        shutil.copyfileobj(resp, out)
 
 
 def _extract_tgz(tgz: Path, dest: Path) -> None:
     import tarfile
 
     with tarfile.open(tgz, "r:gz") as tf:
-        tf.extractall(dest)
+        # Ab Python 3.12 ist extractall() ohne filter deprecated (und ab 3.14
+        # greift standardmäßig der restriktive 'data'-Filter). Ältere Python-
+        # Versionen kennen das Argument noch nicht – daher der Fallback.
+        try:
+            tf.extractall(dest, filter="data")
+        except TypeError:  # Python < 3.11.4
+            tf.extractall(dest)
 
 
 def ensure_vendor() -> None:
@@ -144,6 +154,23 @@ def ensure_vendor() -> None:
 # Patches auf der Spiel-Datei
 # ---------------------------------------------------------------------------
 
+def build_stamp(source_html: str) -> str:
+    """Stabiler, prüfbarer Build-Stempel.
+
+    Das reine Datum war zu grob: zwei Builds am selben Tag (z. B. Shop-Kopie
+    und Website) sahen identisch aus, obwohl sie unterschiedlichen Code
+    enthielten. Der SHA-256-Hash der Quelldatei macht den Stand eindeutig.
+    """
+    digest = hashlib.sha256(source_html.encode("utf-8")).hexdigest()[:8]
+    try:
+        from zoneinfo import ZoneInfo  # Python 3.9+, System-TZ-Datenbank
+
+        today = datetime.datetime.now(ZoneInfo("Europe/Berlin")).date().isoformat()
+    except Exception:  # pragma: no cover – z. B. fehlende tzdata
+        today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+    return f"{today}-{digest}"
+
+
 def _fonts_css(asset_prefix: str) -> str:
     a = asset_prefix
 
@@ -166,10 +193,13 @@ def _fonts_css(asset_prefix: str) -> str:
     ])
 
 
-def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_src_expr: str) -> str:
+def patch_fragment(
+    html: str, asset_prefix: str, rename_css_vars: bool, flyer_src_expr: str, stamp: str,
+) -> str:
     """Alle Build-Patches. ``asset_prefix`` ist 'assets/' relativ oder eine
     absolute URL – je nachdem, wo die Datei später liegt. ``flyer_src_expr`` ist
-    ein JavaScript-Ausdruck für die Bild-URL (lokal gebundelt oder Remote)."""
+    ein JavaScript-Ausdruck für die Bild-URL (lokal gebundelt oder Remote).
+    ``stamp`` ist der von :func:`build_stamp` erzeugte Versionsstempel."""
 
     def replace(text: str, old: str, new: str, expected: int) -> str:
         n = text.count(old)
@@ -179,6 +209,10 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
 
     # 1) Robustes Bootstrapping: läuft auch, wenn das Fragment per JavaScript
     #    nachgeladen wird (DOMContentLoaded ist dann u. U. schon vorbei).
+    #    WICHTIG: Im Nachlade-Fall muss die Haupt-Initialisierung SYNCHRON
+    #    laufen. Alle anderen Module prüfen `readyState` selbst und starten
+    #    sofort – ein setTimeout(__bvMainInit, 0) würde die Engine erst NACH
+    #    diesen Modulen starten (hängende Menüs, Quest-Log, Einstellungen …).
     #    Schützt zusätzlich vor Doppel-Initialisierung.
     html = replace(
         html,
@@ -195,7 +229,7 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
         "\n            }\n"
         "            if (document.readyState === 'loading') { "
         "document.addEventListener('DOMContentLoaded', __bvMainInit); } "
-        "else { setTimeout(__bvMainInit, 0); }\n"
+        "else { __bvMainInit(); }\n"
         "        })();"
     )
     html, n = close_old.subn(close_new, html, count=1)
@@ -203,10 +237,8 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
         raise SystemExit("FEHLER: Ende des Init-Blocks nicht gefunden (Bootstrap-Patch)")
 
     # 1b) Build-Stempel: macht die laufende Version in Console und Boot-Screen
-    #     sichtbar – so erkennt man sofort, ob Shop und Website gleichen Stand haben.
-    stamp = datetime.datetime.now(
-        datetime.timezone(datetime.timedelta(hours=2))  # Europe/Berlin (MEZ/MESZ)
-    ).date().isoformat()
+    #     sichtbar – Datum + Quell-Hash, damit Shop und Website wirklich
+    #     vergleichbar sind (siehe build_stamp()).
     html = replace(
         html,
         "window._bueroversum_init = true;",
@@ -221,11 +253,14 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
         1,
     )
 
-    # 2) Twemoji-Library selbst hosten statt CDN
+    # 2) Twemoji-Library selbst hosten statt CDN. Das crossorigin-Attribut
+    #    wird dabei entfernt: klassische Scripts brauchen kein CORS, auf
+    #    fremden Hosts ohne Access-Control-Allow-Origin würde die Datei
+    #    sonst komplett blockiert werden (Smartstore-Varianten B/C).
     html = replace(
         html,
-        'src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js"',
-        f'src="{asset_prefix}assets/vendor/twemoji.min.js"',
+        '<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>',
+        f'<script src="{asset_prefix}assets/vendor/twemoji.min.js"></script>',
         1,
     )
 
@@ -323,6 +358,20 @@ def patch_fragment(html: str, asset_prefix: str, rename_css_vars: bool, flyer_sr
             html, n = pat.subn(f"--bv-{name}", html)
             total += n
         log(f"CSS-Variablen umbenannt: {total} Vorkommen, {len(css_vars)} Namen")
+
+    # 7) Ausgeglichene DOM-Struktur. In der Quelle bleiben #zuef-main-wrapper
+    #    und #rpg-overlay offen. Der Browser schließt sie still am Dateiende –
+    #    bei Direkt-Einbettung (Variante B) landet damit aber der gesamte Rest
+    #    der Shop-Seite INNERHALB von #rpg-overlay (display:none): Footer und
+    #    nachfolgende Widgets verschwinden. Explizit schließen behebt das.
+    if html.count("<div") - html.count("</div>") != 2:
+        raise SystemExit("FEHLER: Unerwartete div-Bilanz in der Quelldatei (Closing-Patch)")
+    html = (
+        html.rstrip()
+        + "\n\n<!-- Build-Patch: Quell-Fragment lässt diese beiden Container offen. -->\n"
+        "</div><!-- /#rpg-overlay -->\n"
+        "</div><!-- /#zuef-main-wrapper -->\n"
+    )
 
     return html
 
@@ -502,6 +551,13 @@ def write_snippets() -> None:
     if (window._bvLoaderDone) return;          // kein doppeltes Injizieren
     window._bvLoaderDone = true;
 
+    function showError(e) {{
+        window._bvLoaderDone = false;          // Retry nach Fehler ermöglichen
+        console.error("[BüroVersum-Loader] Laden fehlgeschlagen:", e);
+        host.innerHTML = '<p style="font-family:sans-serif;text-align:center;padding:24px">Das Spiel konnte nicht geladen werden. '
+            + '<a href="' + BASE + 'embed.html" target="_blank" rel="noopener">Hier in neuem Tab öffnen</a></p>';
+    }}
+
     fetch(BASE + "game-fragment.html", {{ cache: "no-cache" }})  // immer neu validieren
         .then(function (r) {{
             if (!r.ok) throw new Error("HTTP " + r.status);
@@ -509,24 +565,54 @@ def write_snippets() -> None:
         }})
         .then(function (html) {{
             host.innerHTML = html;
-            // <script>-Tags aus innerHTML werden nicht ausgeführt – deshalb
-            // in derselben Reihenfolge neu anlegen und ausführen.
-            Array.prototype.forEach.call(host.querySelectorAll("script"), function (old) {{
+
+            // <script>-Tags aus innerHTML werden nicht ausgeführt. Dynamisch
+            // erzeugte externe Scripts sind außerdem standardmäßig async – ein
+            // naives replaceChild() startet alle Inline-Scripts VOR
+            // twemoji.min.js (uneinheitliche Emojis, Race-Conditions). Deshalb
+            // strikt in Dokumentreihenfolge ausführen + Timeout als Notfall.
+            var scripts = Array.prototype.slice.call(host.querySelectorAll("script"));
+            var i = 0;
+
+            function runNext() {{
+                if (i >= scripts.length) {{
+                    setTimeout(function () {{
+                        console.info("[BüroVersum-Loader] Spiel geladen – Build: " + (window.BV_BUILD || "unbekannt"));
+                    }}, 300);
+                    return;
+                }}
+                var old = scripts[i++];
                 var s = document.createElement("script");
-                if (old.src) {{ s.src = old.src; if (old.crossOrigin) s.crossOrigin = old.crossOrigin; }}
-                else {{ s.text = old.textContent; }}
+                // Attribute übernehmen – aber src/crossorigin nicht: klassische
+                // Scripts brauchen kein CORS (fremde Hosts ohne ACAO sonst blockiert).
+                for (var a = 0; a < old.attributes.length; a++) {{
+                    var at = old.attributes[a];
+                    if (at.name === "src" || at.name === "crossorigin") continue;
+                    try {{ s.setAttribute(at.name, at.value); }} catch (err) {{}}
+                }}
+                var done = false;
+                function proceed() {{
+                    if (done) return;
+                    done = true;
+                    runNext();
+                }}
+                if (old.src) {{
+                    s.onload = proceed;
+                    s.onerror = function () {{
+                        console.warn("[BüroVersum-Loader] Skript nicht ladbar: " + old.src);
+                        proceed();
+                    }};
+                    s.src = old.src;
+                    setTimeout(proceed, 4000);   // kein Endlos-Warten bei Host-Ausfall
+                }} else {{
+                    s.text = old.textContent;
+                }}
                 old.parentNode.replaceChild(s, old);
-            }});
-            // Build-Stempel zur Kontrolle ausgeben (Boot-Screen zeigt ihn ebenfalls an)
-            setTimeout(function () {{
-                console.info("[BüroVersum-Loader] Spiel geladen – Build: " + (window.BV_BUILD || "unbekannt"));
-            }}, 300);
+                if (!old.src) proceed();         // Inline-Scripts laufen synchron
+            }}
+            runNext();
         }})
-        .catch(function (e) {{
-            console.error("[BüroVersum-Loader] Laden fehlgeschlagen:", e);
-            host.innerHTML = '<p style="font-family:sans-serif;text-align:center;padding:24px">Das Spiel konnte nicht geladen werden. '
-                + '<a href="' + BASE + 'embed.html" target="_blank" rel="noopener">Hier in neuem Tab öffnen</a></p>';
-        }});
+        .catch(showError);
 }})();
 </script>
 """
@@ -545,7 +631,9 @@ def main() -> None:
     ensure_vendor()
 
     source_html = SOURCE.read_text(encoding="utf-8", errors="strict")
+    stamp = build_stamp(source_html)
     log(f"Quelle: {SOURCE.name} ({len(source_html):,} Zeichen)".replace(",", "."))
+    log(f"Build-Stempel: {stamp}")
 
     # Flyer-Bild: lokal gebundelt (assets-src/flyer.jpg) hat Vorrang vor der
     # Remote-Quelle webshops.zuef.de (die kann ausfallen oder gesperrt sein).
@@ -562,13 +650,14 @@ def main() -> None:
 
     # --- öffentliche Website (relativ, unveränderte CSS-Variablen) ---
     web_fragment = patch_fragment(
-        source_html, asset_prefix="", rename_css_vars=False, flyer_src_expr=flyer_expr(""),
+        source_html, asset_prefix="", rename_css_vars=False,
+        flyer_src_expr=flyer_expr(""), stamp=stamp,
     )
 
     # --- Smartstore-Fragment (absolute Pfade, CSS-Variablen isoliert) ---
     direct_fragment = patch_fragment(
         source_html, asset_prefix=SITE_BASE_URL, rename_css_vars=True,
-        flyer_src_expr=flyer_expr(SITE_BASE_URL),
+        flyer_src_expr=flyer_expr(SITE_BASE_URL), stamp=stamp,
     )
 
     if PUBLIC.exists():
@@ -604,6 +693,12 @@ def main() -> None:
                 raise SystemExit(f"FEHLER: {name} enthält noch {bad!r}")
         if "zuef-fallback" not in out:
             raise SystemExit(f"FEHLER: {name} enthält den Flyer-Fallback nicht")
+        if "assets/vendor/twemoji.min.js\" crossorigin" in out:
+            raise SystemExit(f"FEHLER: {name}: crossorigin auf selbst gehostetem Twemoji")
+        if out.count("<div") != out.count("</div>"):
+            raise SystemExit(f"FEHLER: {name}: div-Tags nicht ausgeglichen")
+        if f'BV_BUILD = "{stamp}"' not in out:
+            raise SystemExit(f"FEHLER: {name}: Build-Stempel fehlt")
 
     log("Fertig:")
     for p in sorted(PUBLIC.rglob("*")):

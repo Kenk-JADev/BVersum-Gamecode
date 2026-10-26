@@ -9,3 +9,7 @@ tools/__pycache__/
 # Python
 __pycache__/
 *.pyc
+
+# Node (nur für den optionalen jsdom-Smoke-Test)
+node_modules/
+package-lock.json

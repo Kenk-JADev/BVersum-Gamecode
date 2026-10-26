@@ -57,7 +57,12 @@ vorbereitet:
 - ✅ **Mixed Content behoben:** Das Flyer-Bild lädt über https, bei Fehlschlag
   wird es ausgeblendet.
 - ✅ **Robustes Startverhalten:** Initialisiert auch dann korrekt, wenn der
-  Code-Block erst nach `DOMContentLoaded` in die Seite kommt.
+  Code-Block erst nach `DOMContentLoaded` in die Seite kommt. Die
+  Haupt-Engine startet dabei synchron vor allen anderen Modulen.
+- ✅ **Ausgeglichene DOM-Struktur:** Der Build schließt `#zuef-main-wrapper`
+  und `#rpg-overlay` explizit. Ohne diese Korrektur würden alle
+  nachfolgenden Shop-Inhalte (Footer, weitere Widgets) innerhalb des
+  standardmäßig unsichtbaren Overlays landen.
 
 ### Schritte
 
@@ -93,7 +98,10 @@ Variante A: Styles und Scripts laufen im Shop-DOM (mit den oben genannten,
 abgeschirmten Einschränkungen).
 
 1. `snippet-loader.html` in den Custom-Code-Block einfügen (bzw. den alten
-   Loader-Block damit ersetzen).
+   Loader-Block damit ersetzen). Der aktuelle Loader führt die nachgeladenen
+   Scripts **strikt in Dokumentreihenfolge** aus (externe Scripts werden
+   abgewartet, mit 4-Sekunden-Notfall-Timeout). Das verhindert, dass die
+   Spiel-Logik vor `twemoji.min.js` startet.
 2. **BASE-URL prüfen:** Sie muss auf die Spiel-Website zeigen:
    `https://kenk-jadev.github.io/BVersum-Gamecode/`. Zeigt sie woanders hin
    (z. B. auf eine Kopie im Medien-Speicher des Shops), läuft dort alter Code!
@@ -107,9 +115,12 @@ abgeschirmten Einschränkungen).
 Wenn die Seite bereits einen Loader nutzt, reicht es, den **alten Loader-Block
 im Page Builder durch das aktuelle `snippet-loader.html` zu ersetzen**.
 Kontrolle: In der Browser-Konsole muss
-`[BüroVersum-Loader] Spiel geladen – Build: 2026-10-25` (oder neuer) stehen,
-und der Boot-Screen zeigt `Version 7.10.11 • Build …`. Steht dort kein
-Build-Stempel, läuft weiterhin eine alte Kopie des Spiels (BASE-URL prüfen!).
+`[BüroVersum-Loader] Spiel geladen – Build: 2026-10-26-1a2b3c4d` (Beispielwert)
+stehen, und der Boot-Screen zeigt `Version 7.10.11 • Build …`. Der Stempel
+besteht aus Datum **und einem 8-stelligen Hash der Quelldatei** – nur bei
+identischem Hash laufen Shop und Website wirklich mit demselben Code.
+Steht dort kein Build-Stempel, läuft weiterhin eine alte Kopie des Spiels
+(BASE-URL prüfen!).
 
 Fehler landen mit Präfix `[BüroVersum-Loader]` in der Browser-Konsole;
 zusätzlich wird ein Link-Fallback (Spiel in neuem Tab) angezeigt.
