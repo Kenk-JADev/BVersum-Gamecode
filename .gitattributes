@@ -1,0 +1,9 @@
+# Die Original-Spielcodedatei kommt aus einem Windows-Editor und ist
+# durchgängig CRLF (60.600+ Zeilen). Ohne diese Regel meldet `git diff --check`
+# bei jeder geänderten Zeile fälschlich "trailing whitespace", weil es das CR
+# am Zeilenende als Leerzeichen interpretiert.
+#
+# -text            -> Zeilenenden nicht normalisieren, CRLF bleibt erhalten
+# cr-at-eol        -> CR gehört zum Zeilenende, ist kein Fehler
+# trailing-space   -> echte Leerzeichen/Tabs am Zeilenende weiterhin melden
+*.html -text whitespace=cr-at-eol,trailing-space,space-before-tab,blank-at-eof

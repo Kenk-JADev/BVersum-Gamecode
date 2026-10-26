@@ -4,8 +4,11 @@ BüroVersum – Build-Skript
 =========================
 
 Erzeugt aus der Quell-Datei ``Gamecode-Bueroversum-7.5 (16).html`` alle
-Deploy-Artefakte. Die Quell-Datei bleibt unverändert – sämtliche Anpassungen
-laufen als nachvollziehbare Text-Patches auf den erzeugten Kopien.
+Deploy-Artefakte. Die Map-Engine-Optimierungen stehen direkt in der Quelle
+(Marker ``BV_MAP_PERF_APPLIED``); der Build verifiziert sie und zieht sie bei
+einer älteren Quelle idempotent nach. Alle übrigen Anpassungen laufen als
+nachvollziehbare Text-Patches auf den erzeugten Kopien – diese Fixes hängen vom
+Zielformat ab (relative vs. absolute Asset-Pfade, Fragment vs. ganze Seite).
 
 Ausgabe
 -------
@@ -384,13 +387,39 @@ def patch_fragment(
 # Map-Engine: Performance-Patches
 # ---------------------------------------------------------------------------
 
+MAP_PERF_MARKER = "BV_MAP_PERF_APPLIED"
+MAP_PERF_MARKERS = (
+    "ME.bounds(map); return true;",
+    "window.BVMapPerf",
+    "bvPerf.skipped++",
+    "__bvMiniBg",
+    "mmPerf.minimapStatic++",
+    "el.style.getPropertyValue('--occ-z') !== z",
+    "const bvHasShadow =",
+)
+
+
 def patch_map_performance(html: str) -> str:
     """Gezielte, verifizierte Optimierungen an der Map-Engine.
 
-    Alle Anker müssen GENAU einmal vorkommen – ändert sich die Quelldatei,
-    bricht der Build laut ab statt stillschweigend einen wirkungslosen Patch
-    auszuliefern. Die Quelldatei selbst bleibt unverändert.
+    Die Patches liegen inzwischen direkt in der Original-Quelldatei
+    (``Gamecode-Bueroversum-7.5 (16).html``). Diese Funktion erkennt das am
+    Marker ``BV_MAP_PERF_APPLIED``, prüft die Vollständigkeit und lässt den
+    Quelltext dann unverändert durch.
+
+    Wird eine ältere/unveränderte Quelle gebaut, werden die Patches hier
+    weiterhin automatisch nachgezogen (idempotent, bricht bei unklaren
+    Ankern laut ab). Damit funktionieren beide Stände reproduzierbar.
     """
+    if MAP_PERF_MARKER in html:
+        missing = [m for m in MAP_PERF_MARKERS if m not in html]
+        gates = html.count("if (!document.body.classList.contains('rpg-active')) return;")
+        if missing or gates < 3:
+            raise SystemExit(
+                "FEHLER: Map-Perf-Marker vorhanden, aber Patches unvollständig: "
+                f"{missing}, rpg-active-Gates={gates}"
+            )
+        return html
 
     def swap(text: str, old: str, new: str, label: str) -> str:
         n = text.count(old)
@@ -412,7 +441,7 @@ def patch_map_performance(html: str) -> str:
         "BV3D.resizeToMap=(map)=>ME.render(map); BV3D.renderMap=(map)=>ME.render(map);",
         "BV3D.resizeToMap=(map)=>{ if(!map||!map.length||!ME.init()) return false; "
         "ME.bounds(map); return true; }; BV3D.renderMap=(map)=>ME.render(map); "
-        "/* PERF: nur drawMap() rendert; resizeToMap setzt ausschließlich Bounds. */",
+        "/* BV_MAP_PERF_APPLIED: nur drawMap() rendert; resizeToMap setzt ausschließlich Bounds. */",
         "doppelter Map-Render",
     )
 
@@ -426,7 +455,7 @@ def patch_map_performance(html: str) -> str:
         "            // Wenn SVG existiert und vom letzten Raster versteckt wurde, für das Original kurz wieder bereitstellen.\n"
         "            if (this.svg) {",
         "        ME.render = function patchedRasterRender(map) {\n"
-        "            /* PERF (Build-Patch): Bereits gerasterte Map nicht erneut parsen.\n"
+        "            /* PERF: Bereits gerasterte Map nicht erneut parsen.\n"
         "               Ohne diesen Guard kostet jeder Same-Map-Reload einen kompletten\n"
         "               SVG-DOM-Rebuild, der sofort wieder verworfen wird. */\n"
         "            var bvPerf = window.BVMapPerf || (window.BVMapPerf = {\n"
@@ -468,7 +497,7 @@ def patch_map_performance(html: str) -> str:
         "                            mctx.fillRect(x * scale, y * scale, scale, scale);\n"
         "                        }\n"
         "                    }",
-        "                    /* PERF (Build-Patch): statische Kacheln einmalig cachen. */\n"
+        "                    /* PERF: statische Kacheln einmalig cachen. */\n"
         "                    const mw = Math.max(1, Math.floor(mapCols * scale));\n"
         "                    const mh = Math.max(1, Math.floor(mapRows * scale));\n"
         "                    if (miniCanvas.width !== mw) miniCanvas.width = mw;\n"
@@ -846,7 +875,7 @@ def main() -> None:
         source_html, asset_prefix=SITE_BASE_URL, rename_css_vars=True,
         flyer_src_expr=flyer_expr(SITE_BASE_URL), stamp=stamp,
     )
-    log("Map-Engine: 9 Performance-Anker in beiden Fragmenten geprüft")
+    log("Map-Engine: Performance-Patches in beiden Fragmenten verifiziert")
 
     if PUBLIC.exists():
         shutil.rmtree(PUBLIC)

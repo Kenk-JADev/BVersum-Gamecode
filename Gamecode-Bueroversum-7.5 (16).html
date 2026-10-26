@@ -25917,18 +25917,33 @@
                     const mapRows = currentMap.length || 17;
                     const scale = Math.min(150 / mapCols, 100 / mapRows);
 
-                    miniCanvas.width = mapCols * scale;
-                    miniCanvas.height = mapRows * scale;
-
-                    for (let y = 0; y < mapRows; y++) {
-                        for (let x = 0; x < mapCols; x++) {
-                            const tile = currentMap[y] ? currentMap[y][x] : 0;
-                            const tileData = TILES[tile] || TILES[0];
-                            mctx.fillStyle = tileData.block ? "#333" : "#666";
-                            if (tileData.name?.includes("door")) mctx.fillStyle = "#cc0";
-                            mctx.fillRect(x * scale, y * scale, scale, scale);
+                    /* PERF: statische Kacheln einmalig cachen. */
+                    const mw = Math.max(1, Math.floor(mapCols * scale));
+                    const mh = Math.max(1, Math.floor(mapRows * scale));
+                    if (miniCanvas.width !== mw) miniCanvas.width = mw;
+                    if (miniCanvas.height !== mh) miniCanvas.height = mh;
+                    const mmPerf = window.BVMapPerf || (window.BVMapPerf = {
+                        renderCalls: 0, skipped: 0, minimapStatic: 0, minimapFrames: 0
+                    });
+                    mmPerf.minimapFrames++;
+                    let mmBg = window.__bvMiniBg;
+                    if (!mmBg || mmBg.ref !== currentMap || mmBg.w !== mw || mmBg.h !== mh) {
+                        const off = document.createElement('canvas');
+                        off.width = mw; off.height = mh;
+                        const bctx = off.getContext('2d');
+                        for (let y = 0; y < mapRows; y++) {
+                            for (let x = 0; x < mapCols; x++) {
+                                const tile = currentMap[y] ? currentMap[y][x] : 0;
+                                const tileData = TILES[tile] || TILES[0];
+                                bctx.fillStyle = tileData.block ? "#333" : "#666";
+                                if (tileData.name?.includes("door")) bctx.fillStyle = "#cc0";
+                                bctx.fillRect(x * scale, y * scale, scale, scale);
+                            }
                         }
+                        mmBg = window.__bvMiniBg = { ref: currentMap, w: mw, h: mh, canvas: off };
+                        mmPerf.minimapStatic++;
                     }
+                    mctx.drawImage(mmBg.canvas, 0, 0);
 
                     npcs.forEach(npc => {
                         if (npc.type === "enemy") mctx.fillStyle = "#f44";
@@ -29138,7 +29153,9 @@
                         el.style.top = pos.y + "px";
                         el.style.zIndex = pos.zIndex;
                         if (transition) el.style.transition = transition;
-                        if (!el.querySelector('.bv-25d-shadow') && ["player", "npc", "enemy", "chest", "egg"].includes(kind)) {
+                        const bvFirst = el.firstElementChild;
+                        const bvHasShadow = !!(bvFirst && bvFirst.classList && bvFirst.classList.contains('bv-25d-shadow'));
+                        if (!bvHasShadow && !el.querySelector('.bv-25d-shadow') && ["player", "npc", "enemy", "chest", "egg"].includes(kind)) {
                             el.insertAdjacentHTML('afterbegin', '<div class="bv-25d-shadow"></div>');
                         }
                     } else {
@@ -29683,7 +29700,7 @@
                             this.cache.set(key,svg.innerHTML); if(this.cache.size>6)this.cache.delete(this.cache.keys().next().value); return true;
                         }
                     };
-                    BV3D.enabled=true; BV3D.canvas={}; BV3D.project=(x,y,z=0)=>ME.project(x,y,z); BV3D.resizeToMap=(map)=>ME.render(map); BV3D.renderMap=(map)=>ME.render(map); BV3D.tileMeta=(tile)=>ME.meta(tile); BV3D.depthZ=(x,y,extra=0)=>getMapDepth(x,y,'ground',extra); window.MapEngineV6=ME;
+                    BV3D.enabled=true; BV3D.canvas={}; BV3D.project=(x,y,z=0)=>ME.project(x,y,z); BV3D.resizeToMap=(map)=>{ if(!map||!map.length||!ME.init()) return false; ME.bounds(map); return true; }; BV3D.renderMap=(map)=>ME.render(map); /* BV_MAP_PERF_APPLIED: nur drawMap() rendert; resizeToMap setzt ausschließlich Bounds. */ BV3D.tileMeta=(tile)=>ME.meta(tile); BV3D.depthZ=(x,y,extra=0)=>getMapDepth(x,y,'ground',extra); window.MapEngineV6=ME;
                 }
                 installMapEngineV600();
                 function checkNearbyNPC() {
@@ -48363,6 +48380,22 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         var lastKey = '';
 
         ME.render = function patchedRasterRender(map) {
+            /* PERF: Bereits gerasterte Map nicht erneut parsen.
+               Ohne diesen Guard kostet jeder Same-Map-Reload einen kompletten
+               SVG-DOM-Rebuild, der sofort wieder verworfen wird. */
+            var bvPerf = window.BVMapPerf || (window.BVMapPerf = {
+                renderCalls: 0, skipped: 0, minimapStatic: 0, minimapFrames: 0
+            });
+            bvPerf.renderCalls++;
+            var cam0 = document.getElementById('rpg-camera');
+            var img0 = document.getElementById('map-engine-v6-raster-img');
+            if (lastKey === mapKey(map) && img0 && img0.getAttribute('src') &&
+                cam0 && cam0.classList.contains('map-engine-rasterized') && this.svg) {
+                this.bounds(map);
+                bvPerf.skipped++;
+                return true;
+            }
+
             // Wenn SVG existiert und vom letzten Raster versteckt wurde, für das Original kurz wieder bereitstellen.
             if (this.svg) {
                 this.svg.classList.remove('bv-raster-hidden');
@@ -48518,7 +48551,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
 (function () {
     function mirrorOccluderZIndex() {
         document.querySelectorAll('#rpg-occlusion-layer .bv-occluder').forEach(function (el) {
-            if (el.style && el.style.zIndex) el.style.setProperty('--occ-z', el.style.zIndex);
+            if (el.style && el.style.zIndex) {
+                var z = el.style.zIndex;
+                if (el.style.getPropertyValue('--occ-z') !== z) el.style.setProperty('--occ-z', z);
+            }
         });
     }
 
@@ -51597,9 +51633,13 @@ body.bv-low-end .bv-daily-deal-banner::after { display: none !important; }
     }
 
     function initRealCutscenes() {
-        setInterval(maybePatrickWelcome, 350);
-        setInterval(maybePausenraumIntro, 450);
-        setInterval(maybeGeneralMapIntros, 500);
+        /* PERF: 3 Poller -> 1; inaktiv, solange das Overlay zu ist. */
+        setInterval(function () {
+            if (!document.body.classList.contains('rpg-active')) return;
+            maybePatrickWelcome();
+            maybePausenraumIntro();
+            maybeGeneralMapIntros();
+        }, 500);
         window.BVRealCutscenes = { play, next, end, skip: () => forceEndCutscene('api'), isPlaying: () => playing, isTyping: () => isTyping, moveEntity };
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRealCutscenes, { once:true }); else initRealCutscenes();
@@ -52343,7 +52383,10 @@ body.bv-settings-lowspec * {
     window.BVRecoverParticles = recoverParticles;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(recoverParticles, 120), { once:true });
     else setTimeout(recoverParticles, 120);
-    setInterval(recoverParticles, 1800);
+    setInterval(function () {
+        if (!document.body.classList.contains('rpg-active')) return;
+        recoverParticles();
+    }, 1800);
 })();
 </script>
 
@@ -52847,7 +52890,10 @@ body.bv-settings-particles-off .title-canvas-bg {
     window.BVRenderTitleSettingsLikeMain = renderTitleSettingsLikeMain;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { wrapSettings(); installOverride(); }, { once:true });
     else { wrapSettings(); installOverride(); }
-    setInterval(() => { wrapSettings(); syncParticleVisibility(); }, 1200);
+    setInterval(() => {
+        if (!document.body.classList.contains('rpg-active')) return;
+        wrapSettings(); syncParticleVisibility();
+    }, 1200);
 })();
 </script>
 

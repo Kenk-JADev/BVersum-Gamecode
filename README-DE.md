@@ -56,11 +56,12 @@ Schritt-für-Schritt-Anleitung inkl. Troubleshooting:
 
 ```
 BVersum-Gamecode/
-├── Gamecode-Bueroversum-7.5 (16).html   # QUELLE – die Spiel-Datei (unverändert!)
+├── Gamecode-Bueroversum-7.5 (16).html   # QUELLE – Spiel-Datei, enthält die Map-Engine-Optimierungen
 ├── tools/build.py                       # erzeugt public/ + smartstore/generated/
 ├── tools/test_build.py                  # Regressionstests (keine Deps, optional Node)
 ├── tools/smoke_test.js                  # Laufzeit-Test mit jsdom (optional)
 ├── tools/perf_test.js                   # Map-Engine Perf-Test mit jsdom
+├── .gitattributes                       # CRLF der Quelle für Git korrekt behandeln
 ├── smartstore/                          # Smartstore-Snippets + Anleitung
 ├── public/                              # Build-Ausgabe (GitHub Pages, gitignored)
 └── .github/workflows/deploy.yml         # Test + Build + Deploy-Pipeline
@@ -94,8 +95,16 @@ NODE_PATH=/tmp/bv-smoke/node_modules node tools/perf_test.js
 
 ## 🗺️ Map-Engine: Performance
 
-Der Build patcht die Engine an neun exakt geprüften Stellen (Quelldatei bleibt
-unangetastet). Gemessen mit jsdom beim Laden von `buero` (35 × 22 = 770 Tiles):
+Die Optimierungen stehen **direkt in der Original-Spielcodedatei**
+`Gamecode-Bueroversum-7.5 (16).html` – an acht exakt geprüften Stellen. Wer die
+HTML-Datei ohne Build weiterverwendet, hat die Verbesserungen also ebenfalls.
+`tools/build.py` erkennt den Marker `BV_MAP_PERF_APPLIED`, prüft die
+Vollständigkeit und zieht die Patches bei einer älteren Quelldatei weiterhin
+automatisch nach (idempotent, bricht bei unklaren Ankern ab). Die übrigen
+Build-Fixes bleiben bewusst im Build, weil sie vom Zielformat abhängen
+(relative vs. absolute Asset-Pfade, Fragment vs. vollständige Seite).
+
+Gemessen mit jsdom beim Laden von `buero` (35 × 22 = 770 Tiles):
 
 | Maßnahme | Vorher | Nachher |
 |---|---|---|
@@ -157,7 +166,7 @@ erreichbar). Ohne Datei wird die Remote-Quelle `webshops.zuef.de` genutzt –
 protokoll-passend, mit 5-Sekunden-Timeout und einem gestalteten
 „Klick hier und starte das Spiel"-Fallback, falls das Bild nicht erreichbar ist.
 
-### Was der Build anpasst (Quell-Datei bleibt unangetastet)
+### Was der Build zusätzlich anpasst (formatabhängige Fixes)
 
 | Patch | Warum |
 |---|---|
@@ -168,7 +177,7 @@ protokoll-passend, mit 5-Sekunden-Timeout und einem gestalteten
 | CSS-Variablen `--bv-*` (Smartstore-Variante) | Shop-Theme wird nicht überschrieben |
 | Loader führt Scripts strikt sequenziell aus | Twemoji ist geladen, bevor die Spiel-Scripts starten; 4-s-Notfall-Timeout |
 | Build-Stempel = Datum + SHA-256-Hash der Quelle | Shop und Website lassen sich wirklich auf denselben Code-Stand prüfen |
-| Map-Engine-Patches (9 Anker) | ein Render pro Map-Ladevorgang, Raster-/Minimap-Caches, Hintergrund-Poller nur bei offenem Spiel – siehe Abschnitt „Map-Engine: Performance" |
+| Map-Engine-Patches: 8 Anker, verifiziert statt blind ersetzt | ein Render pro Map-Ladevorgang, Raster-/Minimap-Caches, Hintergrund-Poller nur bei offenem Spiel – siehe Abschnitt „Map-Engine: Performance" |
 
 ---
 

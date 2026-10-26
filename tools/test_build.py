@@ -303,6 +303,50 @@ class MapEnginePerformance(unittest.TestCase):
             "Mindestens 3 Poller müssen auf 'Spiel offen' geprüft werden",
         )
 
+    def test_optimierungen_stehen_in_der_quelldatei(self) -> None:
+        """Die Original-HTML muss die Patches selbst enthalten (nicht nur der Build)."""
+        source = SOURCE.read_text(encoding="utf-8")
+        self.assertIn(build.MAP_PERF_MARKER, source, "Quelldatei ist nicht gepatcht")
+        for marker in build.MAP_PERF_MARKERS:
+            self.assertIn(marker, source, f"Quelldatei: Marker fehlt: {marker}")
+        self.assertGreaterEqual(
+            source.count("if (!document.body.classList.contains('rpg-active')) return;"),
+            3,
+        )
+        # Zeilenenden dürfen beim Patch nicht umgestellt worden sein.
+        raw = SOURCE.read_bytes()
+        self.assertEqual(raw.count(b"\n"), raw.count(b"\r\n"), "Quelle muss durchgängig CRLF bleiben")
+
+    def test_build_bleibt_idempotent_und_kann_alte_quelle_patchen(self) -> None:
+        """Fallback: eine unveränderte Quelle wird weiterhin automatisch gepatcht.
+
+        Die Anker werden per AST aus build.py gelesen, damit der Test nicht
+        kopierte Literale pflegen muss, die bei einer Quelländerung veralten.
+        """
+        import ast
+        tree = ast.parse((TOOLS / "build.py").read_text(encoding="utf-8"))
+        fn = next(n for n in tree.body
+                  if isinstance(n, ast.FunctionDef) and n.name == "patch_map_performance")
+        anchors = []
+        for node in ast.walk(fn):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                    and node.func.id == "swap" and len(node.args) >= 3):
+                old = node.args[1]
+                if isinstance(old, ast.Constant) and isinstance(old.value, str):
+                    anchors.append(old.value)
+        self.assertEqual(len(anchors), 8, "Erwartet: 8 exakt geprüfte Patch-Anker")
+
+        unpatched = "\n".join(anchors)
+        patched = build.patch_map_performance(unpatched)
+        self.assertIn(build.MAP_PERF_MARKER, patched)
+        for marker in build.MAP_PERF_MARKERS:
+            self.assertIn(marker, patched, f"Fallback: Marker fehlt: {marker}")
+        # Zweiter Durchlauf darf nichts doppelt anwenden.
+        self.assertEqual(build.patch_map_performance(patched), patched)
+
+        with self.assertRaises(SystemExit):
+            build.patch_map_performance("defekte Quelle ohne Anker")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
