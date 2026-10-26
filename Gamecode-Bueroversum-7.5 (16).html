@@ -19977,19 +19977,59 @@
             100% { opacity: 0; }
         }
         /* ============================================================
-           PATCH N: Thematische Map-Effekte (alle 10 Maps)
-           Layer: ::before + ::after von #rpg-game-window, z 6-7 (unter HUD z60)
+           v5.5 – THEMATISCHE MAP-EFFEKTE (alle 10 Maps)
+           Vorher: zwei vollflächige Ebenen, deren `background-position`
+           per @keyframes an die CSS-Variablen --cam-x/--cam-y gekoppelt
+           war. Jede Kamera-Bewegung (30x/Sekunde) erzwang damit ein
+           komplettes Neuzeichnen + Neublenden zweier Fenster-großer
+           Layer mit mix-blend-mode.
+           Jetzt: die Muster sind statisch, die Bewegung kommt über
+           `transform: translate3d(...)` (GPU, kein Repaint). Die Ebenen
+           sind überdimensioniert, damit beim Verschieben keine Kante
+           aufreißt.
+           Stufen: high = Blend-Modi + Parallax, balanced = ohne Blend,
+           low = statisch, ohne Blend, ohne Animation.
            ============================================================ */
         #rpg-game-window[class*="fx-"]::before,
         #rpg-game-window[class*="fx-"]::after {
             content: "";
             position: absolute;
-            inset: 0;
+            inset: -30%;
             pointer-events: none;
             z-index: 7;
             background-repeat: repeat;
+            animation: none;
         }
-        #rpg-game-window[class*="fx-"]::before { z-index: 6; }
+        #rpg-game-window[class*="fx-"]::before {
+            z-index: 6;
+            transform: translate3d(0, 0, 0);          /* Licht/Vignette: steht still */
+        }
+        /* Staub-/Partikelebene: folgt der Kamera als Composited-Layer */
+        #rpg-game-window[class*="fx-"]::after {
+            transform: translate3d(var(--cam-x, 0px), var(--cam-y, 0px), 0);
+            will-change: transform;
+        }
+
+        /* ---------- Stufe balanced / low: keine Blend-Modi ----------
+           mix-blend-mode auf Fenster-großen Ebenen zwingt die GPU zum
+           Zurücklesen des Hintergrunds – auf schwachen Geräten der
+           teuerste Teil. Ohne Blend sieht es fast gleich aus. */
+        #rpg-game-window.bv-fx-tier-balanced[class*="fx-"]::before,
+        #rpg-game-window.bv-fx-tier-balanced[class*="fx-"]::after,
+        #rpg-game-window.bv-fx-tier-low[class*="fx-"]::before,
+        #rpg-game-window.bv-fx-tier-low[class*="fx-"]::after {
+            mix-blend-mode: normal !important;
+        }
+        /* ---------- Stufe low: statisch, keine Parallax-Schreibzugriffe ---------- */
+        #rpg-game-window.bv-fx-tier-low[class*="fx-"]::after {
+            transform: none !important;
+            will-change: auto;
+            opacity: .32;
+        }
+        #rpg-game-window.bv-fx-tier-low[class*="fx-"]::before {
+            opacity: .35 !important;
+            animation: none !important;
+        }
 
         /* ---------- BUERO: God-Rays + feiner Staub ---------- */
         #rpg-game-window.fx-buero::after {
@@ -19997,87 +20037,75 @@
                 repeating-linear-gradient(108deg, transparent 0 7%, rgba(255,248,214,0.10) 11%, transparent 15%),
                 radial-gradient(circle, rgba(255,255,255,0.30) 0 1px, transparent 1.6px);
             background-size: auto, 130px 130px;
-            background-position: var(--cam-x-windows) var(--cam-y-windows), var(--cam-x) var(--cam-y);
             mix-blend-mode: soft-light;
             opacity: 0.5;
-            animation: particleMove1 60s linear infinite;
         }
         #rpg-game-window.fx-buero::before {
             background: radial-gradient(circle at 60% 12%, rgba(255,250,220,0.16), transparent 55%);
             opacity: 0.8;
         }
 
-        /* ---------- FLUR: schwebende Staubpartikel (2 Lagen) ---------- */
+        /* ---------- FLUR: schwebender Staub (zwei Tiefen) ---------- */
         #rpg-game-window.fx-flur::after {
             background: radial-gradient(circle, rgba(255,255,255,0.45) 0 1px, transparent 1.6px);
             background-size: 120px 120px;
-            background-position: var(--cam-x) var(--cam-y);
             mix-blend-mode: screen; opacity: 0.5;
-            animation: particleMove1 40s linear infinite;
         }
         #rpg-game-window.fx-flur::before {
             background: radial-gradient(circle, rgba(210,225,255,0.30) 0 1px, transparent 1.4px);
             background-size: 80px 80px;
-            background-position: calc(var(--cam-x) * 1.3) calc(var(--cam-y) * 1.3);
             mix-blend-mode: screen; opacity: 0.45;
-            animation: particleMove2 55s linear infinite;
         }
 
-        /* ---------- ZENTRALE: kuehles Fensterlicht + Glanz ---------- */
+        /* ---------- ZENTRALE: kühles Fensterlicht + Glanz ---------- */
         #rpg-game-window.fx-zentrale::after {
             background:
                 repeating-linear-gradient(100deg, transparent 0 6%, rgba(200,225,255,0.10) 10%, transparent 14%),
                 radial-gradient(circle, rgba(220,235,255,0.28) 0 1px, transparent 1.6px);
             background-size: auto, 140px 140px;
-            background-position: var(--cam-x-windows) var(--cam-y-windows), var(--cam-x) var(--cam-y);
             mix-blend-mode: soft-light; opacity: 0.5;
-            animation: particleMove1 65s linear infinite;
         }
         #rpg-game-window.fx-zentrale::before {
             background: radial-gradient(circle at 50% 8%, rgba(150,200,255,0.14), transparent 55%);
             opacity: 0.8;
         }
 
-        /* ---------- SERVERRAUM: kaltes Neon-Flackern + Daten ---------- */
+        /* ---------- SERVERRAUM: kaltes Neon + Datenregen ---------- */
         #rpg-game-window.fx-serverraum::after {
             background:
                 radial-gradient(circle, rgba(120,255,200,0.45) 0 1px, transparent 1.6px),
                 radial-gradient(circle, rgba(90,200,255,0.35) 0 1px, transparent 1.4px);
             background-size: 90px 160px, 150px 110px;
-            background-position: var(--cam-x) var(--cam-y), calc(var(--cam-x) * 1.4) calc(var(--cam-y) * 1.4);
             mix-blend-mode: screen; opacity: 0.55;
-            animation: fxDataFall 3.5s linear infinite;
         }
         #rpg-game-window.fx-serverraum::before {
             background:
                 linear-gradient(180deg, rgba(20,60,80,0.12), transparent 40%),
                 radial-gradient(circle at 30% 50%, rgba(80,255,210,0.10), transparent 45%);
             opacity: 0.9;
+        }
+        #rpg-game-window.bv-fx-tier-high.fx-serverraum::before {
             animation: fxNeonFlicker 4s steps(8) infinite;
         }
 
-        /* ---------- KANTINE: warmes Licht + aufsteigender Dampf ---------- */
+        /* ---------- KANTINE: warmes Licht + Dampf ---------- */
         #rpg-game-window.fx-kantine::after {
             background:
                 radial-gradient(ellipse 60% 40% at 50% 95%, rgba(255,240,210,0.16), transparent 70%),
                 radial-gradient(circle, rgba(255,235,200,0.30) 0 2px, transparent 3px);
             background-size: auto, 200px 220px;
-            background-position: center bottom, var(--cam-x) var(--cam-y);
             mix-blend-mode: screen; opacity: 0.5;
-            animation: fxSteamRise 8s ease-in-out infinite;
         }
         #rpg-game-window.fx-kantine::before {
             background: radial-gradient(circle at 50% 10%, rgba(255,228,180,0.16), transparent 55%);
             opacity: 0.8;
         }
 
-        /* ---------- LAGER: dunkler Staub + Lichtkegel von oben ---------- */
+        /* ---------- LAGER: dunkler Staub + Lichtkegel ---------- */
         #rpg-game-window.fx-lager::after {
             background: radial-gradient(circle, rgba(220,205,180,0.35) 0 1px, transparent 1.6px);
             background-size: 110px 110px;
-            background-position: var(--cam-x) var(--cam-y);
             mix-blend-mode: screen; opacity: 0.45;
-            animation: particleMove2 50s linear infinite;
         }
         #rpg-game-window.fx-lager::before {
             background:
@@ -20086,138 +20114,141 @@
             mix-blend-mode: multiply; opacity: 0.85;
         }
 
-        /* ---------- KONFERENZ: sanftes lila Ambient-Glow + Staub ---------- */
+        /* ---------- KONFERENZ: lila Ambient-Glow + Staub ---------- */
         #rpg-game-window.fx-konferenz::after {
             background: radial-gradient(circle, rgba(225,215,255,0.30) 0 1px, transparent 1.6px);
             background-size: 130px 130px;
-            background-position: var(--cam-x) var(--cam-y);
             mix-blend-mode: screen; opacity: 0.45;
-            animation: particleMove1 58s linear infinite;
         }
         #rpg-game-window.fx-konferenz::before {
-            background:
-                radial-gradient(ellipse 70% 50% at 50% 45%, rgba(150,120,220,0.12), transparent 70%);
+            background: radial-gradient(ellipse 70% 50% at 50% 45%, rgba(150,120,220,0.12), transparent 70%);
             mix-blend-mode: soft-light; opacity: 0.9;
+        }
+        #rpg-game-window.bv-fx-tier-high.fx-konferenz::before {
             animation: fxGlowPulse 7s ease-in-out infinite;
         }
 
-        /* ---------- BOSS: roetliche Vignette + Spotlight ---------- */
+        /* ---------- BOSS: rote Vignette + Spotlight (ohne blur-Filter) ---------- */
         #rpg-game-window.fx-boss::after {
             background: radial-gradient(circle at 50% 52%, transparent 28%, rgba(40,0,8,0.55) 78%, rgba(20,0,4,0.92) 100%);
             mix-blend-mode: multiply; opacity: 0.85; z-index: 6;
         }
         #rpg-game-window.fx-boss::before {
-            background: radial-gradient(ellipse 22% 30% at 50% 30%, rgba(255,210,170,0.16), transparent 70%);
-            filter: blur(16px); z-index: 6;
+            /* früher filter: blur(16px) – jetzt reiner Gradient (kein Filter-Layer) */
+            background: radial-gradient(ellipse 26% 34% at 50% 30%,
+                rgba(255,210,170,0.18), rgba(255,150,110,0.06) 46%, transparent 72%);
+            z-index: 6;
+        }
+        #rpg-game-window.bv-fx-tier-high.fx-boss::before {
             animation: lightPulse 5s ease-in-out infinite;
         }
 
-        /* ---------- ARCHIV: schwebender Papier-/Aktenstaub ---------- */
+        /* ---------- ARCHIV: schwebender Papierstaub ---------- */
         #rpg-game-window.fx-archiv::after {
             background:
                 radial-gradient(circle, rgba(235,225,200,0.40) 0 1px, transparent 1.8px),
                 radial-gradient(circle, rgba(210,195,160,0.25) 0 1px, transparent 1.4px);
             background-size: 140px 150px, 95px 100px;
-            background-position: var(--cam-x) var(--cam-y), calc(var(--cam-x)*1.2) calc(var(--cam-y)*1.2);
             mix-blend-mode: screen; opacity: 0.5;
-            animation: fxPaperDrift 12s linear infinite;
         }
         #rpg-game-window.fx-archiv::before {
             background: radial-gradient(circle at 50% 12%, rgba(255,240,205,0.12), transparent 55%);
             opacity: 0.8;
         }
 
-        /* ---------- DACH: Himmelschein + Sonnenlicht + Wolkenschimmer ---------- */
+        /* ---------- DACH: Himmelslicht + Sonnenschein ---------- */
         #rpg-game-window.fx-dach::after {
             background:
                 repeating-linear-gradient(115deg, transparent 0 9%, rgba(255,250,225,0.12) 13%, transparent 18%),
                 radial-gradient(circle, rgba(255,255,255,0.30) 0 1px, transparent 1.6px);
             background-size: auto, 150px 150px;
-            background-position: var(--cam-x-windows) var(--cam-y-windows), var(--cam-x) var(--cam-y);
             mix-blend-mode: soft-light; opacity: 0.55;
-            animation: lightRayMove 30s linear infinite;
         }
         #rpg-game-window.fx-dach::before {
             background:
                 radial-gradient(ellipse 40% 28% at 78% 8%, rgba(255,244,200,0.30), transparent 70%),
                 linear-gradient(180deg, rgba(150,200,255,0.14), transparent 45%);
             opacity: 0.85;
+        }
+        #rpg-game-window.bv-fx-tier-high.fx-dach::before {
             animation: fxGlowPulse 9s ease-in-out infinite;
         }
 
-        /* ---------- gemeinsame Keyframes (PATCH N) ---------- */
-        @keyframes fxDataFall {
-            0% { background-position: var(--cam-x) calc(var(--cam-y) - 0px), calc(var(--cam-x)*1.4) calc(var(--cam-y)*1.4 - 0px); }
-            100% { background-position: var(--cam-x) calc(var(--cam-y) + 160px), calc(var(--cam-x)*1.4) calc(var(--cam-y)*1.4 + 110px); }
-        }
+        /* ---------- gemeinsame Keyframes ---------- */
         @keyframes fxNeonFlicker {
             0%,100% { opacity: 0.9; } 12% { opacity: 0.6; } 18% { opacity: 0.95; }
             45% { opacity: 0.7; } 50% { opacity: 1; } 70% { opacity: 0.78; } 88% { opacity: 0.92; }
         }
-        @keyframes fxSteamRise {
-            0% { transform: translateY(8px); opacity: 0.32; }
-            50% { transform: translateY(-6px); opacity: 0.55; }
-            100% { transform: translateY(8px); opacity: 0.32; }
-        }
         @keyframes fxGlowPulse {
             0%,100% { opacity: 0.7; } 50% { opacity: 1; }
         }
-        @keyframes fxPaperDrift {
-            0% { background-position: var(--cam-x) var(--cam-y), calc(var(--cam-x)*1.2) calc(var(--cam-y)*1.2); }
-            100% { background-position: calc(var(--cam-x) + 60px) calc(var(--cam-y) + 90px), calc(var(--cam-x)*1.2 - 40px) calc(var(--cam-y)*1.2 + 70px); }
+
+        /* Alte, doppelte Effekt-Ebenen (wurden nach Kämpfen zusätzlich zu
+           den fx-*-Ebenen gesetzt) sind jetzt wirkungslos: die fx-*-Ebene
+           deckt dieselbe Optik ab – vorher liefen bis zu vier vollflächige
+           Blend-Ebenen gleichzeitig. */
+        #rpg-game-window.effect-particles::before,
+        #rpg-game-window.effect-particles::after,
+        #rpg-game-window.effect-windows::after {
+            content: none !important;
+            animation: none !important;
         }
-        /* Low-Quality: Effekte abschalten */
-        #rpg-game-window.map-low-quality[class*="fx-"]::before,
-        #rpg-game-window.map-low-quality[class*="fx-"]::after { display: none !important; }
+
         /* ============================================================
-           PATCH O: JS-Partikel-System (viele Partikel pro Map)
+           v5.5 – MAP-PARTIKEL (JS) – eine Animation pro Partikel
+           Kein will-change pro Partikel, kein animierter filter,
+           kein box-shadow mehr.
            ============================================================ */
         #rpg-fx-particles {
             position: absolute;
             inset: 0;
             overflow: hidden;
             pointer-events: none;
-            z-index: 8; /* ueber Map-Effekten (6-7), UNTER HUD (60) */
+            z-index: 8; /* über Map-Effekten (6-7), UNTER HUD (60) */
+            contain: layout paint;
         }
         #rpg-fx-particles .fxp {
             position: absolute;
             top: 0; left: 0;
             border-radius: 50%;
             pointer-events: none;
-            will-change: transform, opacity;
+            /* bewusst KEIN will-change: 50–90 eigene Layer waren der
+               Hauptgrund für ruckelige Kamerafahrten */
+            will-change: auto;
         }
-        /* Typ: Staub (schwebt langsam) */
+        /* Staub (schwebt langsam) */
         #rpg-fx-particles .fxp.dust {
-            background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0));
             animation: fxpFloat var(--dur,14s) ease-in-out var(--delay,0s) infinite;
         }
-        /* Typ: Funken/Glanz (pulsiert) */
+        /* Funken/Glanz (pulsiert über Größe statt filter) */
         #rpg-fx-particles .fxp.spark {
-            box-shadow: 0 0 6px 1px currentColor;
-            /* PATCH R: Twinkle via brightness (filter) statt opacity -> kein Konflikt mit fxpFloat-Fade */
-            animation: fxpFloat var(--dur,12s) linear var(--delay,0s) infinite, fxpSparkle var(--tw,2.4s) ease-in-out var(--delay,0s) infinite;
+            background: radial-gradient(circle, #ffffff 0 34%, currentColor 58%, transparent 100%);
+            animation: fxpFloat var(--dur,12s) linear var(--delay,0s) infinite;
         }
-        /* Typ: Daten (faellt nach unten) */
+        /* Datenregen */
         #rpg-fx-particles .fxp.data {
             border-radius: 1px;
-            /* PATCH R: data Glitzern via brightness statt opacity (Konflikt mit fxpFall-Fade vermeiden) */
-            animation: fxpFall var(--dur,5s) linear var(--delay,0s) infinite, fxpSparkle var(--tw,1.6s) steps(2) infinite;
+            animation: fxpFall var(--dur,5s) linear var(--delay,0s) infinite;
         }
-        /* Typ: Dampf/Rauch (steigt auf, wird groesser) */
+        /* Dampf (steigt auf) */
         #rpg-fx-particles .fxp.steam {
-            background: radial-gradient(circle, rgba(255,255,255,0.5), rgba(255,255,255,0));
             animation: fxpRise var(--dur,7s) ease-out var(--delay,0s) infinite;
         }
-        /* Typ: Papier (driftet seitlich + rotiert) */
+        /* Papier (driftet seitlich) */
         #rpg-fx-particles .fxp.paper {
             border-radius: 1px;
             animation: fxpDrift var(--dur,11s) linear var(--delay,0s) infinite;
         }
-        /* Typ: Blatt/Pollen (Dach, weite Schwebebahn) */
+        /* Pollen (weite Schwebebahn) */
         #rpg-fx-particles .fxp.pollen {
-            background: radial-gradient(circle, rgba(255,250,210,0.95), rgba(255,250,210,0));
             animation: fxpDriftWide var(--dur,16s) ease-in-out var(--delay,0s) infinite;
         }
+        /* Low-Spec: statische Lichtpunkte – Atmosphäre ohne Animationskosten */
+        #rpg-fx-particles .fxp.idle {
+            border-radius: 50%;
+            animation: none;
+        }
+
         @keyframes fxpFloat {
             0%   { transform: translate(0,0); opacity: 0; }
             10%  { opacity: var(--op,0.7); }
@@ -20225,9 +20256,6 @@
             90%  { opacity: var(--op,0.7); }
             100% { transform: translate(calc(var(--dx,12px) * -0.6), calc(var(--dy,-18px) * 1.6)); opacity: 0; }
         }
-        @keyframes fxpTwinkle { 0%,100% { opacity: var(--op,0.7); } 50% { opacity: 0.15; } }
-        /* PATCH R: Glitzern via Helligkeit (kollidiert NICHT mit opacity-Fade) */
-        @keyframes fxpSparkle { 0%,100% { filter: brightness(1); } 50% { filter: brightness(2.1) drop-shadow(0 0 4px currentColor); } }
         @keyframes fxpFall {
             0%   { transform: translateY(-20px); opacity: 0; }
             8%   { opacity: var(--op,0.85); }
@@ -20251,16 +20279,26 @@
             88%  { opacity: var(--op,0.7); }
             100% { transform: translate(calc(var(--dx,60px) * 1.8), var(--dy2,40px)); opacity: 0; }
         }
-        /* PATCH P: Tiefen-Layer fuer Kamera-Parallax (PATCH Q: + Fade) */
+
+        /* Parallax-Sammerebenen (nur die zwei Layer tragen will-change) */
         #rpg-fx-particles .fx-depth {
             position: absolute; inset: -8%; pointer-events: none;
-            will-change: transform, opacity;
-            transition: transform 0.12s linear, opacity 0.6s ease;
+            will-change: transform;
+            transition: transform 0.12s linear, opacity 0.5s ease;
             opacity: 1;
         }
         #rpg-fx-particles .fx-depth.fx-fading-in { opacity: 0; }
         #rpg-fx-particles .fx-depth.fx-fading-out { opacity: 0 !important; }
-        #rpg-game-window.map-low-quality #rpg-fx-particles { display: none !important; }
+        #rpg-fx-particles .fx-depth.fx-flat { will-change: auto; transition: none; }
+
+        /* Low-Spec behält Partikel – sichtbar, aber statisch und billig */
+        #rpg-game-window.map-low-quality #rpg-fx-particles,
+        body.bv-settings-lowspec #rpg-fx-particles,
+        body.bv-settings-performance #rpg-fx-particles {
+            display: block !important;
+            visibility: visible !important;
+        }
+
         /* ============================================================
            PATCH T: Titelmenue-Redesign (Modern Neon/Glas, blau)
            ============================================================ */
@@ -22566,6 +22604,16 @@
                     };
                 })();
 
+                // v5.5: Parallax nur bei ausreichender Stufe (kein TDZ: greift
+                // auf window-Refs + Klassen zu, nicht auf spaetere let-Variablen).
+                function bvFxParallaxOn() {
+                    const gw = document.getElementById("rpg-game-window");
+                    if (!gw) return false;
+                    if (gw.classList.contains("bv-fx-tier-low")) return false;
+                    if (gw.classList.contains("map-low-quality")) return false;
+                    return !!(window.__bvFxNear || window.__bvFxFar);
+                }
+
                 // ===== CAMERA SYSTEM =====
                 let cameraX = 0, cameraY = 0;
                 let targetCameraX = 0, targetCameraY = 0;
@@ -22708,10 +22756,12 @@
                         lastCameraCssY = ry;
                     }
 
-                    // Map-FX-Parallax nur bei Bewegung updaten.
-                    if (!isLowSpecMap()) {
-                        if (fxLayerNear) fxLayerNear.style.transform = `translate3d(${(-rx * 0.45).toFixed(1)}px, ${(-ry * 0.45).toFixed(1)}px, 0)`;
-                        if (fxLayerFar)  fxLayerFar.style.transform  = `translate3d(${(-rx * 0.22).toFixed(1)}px, ${(-ry * 0.22).toFixed(1)}px, 0)`;
+                    // v5.5: Parallax nur auf den beiden Sammerebenen – und nur,
+                    // wenn die Qualitätsstufe es zulässt (low = keine Schreibzugriffe).
+                    if (bvFxParallaxOn()) {
+                        const nearL = window.__bvFxNear, farL = window.__bvFxFar;
+                        if (nearL) nearL.style.transform = `translate3d(${(-rx * 0.45).toFixed(1)}px, ${(-ry * 0.45).toFixed(1)}px, 0)`;
+                        if (farL)  farL.style.transform  = `translate3d(${(-rx * 0.22).toFixed(1)}px, ${(-ry * 0.22).toFixed(1)}px, 0)`;
                     }
                 }
 
@@ -25406,50 +25456,113 @@
                     return { svg: `<svg width="${w.toFixed(0)}" height="${hh.toFixed(0)}" viewBox="0 0 ${w.toFixed(1)} ${hh.toFixed(1)}" style="position:absolute;left:0;top:0;overflow:visible;pointer-events:none;display:block;" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`,
                              ax: minX - pad, ay: minY - pad };
                 }
-                // PATCH O: JS-Partikel-System - viele Partikel je nach Map-Thema
-                let fxLayerNear = null, fxLayerFar = null; // PATCH P: Parallax-Layer-Refs
+                // ============================================================
+                // v5.5 – MAP-PARTIKEL MIT QUALITÄTS-STUFEN
+                // Bisher: 48–95 DOM-Partikel, JEDES mit eigenem
+                //   will-change (=> eigener Compositing-Layer) und bei
+                //   Funken/Daten zusätzlich eine animierte filter-Kette
+                //   (brightness + drop-shadow) + box-shadow.
+                // Das war der teuerste Posten der Map.
+                // Jetzt: eine Stufe pro Gerät/Settings (high/balanced/low),
+                //   genau EINE Animation pro Partikel (transform/opacity),
+                //   Glow statisch per Gradient, kein will-change pro Partikel,
+                //   Parallax nur auf den beiden Sammlerebenen.
+                // Low-Spec bekommt weiterhin Atmosphäre (statische Punkte),
+                //   aber ohne Animation und ohne Filter.
+                // ============================================================
+                let fxLayerNear = null, fxLayerFar = null; // Parallax-Sammerebenen
+                let bvFxFadeTimers = [];
+
+                function bvFxFadeOutOld(host) {
+                    bvFxFadeTimers.forEach(t => clearTimeout(t));
+                    bvFxFadeTimers = [];
+                    Array.from(host.children).forEach(old => {
+                        old.classList.add("fx-fading-out");
+                        bvFxFadeTimers.push(setTimeout(() => {
+                            if (old.parentElement) old.remove();
+                        }, 520));
+                    });
+                }
+
+                /* 0 = high, 1 = balanced, 2 = low */
+                function bvFxTier() {
+                    const s = window.BV_SETTINGS || {};
+                    const gw = document.getElementById("rpg-game-window");
+                    if (s.particles === false || s.reducedMotion === true ||
+                        s.performance === "performance" ||
+                        (gw && gw.classList.contains("map-low-quality")) ||
+                        document.body.classList.contains("bv-settings-lowspec")) return "low";
+                    let forced = null;
+                    try { forced = localStorage.getItem("bv_fx_tier"); } catch (e) {}
+                    if (forced === "high" || forced === "balanced" || forced === "low") return forced;
+                    // 3) vorhandene Low-End-Erkennung des Spiels (Splash/Shop) nutzen:
+                    //    dort bleibt Bewegung erhalten, nur die Effekte werden billiger.
+                    if (document.body.classList.contains("bv-low-end")) return "balanced";
+                    // 4) Hardware-Heuristik – bewusst konservativ: "low" (statisch)
+                    //    nur bei expliziten Einstellungen, nicht per Auto-Erkennung.
+                    const cores = navigator.hardwareConcurrency || 4;
+                    const mem = navigator.deviceMemory || 4;
+                    if (cores <= 2) return "balanced";
+                    if (cores <= 4 && mem <= 4) return "balanced";
+                    return "high";
+                }
+
+                function bvApplyFxTierClass() {
+                    const gw = document.getElementById("rpg-game-window");
+                    if (!gw) return;
+                    const tier = bvFxTier();
+                    gw.classList.remove("bv-fx-tier-high", "bv-fx-tier-balanced", "bv-fx-tier-low");
+                    gw.classList.add("bv-fx-tier-" + tier);
+                }
+
                 function spawnMapParticles(mapId) {
                     const host = document.getElementById("rpg-fx-particles");
                     if (!host) return;
-                    // PATCH Q: alte Partikel-Layer sanft ausblenden statt hart entfernen
-                    Array.from(host.children).forEach(old => {
-                        old.classList.add("fx-fading-out");
-                        setTimeout(() => { if (old.parentElement) old.remove(); }, 650);
-                    });
+                    bvFxFadeOutOld(host);
                     fxLayerNear = null; fxLayerFar = null;
-                    const bvParticleSettings = window.BV_SETTINGS || {};
-                    // Bugfix v7.10.1: Performance/low-quality darf Partikel nicht komplett entfernen.
-                    // Nur wenn Partikel explizit aus sind oder Reduced-Motion aktiv ist, werden sie wirklich deaktiviert.
-                    if (bvParticleSettings.particles === false || bvParticleSettings.reducedMotion === true || bvParticleSettings.performance === "performance") return;
-                    const lowParticleMode = document.getElementById("rpg-game-window")?.classList.contains("map-low-quality");
-                    // PATCH P: 2 Tiefen-Layer fuer Kamera-Parallax (PATCH Q: mit Einblend-Klasse)
-                    const layerFar = document.createElement("div"); layerFar.className = "fx-depth fx-far fx-fading-in";
-                    const layerNear = document.createElement("div"); layerNear.className = "fx-depth fx-near fx-fading-in";
-                    host.appendChild(layerFar); host.appendChild(layerNear);
-                    // naechsten Frame: Einblend-Klasse entfernen -> sanftes Fade-In
-                    requestAnimationFrame(() => requestAnimationFrame(() => {
-                        layerFar.classList.remove("fx-fading-in");
-                        layerNear.classList.remove("fx-fading-in");
-                    }));
-                    // Thema-Konfiguration: type, anzahl, groesse[min,max], farben[], opacity[min,max]
+                    bvApplyFxTierClass();
+
+                    const tier = bvFxTier();
+                    if (tier === "low" && (window.BV_SETTINGS || {}).particles === false) return;
+
+                    // Thema-Konfiguration (Basis = high)
                     const THEMES = {
-                        buero:      { type:"dust",  n:64, sz:[2,4], col:["#fff8d6","#ffffff"], op:[.25,.6] },
-                        flur:       { type:"dust",  n:82, sz:[2,5], col:["#ffffff","#dbe6ff"], op:[.3,.7] },
-                        zentrale:   { type:"spark", n:62, sz:[2,4], col:["#bcdcff","#ffffff"], op:[.3,.7] },
-                        serverraum: { type:"data",  n:95, sz:[2,4], col:["#7dffc8","#5ac8ff","#9affd5"], op:[.4,.85] },
-                        kantine:    { type:"steam", n:48, sz:[6,14],col:["#fff2d2","#ffe8c0"], op:[.18,.4] },
-                        lager:      { type:"dust",  n:70, sz:[2,5], col:["#dccdb4","#bfae90"], op:[.25,.55] },
-                        konferenz:  { type:"spark", n:60, sz:[2,4], col:["#e1d7ff","#b9a9ff"], op:[.3,.65] },
-                        boss_office:{ type:"spark", n:56, sz:[2,5], col:["#ff9a6a","#ffd2aa","#ff6a4a"], op:[.35,.8] },
-                        archiv:     { type:"paper", n:66, sz:[3,6], col:["#ebe1c8","#d2c3a0","#c9b890"], op:[.3,.6] },
-                        dach:       { type:"pollen",n:76, sz:[2,5], col:["#fffae6","#fff4c8","#ffffff"], op:[.35,.75] }
+                        buero:      { type:"dust",  n:40, sz:[2,4], col:["#fff8d6","#ffffff"], op:[.25,.6] },
+                        flur:       { type:"dust",  n:48, sz:[2,5], col:["#ffffff","#dbe6ff"], op:[.3,.7] },
+                        zentrale:   { type:"spark", n:40, sz:[2,4], col:["#bcdcff","#ffffff"], op:[.3,.7] },
+                        serverraum: { type:"data",  n:52, sz:[2,4], col:["#7dffc8","#5ac8ff","#9affd5"], op:[.4,.85] },
+                        kantine:    { type:"steam", n:30, sz:[6,14],col:["#fff2d2","#ffe8c0"], op:[.18,.4] },
+                        lager:      { type:"dust",  n:42, sz:[2,5], col:["#dccdb4","#bfae90"], op:[.25,.55] },
+                        konferenz:  { type:"spark", n:38, sz:[2,4], col:["#e1d7ff","#b9a9ff"], op:[.3,.65] },
+                        boss_office:{ type:"spark", n:36, sz:[2,5], col:["#ff9a6a","#ffd2aa","#ff6a4a"], op:[.35,.8] },
+                        archiv:     { type:"paper", n:40, sz:[3,6], col:["#ebe1c8","#d2c3a0","#c9b890"], op:[.3,.6] },
+                        dach:       { type:"pollen",n:44, sz:[2,5], col:["#fffae6","#fff4c8","#ffffff"], op:[.35,.75] }
                     };
-                    const baseCfg = THEMES[mapId] || THEMES.flur;
-                    const cfg = Object.assign({}, baseCfg, { col: baseCfg.col });
-                    if (lowParticleMode) cfg.n = Math.max(18, Math.floor(cfg.n * 0.38));
+                    let cfg = THEMES[mapId] || THEMES.flur;
+                    if (tier === "balanced") cfg = Object.assign({}, cfg, { n: Math.round(cfg.n * 0.62) });
+                    if (tier === "low") cfg = Object.assign({}, cfg, { n: 14, type: "idle" });
+
                     const W = host.clientWidth || 800, H = host.clientHeight || 520;
-                    const rnd = (a,b) => a + Math.random()*(b-a);
-                    const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+                    const rnd = (a, b) => a + Math.random() * (b - a);
+                    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+                    // Low: eine einzige, flache Ebene ohne Parallax.
+                    let layerNear, layerFar;
+                    if (tier === "low") {
+                        layerNear = document.createElement("div");
+                        layerNear.className = "fx-depth fx-flat";
+                        host.appendChild(layerNear);
+                        layerFar = null;
+                    } else {
+                        layerFar = document.createElement("div");  layerFar.className = "fx-depth fx-far fx-fading-in";
+                        layerNear = document.createElement("div"); layerNear.className = "fx-depth fx-near fx-fading-in";
+                        host.appendChild(layerFar); host.appendChild(layerNear);
+                        requestAnimationFrame(() => requestAnimationFrame(() => {
+                            layerFar.classList.remove("fx-fading-in");
+                            layerNear.classList.remove("fx-fading-in");
+                        }));
+                    }
+
                     for (let i = 0; i < cfg.n; i++) {
                         const p = document.createElement("div");
                         p.className = "fxp " + cfg.type;
@@ -25457,28 +25570,93 @@
                         const op = rnd(cfg.op[0], cfg.op[1]);
                         const col = pick(cfg.col);
                         p.style.width = size.toFixed(1) + "px";
-                        p.style.height = (cfg.type === "data" ? size*rnd(3,6) : (cfg.type==="paper"? size*rnd(1.2,2):size)).toFixed(1) + "px";
+                        p.style.height = (cfg.type === "data" ? size * rnd(3, 6)
+                                        : cfg.type === "paper" ? size * rnd(1.2, 2)
+                                        : cfg.type === "idle" ? size * rnd(.9, 1.6)
+                                        : size).toFixed(1) + "px";
                         p.style.left = rnd(0, W).toFixed(0) + "px";
                         p.style.top  = rnd(0, H).toFixed(0) + "px";
-                        if (cfg.type === "spark" || cfg.type === "data" || cfg.type === "boss") p.style.color = col;
-                        if (cfg.type === "data" || cfg.type === "paper") p.style.background = col;
-                        else if (cfg.type === "spark") p.style.background = col;
-                        else if (cfg.type === "dust") p.style.background = "radial-gradient(circle, " + col + ", transparent 70%)";
-                        else if (cfg.type === "pollen") p.style.background = "radial-gradient(circle, " + col + ", transparent 72%)";
-                        p.style.setProperty("--op", op.toFixed(2));
-                        p.style.setProperty("--delay", (-rnd(0, 14)).toFixed(2) + "s");
-                        p.style.setProperty("--dur", rnd(8, 20).toFixed(1) + "s");
-                        p.style.setProperty("--tw", rnd(1.2, 3.2).toFixed(1) + "s");
-                        p.style.setProperty("--dx", (rnd(-1,1)*rnd(20,90)).toFixed(0) + "px");
-                        p.style.setProperty("--dy", (-rnd(15,70)).toFixed(0) + "px");
-                        p.style.setProperty("--dy2", (rnd(20,80)).toFixed(0) + "px");
-                        p.style.setProperty("--rise", (-rnd(90,180)).toFixed(0) + "px");
-                        p.style.setProperty("--fall", rnd(180, 340).toFixed(0) + "px");
-                        (Math.random() < 0.55 ? layerNear : layerFar).appendChild(p); // PATCH P: Tiefe
+
+                        if (cfg.type === "idle") {
+                            // statischer Lichtpunkt – ein einziges Paint, keine Animation
+                            p.style.background = col;
+                            p.style.opacity = (op * 0.85).toFixed(2);
+                        } else {
+                            if (cfg.type === "dust" || cfg.type === "pollen" || cfg.type === "steam") {
+                                p.style.background = "radial-gradient(circle, " + col + ", transparent 70%)";
+                            } else {
+                                p.style.background = col;
+                            }
+                            p.style.setProperty("--op", op.toFixed(2));
+                            p.style.setProperty("--delay", (-rnd(0, 14)).toFixed(2) + "s");
+                            p.style.setProperty("--dur", rnd(8, 20).toFixed(1) + "s");
+                            p.style.setProperty("--dx", (rnd(-1, 1) * rnd(20, 90)).toFixed(0) + "px");
+                            p.style.setProperty("--dy", (-rnd(15, 70)).toFixed(0) + "px");
+                            p.style.setProperty("--dy2", (rnd(20, 80)).toFixed(0) + "px");
+                            p.style.setProperty("--rise", (-rnd(90, 180)).toFixed(0) + "px");
+                            p.style.setProperty("--fall", rnd(180, 340).toFixed(0) + "px");
+                            if (cfg.type === "spark") p.style.color = col;
+                        }
+                        (Math.random() < 0.55 ? layerNear : (layerFar || layerNear)).appendChild(p);
                     }
-                    fxLayerNear = layerNear; fxLayerFar = layerFar; // PATCH P: fuer Kamera-Parallax cachen
+
+                    fxLayerNear = layerNear;
+                    fxLayerFar = layerFar;
+                    // v5.5: Refs für den Kamera-Parallax (ohne TDZ-Probleme)
+                    window.__bvFxNear = layerNear;
+                    window.__bvFxFar = layerFar;
+                    host.dataset.bvFxFxTier = tier;
+                    host.dataset.bvFxFxCount = String(cfg.n);
+                    host.dataset.bvFxMap = mapId;
                 }
                 window.BVSpawnMapParticles = spawnMapParticles;
+
+                /* v5.5: Eine Stelle für die thematische Map-Ebene. Vorher setzten
+                   Map-Laden, Menü-Schließen und Kampf-Rückkehr jeweils eigene
+                   Klassen – dadurch lagen teils mehrere vollflächige Ebenen
+                   (inkl. der alten effect-*) gleichzeitig übereinander. */
+                const BV_FX_BY_MAP = {
+                    buero: "fx-buero", flur: "fx-flur", zentrale: "fx-zentrale",
+                    serverraum: "fx-serverraum", kantine: "fx-kantine", lager: "fx-lager",
+                    konferenz: "fx-konferenz", boss_office: "fx-boss", archiv: "fx-archiv",
+                    dach: "fx-dach"
+                };
+                const BV_ALL_FX = ["effect-particles", "effect-dim", "effect-windows",
+                    "fx-buero", "fx-flur", "fx-zentrale", "fx-serverraum", "fx-kantine",
+                    "fx-lager", "fx-konferenz", "fx-boss", "fx-archiv", "fx-dach"];
+                window.BVApplyMapFx = function (mapId) {
+                    const gw = document.getElementById("rpg-game-window");
+                    if (!gw) return null;
+                    const cls = BV_FX_BY_MAP[mapId] || "fx-flur";
+                    BV_ALL_FX.forEach(c => { if (c !== cls) gw.classList.remove(c); });
+                    gw.classList.add(cls);
+                    return cls;
+                };
+
+                window.BVFx = {
+                    tier: bvFxTier,
+                    setTier: function (t) {
+                        try {
+                            if (t === "auto") localStorage.removeItem("bv_fx_tier");
+                            else if (["high", "balanced", "low"].includes(t)) localStorage.setItem("bv_fx_tier", t);
+                        } catch (e) {}
+                        const rt = (typeof window.syncBvRuntime === "function") ? window.syncBvRuntime() : {};
+                        const host = document.getElementById("rpg-fx-particles");
+                        const mapId = rt.currentMapId || (host && host.dataset.bvFxMap);
+                        bvApplyFxTierClass();
+                        if (mapId) spawnMapParticles(mapId);
+                        return bvFxTier();
+                    },
+                    stats: function () {
+                        const host = document.getElementById("rpg-fx-particles");
+                        return {
+                            tier: bvFxTier(),
+                            particles: host ? host.querySelectorAll(".fxp").length : 0,
+                            layers: host ? host.querySelectorAll(".fx-depth").length : 0,
+                            animated: host ? host.querySelectorAll(".fxp:not(.idle)").length : 0
+                        };
+                    }
+                };
                 function spawnDoors() {
                     if (!doorLayer) return;
                     doorLayer.innerHTML = "";
@@ -26319,6 +26497,7 @@
                     const _fxp = document.getElementById("rpg-fx-particles");
                     if (_fxp) _fxp.innerHTML = "";
                     if (typeof fxLayerNear !== "undefined") { fxLayerNear = null; fxLayerFar = null; }
+                    window.__bvFxNear = null; window.__bvFxFar = null;
                     document.getElementById("battle-transition-out")?.classList.remove("active");
                     document.getElementById("cheat-console")?.classList.remove("visible");
                     document.getElementById("minimap-container")?.classList.remove("visible");
@@ -29092,22 +29271,13 @@
                     updatePlayerSprite();
 
                     // Map Effects (immer anwenden, wenn Map geladen wird)
-                    const gameWin = document.getElementById("rpg-game-window");
-                    if (gameWin) {
-                        // PATCH N: thematische Effekte fuer ALLE Maps
-                        const ALL_FX = ["effect-particles","effect-dim","effect-windows",
-                            "fx-buero","fx-flur","fx-zentrale","fx-serverraum","fx-kantine",
-                            "fx-lager","fx-konferenz","fx-boss","fx-archiv","fx-dach"];
-                        gameWin.classList.remove(...ALL_FX);
-                        const FX_MAP = {
-                            buero: "fx-buero", flur: "fx-flur", zentrale: "fx-zentrale",
-                            serverraum: "fx-serverraum", kantine: "fx-kantine", lager: "fx-lager",
-                            konferenz: "fx-konferenz", boss_office: "fx-boss", archiv: "fx-archiv",
-                            dach: "fx-dach"
-                        };
-                        const fxClass = FX_MAP[mapId];
-                        if (fxClass) gameWin.classList.add(fxClass);
-                        else gameWin.classList.add("fx-flur"); // Fallback: Staub
+                    // v5.5: thematische Effekte über eine gemeinsame Stelle setzen
+                    // (Map-Laden, Menü-Schließen und Kampf-Rückkehr benutzen sie).
+                    if (typeof window.BVApplyMapFx === "function") {
+                        window.BVApplyMapFx(mapId);
+                    } else {
+                        const gameWin = document.getElementById("rpg-game-window");
+                        if (gameWin) gameWin.classList.add(mapId === "boss_office" ? "fx-boss" : "fx-flur");
                     }
                     spawnMapParticles(mapId); // PATCH O: viele Partikel
                     spawnNPCs();
@@ -31560,11 +31730,13 @@
                         gameState = "MAP";
                         const gameWin = document.getElementById("rpg-game-window");
                         if (gameWin) {
-                            gameWin.classList.remove("effect-particles", "effect-dim", "effect-windows");
-                            if (currentMapId === "flur") gameWin.classList.add("effect-particles");
-                            else if (currentMapId === "boss_office") gameWin.classList.add("effect-dim");
-                            else if (currentMapId === "buero" || currentMapId === "zentrale") gameWin.classList.add("effect-windows");
-                            else if (currentMapId === "kantine") gameWin.classList.add("effect-windows");
+                            // v5.5: gleiche thematische Ebene wie beim Map-Laden,
+                            // keine zusätzlichen alt-effect-*-Layer mehr.
+                            if (typeof window.BVApplyMapFx === "function") {
+                                window.BVApplyMapFx(currentMapId);
+                            } else {
+                                gameWin.classList.remove("effect-particles", "effect-dim", "effect-windows");
+                            }
                         }
                     };
                     if (instant) finishClose();
@@ -35247,11 +35419,18 @@ window.respawnPlayer = function () {
                             // Immediately restore map effects when battle screen shows
                             const gameWin = document.getElementById("rpg-game-window");
                             if (gameWin) {
-                                gameWin.classList.remove("effect-particles", "effect-dim", "effect-windows");
-                                if (currentMapId === "flur") gameWin.classList.add("effect-particles");
-                                else if (currentMapId === "boss_office") gameWin.classList.add("effect-dim");
-                                else if (currentMapId === "buero" || currentMapId === "zentrale") gameWin.classList.add("effect-windows");
-                                else if (currentMapId === "kantine") gameWin.classList.add("effect-windows");
+                                // v5.5: Nach dem Kampf wurde bisher ZUSÄTZLICH zu fx-*
+                                // noch die alten effect-*-Ebenen aktiviert -> bis zu vier
+                                // vollflächige Blend-Layer gleichzeitig (Ruckel-Ursache).
+                                // Jetzt gilt dieselbe thematische Ebene wie beim Map-Laden.
+                                if (typeof window.BVApplyMapFx === "function") {
+                                    window.BVApplyMapFx(currentMapId);
+                                } else {
+                                    gameWin.classList.remove("effect-particles", "effect-dim", "effect-windows");
+                                }
+                                if (typeof window.BVSpawnMapParticles === "function") {
+                                    window.BVSpawnMapParticles(currentMapId);
+                                }
                             }
                         }
                     }, 600);
@@ -47302,19 +47481,21 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     transform: translate3d(0,0,0);
     backface-visibility: hidden;
 }
+/* v5.5: kein will-change auf left/top – diese Eigenschaften kann der
+   Browser nicht compositen, die Angabe erzeugt nur unnötige Layer. */
 #rpg-player,
 .rpg-npc,
 .map-easter-egg {
-    will-change: left, top !important;
+    will-change: auto;
     contain: layout style !important;
 }
 .map-chest {
-    will-change: left, top !important;
+    will-change: auto;
     contain: layout !important;
     overflow: visible !important;
 }
 #rpg-fx-particles {
-    will-change: transform !important;
+    will-change: auto;
     pointer-events: none !important;
 }
 </style>
@@ -48482,16 +48663,17 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
 #bv-fps-counter-settings.bad .fps-main { color: #ff6b6b; }
 #bv-fps-counter-settings .fps-row { display:flex; justify-content:space-between; gap:12px; }
 
+/* v5.5: Die Karten-Partikel bleiben in jeder Stufe sichtbar – bei
+   reduced motion / performance als statische Lichtpunkte (spawnMapParticles
+   setzt dort die Stufe "low"). Nur Titel-Effekte werden weiter versteckt. */
 body.bv-settings-reduced-motion #rpg-title-screen .title-particles,
 body.bv-settings-reduced-motion #rpg-title-screen .title-light-rays,
 body.bv-settings-reduced-motion #rpg-title-screen .title-glow-orbs,
 body.bv-settings-reduced-motion .battle-particles,
-body.bv-settings-reduced-motion .battle-fog,
-body.bv-settings-reduced-motion #rpg-fx-particles {
+body.bv-settings-reduced-motion .battle-fog {
     display: none !important;
 }
 
-body.bv-settings-performance #rpg-fx-particles,
 body.bv-settings-performance .battle-fog,
 body.bv-settings-performance .battle-deco,
 body.bv-settings-performance .title-particles,
@@ -48549,9 +48731,12 @@ body.bv-settings-performance .title-light-rays {
         const lowFx = settings.particles === false || settings.reducedMotion === true || settings.performance === 'performance';
         document.body.classList.toggle('bv-settings-lowspec', lowFx);
         if (gameWin) gameWin.classList.toggle('map-low-quality', lowFx);
-        if (lowFx && typeof window.BVSpawnMapParticles === 'function') {
-            const host = document.getElementById('rpg-fx-particles');
-            if (host) host.replaceChildren();
+        // v5.5: Low-Spec bekommt jetzt eine billige, statische Partikel-Ebene
+        // statt "alles weg". Deshalb immer neu aufbauen (Stufe wird im
+        // Spawner bestimmt), nicht mehr leeren.
+        if (typeof window.BVSpawnMapParticles === 'function') {
+            const rt = (typeof window.syncBvRuntime === 'function') ? window.syncBvRuntime() : {};
+            if (rt.currentMapId) window.BVSpawnMapParticles(rt.currentMapId);
         }
         if (typeof window.startNPCMovementLoop === 'function') window.startNPCMovementLoop();
 
@@ -51281,11 +51466,11 @@ body.bv-settings-performance .title-canvas-bg,
     display: block !important;
     visibility: visible !important;
 }
-body.bv-settings-performance #rpg-fx-particles,
+/* v5.5: #rpg-fx-particles absichtlich NICHT mehr in dieser Liste –
+   Low-Spec zeigt statische Partikel (billig) statt eines leeren Bildes. */
 body.bv-settings-performance .title-particles,
 body.bv-settings-performance .splash-bg-canvas,
 body.bv-settings-performance .title-canvas-bg,
-body.bv-settings-lowspec #rpg-fx-particles,
 body.bv-settings-lowspec .title-particles {
     display: none !important;
 }
@@ -51334,7 +51519,8 @@ body.bv-settings-lowspec * {
         const host = document.getElementById('rpg-fx-particles');
         const rt = (typeof window.syncBvRuntime === 'function') ? window.syncBvRuntime() : {};
         if (!host || !rt.currentMapId) return;
-        if (!host.querySelector('.fx-depth') && typeof window.BVSpawnMapParticles === 'function') window.BVSpawnMapParticles(rt.currentMapId);
+        // v5.5: Low-Spec hat nur eine flache Ebene – deshalb auf Partikel prüfen.
+        if (!host.querySelector('.fxp') && typeof window.BVSpawnMapParticles === 'function') window.BVSpawnMapParticles(rt.currentMapId);
     }
     function recoverParticles(){ recoverTitleParticles(); recoverMapParticles(); }
     window.BVRecoverParticles = recoverParticles;
