@@ -32628,6 +32628,9 @@
                     isBattleStarting = true;
                     battleLocked = true;
                     gameState = "BATTLE_INTRO";
+                    // v5.7: neuer Kampf = neuer Aktenstapel, Waffen-Feld frisch aufbauen
+                    if (window.BVCombo) window.BVCombo.reset();
+                    if (typeof bvWeaponUi === "function") bvWeaponUi();
                     stopCameraLoop();
 
                     currentEnemy = { ...enemyData, enemyId: npc?.enemyId || enemyData.enemyId, npcRef: npc };
@@ -32853,6 +32856,11 @@
 
                 function updateBattleStatusUI() {
                     const row = document.getElementById("battle-status-row");
+                    // v5.7: Betäubung lässt den Aktenstapel umfallen
+                    if (player && player.isStunned && player.stunTurns > 0 &&
+                        window.BVCombo && window.BVCombo.info().stacks > 0) {
+                        window.BVCombo.reset("Betäubung");
+                    }
                     if (!row) return;
                     const statuses = [];
                     if (player.isPoisoned && player.poisonTurns > 0) {
@@ -32970,6 +32978,343 @@
                     else if (action === "run") attemptFlee();
                 }
 
+                /* ============================================================
+                   v5.7 – BÜRO-WAFFEN + AKTENSTAPEL-KOMBO
+                   ------------------------------------------------------------
+                   • Vier Büro-Waffen, jede mit eigener Angriffs-Animation.
+                     Spezialwaffen schlagen mehrfach (Tacker x2, Ordner x3).
+                   • „Aktenstapel-Kombo": jeder Treffer legt ein Blatt auf den
+                     Stapel (max. 5). Ab Stufe 2 gibt jedes Blatt +4,5 %
+                     Angriffsschaden (max. +18 % bei 5 Blatt).
+                     Stapel fällt um bei: Fehlschlag, Item, Flucht, Betäubung
+                     und am Kampfende.
+                   • Waffe wechseln: Klick auf das Waffen-Feld oben links.
+                   • Alles rein über transform/opacity – Low-Spec bekommt
+                     dieselben Treffer, nur ohne Papier-/Funken-FX.
+                   ============================================================ */
+                const BV_WEAPONS = {
+                    aktenstapel: {
+                        id: "aktenstapel", name: "Aktenstapel", icon: "📚",
+                        hits: 1, mult: 1.15, defFactor: 1.0, anim: "slam", fx: "📄",
+                        color: "#ffd479", unlockLevel: 1,
+                        hint: "Ein wuchtiger Schlag mit dem ganzen Stapel."
+                    },
+                    tacker: {
+                        id: "tacker", name: "Tacker", icon: "📎",
+                        hits: 2, mult: 0.62, defFactor: 0.45, anim: "jab", fx: "📎",
+                        color: "#7ad0ff", unlockLevel: 3,
+                        hint: "Zwei schnelle Klammer-Stiche."
+                    },
+                    locher: {
+                        id: "locher", name: "Locher", icon: "🕳️",
+                        hits: 1, mult: 1.0, defFactor: 0.8, anim: "pierce", fx: "⭕",
+                        color: "#9ade7b", unlockLevel: 5, pierce: 0.35,
+                        hint: "Stanzt ein Loch in die Deckung (Gegner-DEF ↓)."
+                    },
+                    ordner: {
+                        id: "ordner", name: "Aktenordner", icon: "🗂️",
+                        hits: 3, mult: 0.45, defFactor: 0.3, anim: "flurry", fx: "🗂️",
+                        color: "#ff9a6a", unlockLevel: 7,
+                        hint: "Drei schnelle Schläge mit dem Ordner."
+                    }
+                };
+                const BV_WEAPON_ORDER = ["aktenstapel", "tacker", "locher", "ordner"];
+                const BV_COMBO_MAX = 5;
+
+                let bvComboStacks = 0;
+                let bvComboLastTier = 0;
+                let bvComboBumpTimers = [];
+
+                function bvNumber(v, d) { const n = Number(v); return isFinite(n) ? n : d; }
+                function bvWeaponLevel() { return Math.max(1, bvNumber(player && player.level, 1)); }
+                function bvWeaponUnlocked(id) {
+                    const w = BV_WEAPONS[id];
+                    return !!w && bvWeaponLevel() >= w.unlockLevel;
+                }
+
+                function bvWeaponCurrentId() {
+                    let id = (player && player.weapon) || null;
+                    if (!id) { try { id = localStorage.getItem("bv_weapon"); } catch (e) {} }
+                    if (id && BV_WEAPONS[id] && bvWeaponUnlocked(id)) return id;
+                    return "aktenstapel";
+                }
+                function bvWeaponCurrent() { return BV_WEAPONS[bvWeaponCurrentId()]; }
+
+                function bvWeaponSet(id) {
+                    if (!BV_WEAPONS[id] || !bvWeaponUnlocked(id)) return false;
+                    if (player) player.weapon = id;
+                    try { localStorage.setItem("bv_weapon", id); } catch (e) {}
+                    bvWeaponUi();
+                    return true;
+                }
+
+                function bvWeaponCycle() {
+                    const unlocked = BV_WEAPON_ORDER.filter(bvWeaponUnlocked);
+                    if (!unlocked.length) return;
+                    const cur = bvWeaponCurrentId();
+                    const next = unlocked[(unlocked.indexOf(cur) + 1) % unlocked.length];
+                    bvWeaponSet(next);
+                    const w = BV_WEAPONS[next];
+                    if (typeof battleLog === "function" && gameState === "BATTLE") {
+                        battleLog("Waffe: " + w.icon + " " + w.name + " – " + w.hint);
+                    }
+                    if (typeof showBattleActionBubble === "function" && gameState === "BATTLE") {
+                        showBattleActionBubble("player", w.name, w.icon, w.color);
+                    }
+                }
+
+                /* ---------------- Aktenstapel-Kombo ---------------- */
+                function bvComboBonus() {
+                    return 1 + 0.045 * Math.max(0, bvComboStacks - 1);
+                }
+                function bvComboBonusPercent() {
+                    return Math.round((bvComboBonus() - 1) * 100);
+                }
+                function bvComboReset(reason) {
+                    if (bvComboStacks > 0 && typeof bvComboUi === "function") {
+                        const meter = document.getElementById("bv-combo-meter");
+                        if (meter) {
+                            meter.classList.remove("bump");
+                            void meter.offsetWidth;
+                            meter.classList.add("toppling");
+                            setTimeout(() => meter.classList.remove("toppling"), 420);
+                        }
+                        if (reason && typeof battleLog === "function" && gameState === "BATTLE") {
+                            battleLog("Aktenstapel verrutscht (" + reason + ") – Kombo zurückgesetzt.");
+                        }
+                    }
+                    bvComboStacks = 0;
+                    bvComboLastTier = 0;
+                    bvComboUi();
+                }
+                function bvComboAdd() {
+                    if (bvComboStacks < BV_COMBO_MAX) bvComboStacks++;
+                    const tier = bvComboStacks >= 5 ? 3 : (bvComboStacks >= 3 ? 2 : (bvComboStacks >= 2 ? 1 : 0));
+                    if (tier > bvComboLastTier && typeof battleLog === "function" && gameState === "BATTLE") {
+                        if (tier === 1) battleLog("📚 Aktenstapel ×2 – +" + bvComboBonusPercent() + " % Schaden.");
+                        else if (tier === 2) battleLog("📚 Aktenstapel ×3 – die Blätter stapeln sich! +" + bvComboBonusPercent() + " % Schaden.");
+                        else battleLog("📚 AKTENSTAPEL VOLL (×5) – +" + bvComboBonusPercent() + " % Schaden!");
+                    }
+                    bvComboLastTier = Math.max(bvComboLastTier, tier);
+                    bvComboUi(true);
+                }
+                function bvComboInfo() {
+                    return { stacks: bvComboStacks, max: BV_COMBO_MAX, bonus: bvComboBonusPercent(), weapon: bvWeaponCurrentId() };
+                }
+
+                /* ---------------- Anzeige ---------------- */
+                function bvBattleTools() {
+                    let box = document.getElementById("bv-battle-tools");
+                    if (box) return box;
+                    const screen = document.getElementById("rpg-battle-screen");
+                    if (!screen) return null;
+                    box = document.createElement("div");
+                    box.id = "bv-battle-tools";
+                    box.innerHTML =
+                        '<button type="button" id="bv-weapon-chip" class="bv-weapon-chip" title="Klick: nächste Waffe">' +
+                            '<span class="wpn-ico"></span><span class="wpn-name"></span>' +
+                            '<span class="wpn-hits"></span><span class="wpn-tip">wechseln</span>' +
+                        '</button>' +
+                        '<div id="bv-combo-meter" class="bv-combo-meter" aria-live="polite">' +
+                            '<span class="cm-label">AKTENSTAPEL</span>' +
+                            '<span class="cm-slots"></span>' +
+                            '<span class="cm-bonus"></span>' +
+                        '</div>';
+                    screen.appendChild(box);
+                    const chip = box.querySelector("#bv-weapon-chip");
+                    if (chip) {
+                        chip.addEventListener("click", function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            bvWeaponCycle();
+                        });
+                    }
+                    return box;
+                }
+
+                function bvWeaponUi() {
+                    const box = bvBattleTools();
+                    if (!box) return;
+                    const w = bvWeaponCurrent();
+                    const lvlNext = BV_WEAPON_ORDER.map(id => BV_WEAPONS[id]).filter(x => !bvWeaponUnlocked(x.id))[0];
+                    const nameEl = box.querySelector(".wpn-name");
+                    const icoEl = box.querySelector(".wpn-ico");
+                    const hitsEl = box.querySelector(".wpn-hits");
+                    if (icoEl) icoEl.textContent = w.icon;
+                    if (nameEl) nameEl.textContent = w.name;
+                    if (hitsEl) hitsEl.textContent = w.hits > 1 ? "×" + w.hits : "";
+                    const chip = box.querySelector("#bv-weapon-chip");
+                    if (chip) {
+                        chip.title = w.name + " (" + (w.hits > 1 ? w.hits + " Schläge" : "1 Schlag") + ") – " + w.hint +
+                            (lvlNext ? " · Nächste Waffe ab Level " + lvlNext.unlockLevel : "");
+                        chip.classList.toggle("is-multi", w.hits > 1);
+                    }
+                    bvComboUi();
+                }
+
+                function bvComboUi(bump) {
+                    const meter = document.getElementById("bv-combo-meter");
+                    if (!meter) return;
+                    const on = bvComboStacks > 0;
+                    meter.classList.toggle("on", on);
+                    meter.classList.toggle("max", bvComboStacks >= BV_COMBO_MAX);
+                    const slots = meter.querySelector(".cm-slots");
+                    if (slots) {
+                        let html = "";
+                        for (let i = 0; i < BV_COMBO_MAX; i++) {
+                            html += '<i class="cm-slot' + (i < bvComboStacks ? " on" : "") + '"></i>';
+                        }
+                        slots.innerHTML = html;
+                    }
+                    const bonusEl = meter.querySelector(".cm-bonus");
+                    if (bonusEl) bonusEl.textContent = on ? "×" + bvComboStacks + " · +" + bvComboBonusPercent() + " %" : "";
+                    if (on && bump) {
+                        bvComboBumpTimers.forEach(t => clearTimeout(t));
+                        bvComboBumpTimers = [];
+                        meter.classList.remove("bump");
+                        void meter.offsetWidth;
+                        meter.classList.add("bump");
+                        bvComboBumpTimers.push(setTimeout(() => meter.classList.remove("bump"), 240));
+                    }
+                }
+
+                /* ---------------- Treffer-FX (billig, nur transform/opacity) ---------------- */
+                function bvWeaponFxLevel() {
+                    try {
+                        const s = window.BV_SETTINGS || {};
+                        if (s.particles === false || s.reducedMotion === true || s.performance === "performance") return 0;
+                        if (document.body.classList.contains("bv-settings-lowspec") ||
+                            document.body.classList.contains("bv-settings-reduced-motion")) return 0;
+                        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return 0;
+                    } catch (e) { return 0; }
+                    return 1;
+                }
+
+                function bvWeaponImpact(w, index) {
+                    if (!bvWeaponFxLevel()) return;
+                    const host = document.getElementById("battle-enemy-sprite-container");
+                    if (!host) return;
+                    const n = w.anim === "slam" ? 6 : (w.anim === "jab" ? 4 : (w.anim === "pierce" ? 3 : 5));
+                    for (let i = 0; i < n; i++) {
+                        const s = document.createElement("i");
+                        s.className = "bv-wfx bv-wfx-" + w.anim;
+                        s.style.setProperty("--ang", (Math.round((360 / n) * i + Math.random() * 24)) + "deg");
+                        s.style.setProperty("--dist", (26 + Math.random() * 42).toFixed(0) + "px");
+                        s.style.setProperty("--d", (i * 32 + (index || 0) * 20) + "ms");
+                        host.appendChild(s);
+                        setTimeout(() => { if (s.parentNode) s.remove(); }, 900);
+                    }
+                }
+
+                function bvWeaponCleanup(pSprite) {
+                    if (!pSprite) return;
+                    pSprite.classList.remove("bv-atk-slam", "bv-atk-jab", "bv-atk-pierce", "bv-atk-flurry");
+                }
+
+                /* ---------------- Einzelner Schlag ---------------- */
+                function bvWeaponStrike(w, index) {
+                    if (!currentEnemy || gameState !== "BATTLE" || enemyHp <= 0) return;
+                    const bonus = bvComboBonus();
+                    // Fallback, falls ein alter Spielstand ohne ATK/DEF geladen wurde
+                    const atk = bvNumber(player && player.atk, 1);
+                    const def = bvNumber(currentEnemy.def, 0);
+                    const raw = Math.max(1,
+                        Math.floor((atk + Math.floor(Math.random() * 10)) * w.mult * bonus) -
+                        Math.floor(def * w.defFactor));
+                    const hit = bvApplyCrit(raw, "player");
+
+                    damageEnemy(hit.dmg, hit.crit);
+                    bvComboAdd();
+                    bvWeaponImpact(w, index);
+                    spawnBattleEffect("enemy", w.fx);
+                    if (w.hits > 1) spawnBattleEffect("enemy", "💥");
+
+                    const gameWin = document.getElementById("rpg-game-window");
+                    if (gameWin) {
+                        gameWin.style.animation = "none";
+                        void gameWin.offsetWidth;
+                        gameWin.style.animation = "battleShake 0.18s ease-in-out";
+                    }
+
+                    const label = w.hits > 1
+                        ? w.icon + " " + w.name + " " + (index + 1) + "/" + w.hits
+                        : w.icon + " " + w.name;
+                    battleLog(label + "! " + hit.dmg + " Schaden!" + (hit.crit ? " 💥 KRITISCH!" : "") +
+                        (bvComboStacks > 1 ? " (Stapel ×" + bvComboStacks + ")" : ""));
+
+                    // Locher: Deckung durchlöchern
+                    if (w.pierce && enemyHp > 0 && Math.random() < w.pierce) {
+                        const before = Math.max(0, Number(currentEnemy.def) || 0);
+                        if (before > 0) {
+                            currentEnemy.def = before - 1;
+                            battleLog("🕳️ Loch gestanzt! " + (currentEnemy.displayName || currentEnemy.name) +
+                                ": DEF " + before + " → " + currentEnemy.def);
+                        }
+                    }
+                }
+
+                /* ---------------- Kompletter Angriff ---------------- */
+                function bvWeaponAttack() {
+                    const w = bvWeaponCurrent();
+                    const pSprite = document.getElementById("battle-player-sprite");
+                    const eSprite = document.getElementById("battle-enemy-sprite");
+
+                    bvWeaponUi();
+
+                    if (pSprite) {
+                        pSprite.classList.remove("bv-atk-slam", "bv-atk-jab", "bv-atk-pierce", "bv-atk-flurry");
+                        void pSprite.offsetWidth;
+                        pSprite.classList.add("bv-atk-" + w.anim);
+                    }
+                    if (typeof showBattleActionBubble === "function") {
+                        showBattleActionBubble("player", w.name + (w.hits > 1 ? " ×" + w.hits : ""), w.icon, w.color);
+                    }
+
+                    // Fehlschlag: 7 % (etwas gnädiger als vorher, dafür mehr Schläge)
+                    if (Math.random() < 0.07) {
+                        setTimeout(() => {
+                            bvWeaponCleanup(pSprite);
+                            battleLog("Daneben! " + (currentEnemy.displayName || currentEnemy.name) + " ist ausgewichen! ❌");
+                            spawnBattleEffect("enemy", "❌");
+                            bvComboReset("Fehlschlag");
+                            if (eSprite) {
+                                eSprite.style.transition = "transform .18s ease-out";
+                                eSprite.style.transform = "translateX(-26px) rotate(-12deg)";
+                                setTimeout(() => {
+                                    if (eSprite) { eSprite.style.transform = ""; eSprite.style.transition = ""; }
+                                }, 200);
+                            }
+                            checkBattleEnd();
+                        }, 260);
+                        return;
+                    }
+
+                    const stagger = w.hits > 1 ? 170 : 130;
+                    const firstHitAt = 240;
+                    for (let i = 0; i < w.hits; i++) {
+                        setTimeout(() => bvWeaponStrike(w, i), firstHitAt + i * stagger);
+                    }
+                    setTimeout(() => {
+                        bvWeaponCleanup(pSprite);
+                        checkBattleEnd();
+                    }, firstHitAt + (w.hits - 1) * stagger + 330);
+                }
+
+                /* ---------------- Öffentliche Brücke ---------------- */
+                window.BVWeapons = {
+                    list: () => BV_WEAPON_ORDER.map(id => Object.assign({ unlocked: bvWeaponUnlocked(id) }, BV_WEAPONS[id])),
+                    current: () => BV_WEAPONS[bvWeaponCurrentId()],
+                    set: bvWeaponSet,
+                    cycle: bvWeaponCycle,
+                    attack: bvWeaponAttack
+                };
+                window.BVCombo = {
+                    info: bvComboInfo,
+                    add: bvComboAdd,
+                    reset: bvComboReset,
+                    max: BV_COMBO_MAX
+                };
+
 function performAttack() {
     const playerSprite = document.getElementById("battle-player-sprite");
     const enemySprite = document.getElementById("battle-enemy-sprite");
@@ -32986,7 +33331,10 @@ function performAttack() {
         void playerSprite.offsetWidth; // Force reflow
     }
 
-    // MULTIPLE RANDOMIZED COOL ATTACK ANIMATIONS!
+    // v5.7: Angriff läuft über die gewählte Büro-Waffe (Animation + Trefferzahl)
+    if (typeof bvWeaponAttack === "function") { bvWeaponAttack(); return; }
+
+    // MULTIPLE RANDOMIZED COOL ATTACK ANIMATIONS! (Fallback)
     const attackAnims = [
         // 1. Ausfallschritt & Schnitt (Forward Slash Dash)
         () => {
@@ -33706,6 +34054,8 @@ function performSkill(skillId) {
                 }
 
                 function useBattleItem(item) {
+                    // v5.7: Item in der Hand = Stapel fällt um
+                    if (window.BVCombo) window.BVCombo.reset("Item");
                     closeItemMenu(false);
                     showBattleActionBubble("player", "Item: " + item.name.replace(/^\S+\s*/, ""), item.name.split(" ")[0] || "🎒", "#22c55e");
 
@@ -33746,6 +34096,8 @@ function performSkill(skillId) {
                 }
 
                 function attemptFlee() {
+                    // v5.7: Flucht lässt den Aktenstapel liegen
+                    if (window.BVCombo) window.BVCombo.reset("Flucht");
                     const fleeAllowed = currentEnemy?.canFlee === true || (!currentEnemy?.isBoss && currentEnemy?.canFlee !== false);
                     if (!fleeAllowed) {
                         battleLog(currentEnemy?.isEditorTest ? "Flucht ist im Editor deaktiviert! 🚫" : "Keine Flucht vor dem Chef! 😱");
@@ -34806,6 +35158,9 @@ function performSkill(skillId) {
                     document.getElementById("battle-player-sprite")?.classList.remove("battle-win-dance-v419", "win-dance-hop-v420", "win-dance-spin-v420", "win-dance-slide-v420", "win-dance-pose-v420", "win-dance-wave-v420");
                     
                     battleCount++;
+
+                    // v5.7: Der Aktenstapel wird für den nächsten Kampf neu aufgebaut
+                    if (window.BVCombo) window.BVCombo.reset();
 
                     const update = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
                     update("victory-gold", currentEnemy.gold);
@@ -58951,5 +59306,225 @@ body.bv-settings-particles-off #rpg-fx-particles {
         animation: none !important;
         opacity: var(--op, .6);
     }
+}
+</style>
+
+<style>
+/* ============================================================
+   v5.7 – BÜRO-WAFFEN + AKTENSTAPEL-KOMBO (Kampf-UI)
+   Nur transform/opacity-Animationen, keine Filter-Ketten.
+   Low-Spec sieht dieselben Treffer, nur ohne Papier-/Funken-FX.
+   ============================================================ */
+
+#rpg-battle-screen #bv-battle-tools {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 130;
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    pointer-events: none;
+    font-family: 'VT323', monospace;
+}
+
+#rpg-battle-screen.active #bv-battle-tools { display: flex; }
+
+/* ---- Waffen-Feld ---- */
+#rpg-battle-screen .bv-weapon-chip {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    font-family: inherit;
+    font-size: .64rem;
+    letter-spacing: .6px;
+    color: #eaf2ff;
+    border: 1px solid rgba(255, 212, 121, .45);
+    border-radius: 5px;
+    background: linear-gradient(180deg, rgba(20, 32, 74, .92), rgba(6, 10, 26, .94));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease;
+}
+
+#rpg-battle-screen .bv-weapon-chip:hover,
+#rpg-battle-screen .bv-weapon-chip:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(255, 228, 160, .95);
+    outline: none;
+}
+
+#rpg-battle-screen .bv-weapon-chip.is-multi {
+    border-color: rgba(255, 154, 106, .6);
+}
+
+#rpg-battle-screen .bv-weapon-chip .wpn-ico { font-size: .9rem; line-height: 1; }
+#rpg-battle-screen .bv-weapon-chip .wpn-hits { color: #ffd479; font-size: .6rem; }
+#rpg-battle-screen .bv-weapon-chip .wpn-tip {
+    font-size: .48rem;
+    letter-spacing: 1px;
+    color: rgba(200, 220, 255, .5);
+    text-transform: uppercase;
+}
+
+/* ---- Aktenstapel-Kombo ---- */
+#rpg-battle-screen .bv-combo-meter {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border: 1px solid rgba(160, 200, 255, .3);
+    border-radius: 5px;
+    background: linear-gradient(180deg, rgba(20, 32, 74, .86), rgba(6, 10, 26, .92));
+    font-size: .58rem;
+    letter-spacing: 1px;
+    color: #dbe9ff;
+    transform-origin: left center;
+}
+
+#rpg-battle-screen .bv-combo-meter.on { display: flex; }
+
+#rpg-battle-screen .bv-combo-meter .cm-slots { display: flex; gap: 3px; }
+
+#rpg-battle-screen .bv-combo-meter .cm-slot {
+    width: 9px;
+    height: 11px;
+    border: 1px solid rgba(160, 200, 255, .35);
+    border-radius: 1px;
+    background: rgba(120, 150, 220, .12);
+    transform: rotate(-4deg);
+}
+
+#rpg-battle-screen .bv-combo-meter .cm-slot.on {
+    background: linear-gradient(180deg, #fff8e2, #ffd479);
+    border-color: #fff0c4;
+}
+
+#rpg-battle-screen .bv-combo-meter.max { border-color: rgba(255, 180, 90, .8); }
+#rpg-battle-screen .bv-combo-meter.max .cm-slot.on {
+    background: linear-gradient(180deg, #ffffff, #ff9a3d);
+    border-color: #ffd0a4;
+}
+#rpg-battle-screen .bv-combo-meter .cm-bonus { color: #ffd479; }
+
+#rpg-battle-screen .bv-combo-meter.bump { animation: bvComboBump .22s ease-out; }
+#rpg-battle-screen .bv-combo-meter.toppling { animation: bvComboTopple .42s ease-in; }
+
+@keyframes bvComboBump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.09); }
+    100% { transform: scale(1); }
+}
+
+@keyframes bvComboTopple {
+    0%   { transform: rotate(0) translateY(0); }
+    35%  { transform: rotate(-5deg) translateY(3px); opacity: .55; }
+    100% { transform: rotate(0) translateY(0); }
+}
+
+/* ---- Angriffs-Animationen der Waffen (nur transform) ---- */
+#battle-player-sprite.bv-atk-slam { animation: bvAtkSlam .52s cubic-bezier(.3, 1.4, .5, 1) both; }
+#battle-player-sprite.bv-atk-jab { animation: bvAtkJab .44s ease-out both; }
+#battle-player-sprite.bv-atk-pierce { animation: bvAtkPierce .48s cubic-bezier(.2, .9, .3, 1) both; }
+#battle-player-sprite.bv-atk-flurry { animation: bvAtkFlurry .66s ease-in-out both; }
+
+@keyframes bvAtkSlam {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    35%  { transform: translateY(-26px) rotate(-10deg) scale(1.05); }
+    62%  { transform: translate(34px, 10px) rotate(12deg) scale(1.12); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+@keyframes bvAtkJab {
+    0%   { transform: translateX(0); }
+    22%  { transform: translateX(28px) rotate(6deg); }
+    44%  { transform: translateX(6px); }
+    68%  { transform: translateX(32px) rotate(-4deg); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes bvAtkPierce {
+    0%   { transform: translateX(0) scaleX(1); }
+    30%  { transform: translateX(-18px) rotate(-6deg); }
+    58%  { transform: translateX(48px) scaleX(1.2); }
+    100% { transform: translateX(0) scaleX(1); }
+}
+
+@keyframes bvAtkFlurry {
+    0%   { transform: translate(0, 0) rotate(0); }
+    20%  { transform: translate(22px, -8px) rotate(8deg); }
+    40%  { transform: translate(4px, 4px) rotate(-6deg); }
+    60%  { transform: translate(26px, -4px) rotate(6deg); }
+    80%  { transform: translate(10px, 2px) rotate(-3deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* ---- Treffer-FX am Gegner ---- */
+#battle-enemy-sprite-container .bv-wfx {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 1px;
+    pointer-events: none;
+    opacity: 0;
+    animation: bvWfxFly .62s ease-out var(--d, 0ms) forwards;
+}
+
+#battle-enemy-sprite-container .bv-wfx-slam {
+    background: linear-gradient(180deg, #fffdf2, #d8d2bd);
+    box-shadow: 0 0 0 1px rgba(120, 110, 80, .35);
+}
+
+#battle-enemy-sprite-container .bv-wfx-jab {
+    width: 11px;
+    height: 3px;
+    border-radius: 1px;
+    background: #cfe6ff;
+}
+
+#battle-enemy-sprite-container .bv-wfx-pierce {
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    border: 2px solid #bff0a2;
+    background: transparent;
+}
+
+#battle-enemy-sprite-container .bv-wfx-flurry {
+    background: linear-gradient(180deg, #ffd7bd, #ff9a6a);
+}
+
+@keyframes bvWfxFly {
+    0%   { opacity: 0; transform: rotate(var(--ang, 0deg)) translate(0, 0) scale(.5); }
+    25%  { opacity: 1; }
+    100% { opacity: 0; transform: rotate(var(--ang, 0deg)) translate(var(--dist, 40px), 0) scale(.9); }
+}
+
+/* Low-Spec / reduzierte Bewegung: Treffer bleiben, FX sparen */
+body.bv-settings-lowspec #battle-enemy-sprite-container .bv-wfx,
+body.bv-settings-performance #battle-enemy-sprite-container .bv-wfx,
+body.bv-settings-reduced-motion #battle-enemy-sprite-container .bv-wfx { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+    #battle-enemy-sprite-container .bv-wfx { display: none !important; }
+    #battle-player-sprite.bv-atk-slam,
+    #battle-player-sprite.bv-atk-jab,
+    #battle-player-sprite.bv-atk-pierce,
+    #battle-player-sprite.bv-atk-flurry { animation-duration: .14s !important; }
+}
+
+/* Kleine Fenster: Werkzeugleiste kompakter */
+@media (max-width: 560px) {
+    #rpg-battle-screen #bv-battle-tools { top: 6px; left: 6px; gap: 4px; }
+    #rpg-battle-screen .bv-weapon-chip { font-size: .58rem; padding: 2px 7px; }
+    #rpg-battle-screen .bv-combo-meter { font-size: .52rem; padding: 2px 6px; }
+    #rpg-battle-screen .bv-combo-meter .cm-slot { width: 7px; height: 9px; }
 }
 </style>
