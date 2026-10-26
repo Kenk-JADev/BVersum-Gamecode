@@ -60,6 +60,7 @@ BVersum-Gamecode/
 ├── tools/build.py                       # erzeugt public/ + smartstore/generated/
 ├── tools/test_build.py                  # Regressionstests (keine Deps, optional Node)
 ├── tools/smoke_test.js                  # Laufzeit-Test mit jsdom (optional)
+├── tools/perf_test.js                   # Map-Engine Perf-Test mit jsdom
 ├── smartstore/                          # Smartstore-Snippets + Anleitung
 ├── public/                              # Build-Ausgabe (GitHub Pages, gitignored)
 └── .github/workflows/deploy.yml         # Test + Build + Deploy-Pipeline
@@ -80,12 +81,67 @@ verhindert das Veröffentlichen.
 
 Zusätzlich bootet der **Laufzeit-Smoke-Test** die gebaute Seite in jsdom
 (Scripts, Twemoji, Initialisierung, Klick auf die Promo-Karte) und meldet
-JS-Fehler. Lokal ausführen:
+JS-Fehler. `perf_test.js` lädt eine echte Map und prüft die Render-Zähler.
+Lokal ausführen:
 
 ```bash
 npm install --prefix /tmp/bv-smoke jsdom@26
 NODE_PATH=/tmp/bv-smoke/node_modules node tools/smoke_test.js
+NODE_PATH=/tmp/bv-smoke/node_modules node tools/perf_test.js
 ```
+
+---
+
+## 🗺️ Map-Engine: Performance
+
+Der Build patcht die Engine an neun exakt geprüften Stellen (Quelldatei bleibt
+unangetastet). Gemessen mit jsdom beim Laden von `buero` (35 × 22 = 770 Tiles):
+
+| Maßnahme | Vorher | Nachher |
+|---|---|---|
+| `ME.render()` pro Map-Ladevorgang | **2×** (62 ms + 200 ms) | **1×** (70 ms) |
+| Minimap: `fillRect` über 2 Updates | 1574 | 34 (+ 2 `drawImage`) |
+| Cutscene-Poller im Hintergrund | 3 Intervalle, ~6 Aufrufe/s – auch bei geschlossenem Spiel | 1 Intervall, 0 Aufrufe bei geschlossenem Spiel |
+
+Konkret:
+
+- **Kein Doppel-Render mehr:** `actuallyLoadMap()` rief über
+  `BV3D.resizeToMap()` *und* `drawMap()` dieselbe `ME.render()` auf. Der zweite
+  Lauf parste den gecachten SVG-String (133 KB / 1396 Knoten) nur, um ihn
+  sofort vom Raster-Cache wieder zu leeren. `resizeToMap` setzt jetzt nur
+  Bounds/Geometrie.
+- **Raster-Guard:** Bei Rückkehr auf dieselbe Map (Kampf, Respawn, Spielstand)
+  wird das vorhandene Rasterbild wiederverwendet statt die Live-SVG neu zu
+  parsen. Fällt das Bild-Laden aus, greift automatisch der alte SVG-Pfad.
+- **Minimap-Offscreen-Cache:** Statische Kacheln werden einmal pro Map in ein
+  Offscreen-Canvas gezeichnet (Cache-Schlüssel = Identität von `currentMap`).
+  Pro 150-ms-Update bleiben nur NPCs/Kisten/Spieler plus ein `drawImage`.
+  `canvas.width/height` wird nur noch bei Größenänderung gesetzt.
+- **Kleinere Hotspots:** Occluder-Observer schreibt `--occ-z` nur bei
+  Änderung; der 2.5D-Schatten wird per `firstElementChild` statt per
+  `querySelector` im gesamten Teilbaum gesucht; Partikel- und
+  Settings-Poller laufen nur bei geöffnetem Overlay.
+
+**Diagnose im Browser:** `window.BVMapPerf` liefert live
+`{ renderCalls, skipped, minimapStatic, minimapFrames }`. Ideal nach einem
+Map-Wechsel: `renderCalls` steigt um 1, `skipped` bleibt 0; bei Rückkehr auf
+dieselbe Map steigt `skipped`. `minimapStatic` sollte deutlich seltener
+steigen als `minimapFrames`.
+
+Bewusst **nicht** geändert: Die NPC-Bewegung animiert weiterhin `left`/`top`
+statt `transform`. Ein `transform` auf den Gameplay-Layern erzeugt neue
+Stacking-Contexts und würde die Occlusion-/Z-Index-Logik (Wände vor Figuren)
+zerstören – das ist im Code bewusst so dokumentiert.
+
+**Weitere Kandidaten (noch offen, mit Absicht nicht blind gepatcht):**
+`spawnOccluders()` erzeugt pro Wand-/Schreibtisch-Tile ein eigenes `<div>` mit
+Inline-SVG; ein gemeinsames SVG wäre weniger DOM. Das Rasterbild nutzt
+`img.decoding = 'sync'` (synchrones Decoding großer Data-URLs). Die drei
+Cache-Keys bauen per `map.flat().join('')` große Strings; ein numerischer
+Rolling-Hash wäre günstiger. Und einige weitere Dauer-Intervalle
+(Quest-Log 1200 ms, Achievements 2000 ms) könnten ebenfalls auf
+`rpg-active` gated werden. All das braucht einen visuellen Browsertest, bevor
+es in den Build geht.
 
 Das Skript lädt bei Bedarf automatisch die Vendor-Assets (Twemoji-Emojis +
 Fonts VT323 / Press Start 2P) nach `tools/vendor/` und schreibt alle Artefakte
@@ -112,6 +168,7 @@ protokoll-passend, mit 5-Sekunden-Timeout und einem gestalteten
 | CSS-Variablen `--bv-*` (Smartstore-Variante) | Shop-Theme wird nicht überschrieben |
 | Loader führt Scripts strikt sequenziell aus | Twemoji ist geladen, bevor die Spiel-Scripts starten; 4-s-Notfall-Timeout |
 | Build-Stempel = Datum + SHA-256-Hash der Quelle | Shop und Website lassen sich wirklich auf denselben Code-Stand prüfen |
+| Map-Engine-Patches (9 Anker) | ein Render pro Map-Ladevorgang, Raster-/Minimap-Caches, Hintergrund-Poller nur bei offenem Spiel – siehe Abschnitt „Map-Engine: Performance" |
 
 ---
 

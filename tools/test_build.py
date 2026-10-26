@@ -260,5 +260,49 @@ class VersionsUndCSS(unittest.TestCase):
         self.assertIn("--primary:", self.web)
 
 
+class MapEnginePerformance(unittest.TestCase):
+    """Statische Absicherung der Map-Engine-Patches (Laufzeittest: perf_test.js)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.fragment = (PUBLIC / "game-fragment.html").read_text(encoding="utf-8")
+
+    def test_kein_doppelter_map_render(self) -> None:
+        self.assertNotIn("BV3D.resizeToMap=(map)=>ME.render(map);", self.fragment)
+        self.assertIn("ME.bounds(map); return true;", self.fragment)
+        self.assertIn("BV3D.renderMap=(map)=>ME.render(map);", self.fragment)
+
+    def test_raster_guard_und_diagnose_api(self) -> None:
+        for marker in ("window.BVMapPerf", "bvPerf.skipped++", "map-engine-rasterized",
+                       "this.bounds(map);\n                bvPerf.skipped++;"):
+            self.assertIn(marker, self.fragment, f"Marker fehlt: {marker}")
+
+    def test_minimap_statik_cache(self) -> None:
+        self.assertNotIn("miniCanvas.width = mapCols * scale;", self.fragment)
+        for marker in ("__bvMiniBg", "mmPerf.minimapStatic++",
+                       "mctx.drawImage(mmBg.canvas, 0, 0);"):
+            self.assertIn(marker, self.fragment, f"Marker fehlt: {marker}")
+        # width/height nur noch bei Änderung setzen -> keine Bitmap-Reallocation pro Frame
+        self.assertIn("if (miniCanvas.width !== mw) miniCanvas.width = mw;", self.fragment)
+
+    def test_occluder_observer_guard(self) -> None:
+        self.assertIn("el.style.getPropertyValue('--occ-z') !== z", self.fragment)
+
+    def test_shadow_lookup_optimiert(self) -> None:
+        self.assertIn("const bvHasShadow =", self.fragment)
+
+    def test_hintergrund_poller_gedrosselt(self) -> None:
+        self.assertNotIn("setInterval(maybePatrickWelcome, 350);", self.fragment)
+        self.assertNotIn("setInterval(maybePausenraumIntro, 450);", self.fragment)
+        self.assertNotIn("setInterval(recoverParticles, 1800);", self.fragment)
+        self.assertNotIn("setInterval(() => { wrapSettings(); syncParticleVisibility(); }, 1200);",
+                         self.fragment)
+        self.assertGreaterEqual(
+            self.fragment.count("if (!document.body.classList.contains('rpg-active')) return;"),
+            3,
+            "Mindestens 3 Poller müssen auf 'Spiel offen' geprüft werden",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

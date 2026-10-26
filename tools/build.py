@@ -359,7 +359,11 @@ def patch_fragment(
             total += n
         log(f"CSS-Variablen umbenannt: {total} Vorkommen, {len(css_vars)} Namen")
 
-    # 7) Ausgeglichene DOM-Struktur. In der Quelle bleiben #zuef-main-wrapper
+    # 7) Map-Engine-Performance (render-Dedupe, Raster-/Minimap-Caches,
+    #    Hintergrund-Poller). Eigene Funktion mit strengen Anker-Prüfungen.
+    html = patch_map_performance(html)
+
+    # 8) Ausgeglichene DOM-Struktur. In der Quelle bleiben #zuef-main-wrapper
     #    und #rpg-overlay offen. Der Browser schließt sie still am Dateiende –
     #    bei Direkt-Einbettung (Variante B) landet damit aber der gesamte Rest
     #    der Shop-Seite INNERHALB von #rpg-overlay (display:none): Footer und
@@ -371,6 +375,189 @@ def patch_fragment(
         + "\n\n<!-- Build-Patch: Quell-Fragment lässt diese beiden Container offen. -->\n"
         "</div><!-- /#rpg-overlay -->\n"
         "</div><!-- /#zuef-main-wrapper -->\n"
+    )
+
+    return html
+
+
+# ---------------------------------------------------------------------------
+# Map-Engine: Performance-Patches
+# ---------------------------------------------------------------------------
+
+def patch_map_performance(html: str) -> str:
+    """Gezielte, verifizierte Optimierungen an der Map-Engine.
+
+    Alle Anker müssen GENAU einmal vorkommen – ändert sich die Quelldatei,
+    bricht der Build laut ab statt stillschweigend einen wirkungslosen Patch
+    auszuliefern. Die Quelldatei selbst bleibt unverändert.
+    """
+
+    def swap(text: str, old: str, new: str, label: str) -> str:
+        n = text.count(old)
+        if n != 1:
+            raise SystemExit(
+                f"FEHLER: Map-Perf-Patch {label!r}: Anker {n}x gefunden (erwartet 1x)"
+            )
+        return text.replace(old, new, 1)
+
+    # 1) DOPPELTER MAP-RENDER (größte Bremse).
+    #    actuallyLoadMap() ruft zuerst BV3D.resizeToMap(map) und danach über
+    #    drawMap() BV3D.renderMap(map). Beide zeigen auf ME.render() -> die
+    #    komplette SVG-Map wird zweimal gebaut. Beim 2. Lauf wird der gecachte
+    #    SVG-String erneut geparst (jsdom-Messung: 73 ms + 204 ms für 770
+    #    Tiles) und sofort wieder vom Raster-Cache geleert.
+    #    resizeToMap darf daher nur Geometrie/Bounds setzen.
+    html = swap(
+        html,
+        "BV3D.resizeToMap=(map)=>ME.render(map); BV3D.renderMap=(map)=>ME.render(map);",
+        "BV3D.resizeToMap=(map)=>{ if(!map||!map.length||!ME.init()) return false; "
+        "ME.bounds(map); return true; }; BV3D.renderMap=(map)=>ME.render(map); "
+        "/* PERF: nur drawMap() rendert; resizeToMap setzt ausschließlich Bounds. */",
+        "doppelter Map-Render",
+    )
+
+    # 2) RASTER-CACHE: Rückkehr auf dieselbe Map (nach Kampf/Respawn/Save)
+    #    muss die Live-SVG nicht neu parsen. Liegt das Rasterbild bereits vor,
+    #    genügt das Aktualisieren der Bounds (reine Mathematik, kein DOM).
+    #    Gleichzeitig wird window.BVMapPerf als Diagnose-API angelegt.
+    html = swap(
+        html,
+        "        ME.render = function patchedRasterRender(map) {\n"
+        "            // Wenn SVG existiert und vom letzten Raster versteckt wurde, für das Original kurz wieder bereitstellen.\n"
+        "            if (this.svg) {",
+        "        ME.render = function patchedRasterRender(map) {\n"
+        "            /* PERF (Build-Patch): Bereits gerasterte Map nicht erneut parsen.\n"
+        "               Ohne diesen Guard kostet jeder Same-Map-Reload einen kompletten\n"
+        "               SVG-DOM-Rebuild, der sofort wieder verworfen wird. */\n"
+        "            var bvPerf = window.BVMapPerf || (window.BVMapPerf = {\n"
+        "                renderCalls: 0, skipped: 0, minimapStatic: 0, minimapFrames: 0\n"
+        "            });\n"
+        "            bvPerf.renderCalls++;\n"
+        "            var cam0 = document.getElementById('rpg-camera');\n"
+        "            var img0 = document.getElementById('map-engine-v6-raster-img');\n"
+        "            if (lastKey === mapKey(map) && img0 && img0.getAttribute('src') &&\n"
+        "                cam0 && cam0.classList.contains('map-engine-rasterized') && this.svg) {\n"
+        "                this.bounds(map);\n"
+        "                bvPerf.skipped++;\n"
+        "                return true;\n"
+        "            }\n"
+        "\n"
+        "            // Wenn SVG existiert und vom letzten Raster versteckt wurde, für das Original kurz wieder bereitstellen.\n"
+        "            if (this.svg) {",
+        "Raster-Skip-Guard",
+    )
+
+    # 3) MINIMAP: statistische Kachelebene cachen.
+    #    updateMinimap() lief alle 150 ms über ALLE Tiles (bis zu 770 fillRect)
+    #    und setzte canvas.width/height neu (Bitmap-Reallocation). Jetzt wird
+    #    der statische Hintergrund genau einmal pro Map in ein Offscreen-Canvas
+    #    gezeichnet; pro Frame bleibt nur drawImage + NPCs/Kisten/Spieler.
+    #    Cache-Schlüssel ist die Array-Identität von currentMap (bei jedem
+    #    Map-Load ein neues Array) – O(1) statt Tile-Hash pro Frame.
+    html = swap(
+        html,
+        "                    miniCanvas.width = mapCols * scale;\n"
+        "                    miniCanvas.height = mapRows * scale;\n"
+        "\n"
+        "                    for (let y = 0; y < mapRows; y++) {\n"
+        "                        for (let x = 0; x < mapCols; x++) {\n"
+        "                            const tile = currentMap[y] ? currentMap[y][x] : 0;\n"
+        "                            const tileData = TILES[tile] || TILES[0];\n"
+        "                            mctx.fillStyle = tileData.block ? \"#333\" : \"#666\";\n"
+        "                            if (tileData.name?.includes(\"door\")) mctx.fillStyle = \"#cc0\";\n"
+        "                            mctx.fillRect(x * scale, y * scale, scale, scale);\n"
+        "                        }\n"
+        "                    }",
+        "                    /* PERF (Build-Patch): statische Kacheln einmalig cachen. */\n"
+        "                    const mw = Math.max(1, Math.floor(mapCols * scale));\n"
+        "                    const mh = Math.max(1, Math.floor(mapRows * scale));\n"
+        "                    if (miniCanvas.width !== mw) miniCanvas.width = mw;\n"
+        "                    if (miniCanvas.height !== mh) miniCanvas.height = mh;\n"
+        "                    const mmPerf = window.BVMapPerf || (window.BVMapPerf = {\n"
+        "                        renderCalls: 0, skipped: 0, minimapStatic: 0, minimapFrames: 0\n"
+        "                    });\n"
+        "                    mmPerf.minimapFrames++;\n"
+        "                    let mmBg = window.__bvMiniBg;\n"
+        "                    if (!mmBg || mmBg.ref !== currentMap || mmBg.w !== mw || mmBg.h !== mh) {\n"
+        "                        const off = document.createElement('canvas');\n"
+        "                        off.width = mw; off.height = mh;\n"
+        "                        const bctx = off.getContext('2d');\n"
+        "                        for (let y = 0; y < mapRows; y++) {\n"
+        "                            for (let x = 0; x < mapCols; x++) {\n"
+        "                                const tile = currentMap[y] ? currentMap[y][x] : 0;\n"
+        "                                const tileData = TILES[tile] || TILES[0];\n"
+        "                                bctx.fillStyle = tileData.block ? \"#333\" : \"#666\";\n"
+        "                                if (tileData.name?.includes(\"door\")) bctx.fillStyle = \"#cc0\";\n"
+        "                                bctx.fillRect(x * scale, y * scale, scale, scale);\n"
+        "                            }\n"
+        "                        }\n"
+        "                        mmBg = window.__bvMiniBg = { ref: currentMap, w: mw, h: mh, canvas: off };\n"
+        "                        mmPerf.minimapStatic++;\n"
+        "                    }\n"
+        "                    mctx.drawImage(mmBg.canvas, 0, 0);",
+        "Minimap-Statik-Cache",
+    )
+
+    # 4) OCCLUDER-OBSERVER: redundante Style-Writes vermeiden. Der Observer
+    #    lauscht auf Style-Änderungen im gesamten Subtree; schreibt er bei
+    #    jedem Callback denselben Wert erneut, erzeugt er unnötige
+    #    Mutationsrecords (und auf schwachen Geräten Style-Recalc-Arbeit).
+    html = swap(
+        html,
+        "            if (el.style && el.style.zIndex) el.style.setProperty('--occ-z', el.style.zIndex);",
+        "            if (el.style && el.style.zIndex) {\n"
+        "                var z = el.style.zIndex;\n"
+        "                if (el.style.getPropertyValue('--occ-z') !== z) el.style.setProperty('--occ-z', z);\n"
+        "            }",
+        "Occluder-Observer-Guard",
+    )
+
+    # 5) NPC-/Player-Platzierung: el.querySelector('.bv-25d-shadow') sucht
+    #    bei JEDEM Schritt den kompletten Teilbaum ab. Der Schatten ist aber
+    #    immer das erste Kind – ein O(1)-Check genügt (Fallback bleibt).
+    html = swap(
+        html,
+        "                        if (!el.querySelector('.bv-25d-shadow') && [\"player\", \"npc\", \"enemy\", \"chest\", \"egg\"].includes(kind)) {",
+        "                        const bvFirst = el.firstElementChild;\n"
+        "                        const bvHasShadow = !!(bvFirst && bvFirst.classList && bvFirst.classList.contains('bv-25d-shadow'));\n"
+        "                        if (!bvHasShadow && !el.querySelector('.bv-25d-shadow') && [\"player\", \"npc\", \"enemy\", \"chest\", \"egg\"].includes(kind)) {",
+        "Shadow-Lookup",
+    )
+
+    # 6) HINTERGRUND-POLLER: drei Cutscene-Intervalle (350/450/500 ms) liefen
+    #    dauerhaft – auch bei geschlossenem Spiel-Overlay auf der Shop-Seite.
+    #    Einer reicht, und er darf nur arbeiten, wenn das Spiel offen ist.
+    html = swap(
+        html,
+        "        setInterval(maybePatrickWelcome, 350);\n"
+        "        setInterval(maybePausenraumIntro, 450);\n"
+        "        setInterval(maybeGeneralMapIntros, 500);",
+        "        /* PERF: 3 Poller -> 1; inaktiv, solange das Overlay zu ist. */\n"
+        "        setInterval(function () {\n"
+        "            if (!document.body.classList.contains('rpg-active')) return;\n"
+        "            maybePatrickWelcome();\n"
+        "            maybePausenraumIntro();\n"
+        "            maybeGeneralMapIntros();\n"
+        "        }, 500);",
+        "Cutscene-Poller",
+    )
+    html = swap(
+        html,
+        "    setInterval(recoverParticles, 1800);",
+        "    setInterval(function () {\n"
+        "        if (!document.body.classList.contains('rpg-active')) return;\n"
+        "        recoverParticles();\n"
+        "    }, 1800);",
+        "Partikel-Recovery-Poller",
+    )
+    html = swap(
+        html,
+        "    setInterval(() => { wrapSettings(); syncParticleVisibility(); }, 1200);",
+        "    setInterval(() => {\n"
+        "        if (!document.body.classList.contains('rpg-active')) return;\n"
+        "        wrapSettings(); syncParticleVisibility();\n"
+        "    }, 1200);",
+        "Partikel-Sync-Poller",
     )
 
     return html
@@ -659,6 +846,7 @@ def main() -> None:
         source_html, asset_prefix=SITE_BASE_URL, rename_css_vars=True,
         flyer_src_expr=flyer_expr(SITE_BASE_URL), stamp=stamp,
     )
+    log("Map-Engine: 9 Performance-Anker in beiden Fragmenten geprüft")
 
     if PUBLIC.exists():
         shutil.rmtree(PUBLIC)

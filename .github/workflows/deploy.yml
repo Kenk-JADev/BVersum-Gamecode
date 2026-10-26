@@ -41,6 +41,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/bv-smoke" jsdom@26 --no-audit --no-fund
           NODE_PATH="$RUNNER_TEMP/bv-smoke/node_modules" node tools/smoke_test.js
+          NODE_PATH="$RUNNER_TEMP/bv-smoke/node_modules" node tools/perf_test.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
