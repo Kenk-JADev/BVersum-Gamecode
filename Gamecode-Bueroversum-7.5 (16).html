@@ -32637,6 +32637,8 @@
                     // v5.7: neuer Kampf = neuer Aktenstapel, Waffen-Feld frisch aufbauen
                     if (window.BVCombo) window.BVCombo.reset();
                     if (typeof bvWeaponUi === "function") bvWeaponUi();
+                    // v5.9: alte Gegner-Status (Gift/Brand/...) gehören zum letzten Kampf
+                    if (typeof bvStatusReset === "function") bvStatusReset();
                     stopCameraLoop();
 
                     currentEnemy = { ...enemyData, enemyId: npc?.enemyId || enemyData.enemyId, npcRef: npc };
@@ -33020,15 +33022,57 @@
                         hint: "Stanzt ein Loch in die Deckung (Gegner-DEF ↓).",
                         desc: "Stanzt ein Loch in die Deckung: 35 % Chance auf -1 Gegner-DEF."
                     },
+                    kaffeekanne: {
+                        id: "kaffeekanne", name: "Kaffeekanne", icon: "☕",
+                        hits: 1, mult: 1.05, defFactor: 0.7, anim: "scald", fx: "☕",
+                        color: "#ffb26b", price: 320,
+                        dot: { kind: "brand", chance: 0.45, turns: 3, dmg: [5, 7] },
+                        hint: "Kochender Kaffee – kann den Gegner in Brand setzen.",
+                        desc: "Kochend heiß: 45 % Chance auf Brand – 3 Runden Schaden über Zeit."
+                    },
+                    tinte: {
+                        id: "tinte", name: "Tintenflasche", icon: "🧪",
+                        hits: 1, mult: 0.95, defFactor: 0.5, anim: "splash", fx: "🖋️",
+                        color: "#8fb4ff", price: 380,
+                        dot: { kind: "gift", chance: 0.5, turns: 3, dmg: [4, 6] },
+                        hint: "Vergiftete Tinte – frisst jede Runde HP.",
+                        desc: "Tintenspritzer: 50 % Chance auf Gift – 3 Runden Schaden über Zeit."
+                    },
                     ordner: {
                         id: "ordner", name: "Aktenordner", icon: "🗂️",
                         hits: 3, mult: 0.45, defFactor: 0.3, anim: "flurry", fx: "🗂️",
                         color: "#ff9a6a", price: 420,
                         hint: "Drei schnelle Schläge mit dem Ordner.",
                         desc: "Drei schnelle Schläge. Baut den Aktenstapel am schnellsten auf."
+                    },
+                    drucker: {
+                        id: "drucker", name: "Drucker", icon: "🖨️",
+                        hits: 2, mult: 0.72, defFactor: 0.55, anim: "tremor", fx: "🖨️",
+                        color: "#cbd5e1", price: 480,
+                        stun: { chance: 0.3, turns: 1 },
+                        hint: "Zwei Stöße mit dem Drucker – kann betäuben.",
+                        desc: "Zwei wuchtige Stöße, 30 % Chance den Gegner 1 Runde zu betäuben."
+                    },
+                    schredder: {
+                        id: "schredder", name: "Aktenschredder", icon: "🗄️",
+                        hits: 1, mult: 1.5, defFactor: 0.35, anim: "shred", fx: "📄",
+                        color: "#f87171", price: 620,
+                        dot: { kind: "blutung", chance: 0.65, turns: 2, dmg: [6, 8] },
+                        hint: "Papierschnitt – lässt den Gegner bluten.",
+                        desc: "Härtester Einzelschlag: 65 % Chance auf Blutung – 2 Runden Schaden."
                     }
                 };
-                const BV_WEAPON_ORDER = ["aktenstapel", "tacker", "locher", "ordner"];
+                const BV_WEAPON_ORDER = ["aktenstapel", "tacker", "locher", "kaffeekanne", "tinte", "ordner", "drucker", "schredder"];
+                const BV_ATK_CLASSES = ["bv-atk-slam", "bv-atk-jab", "bv-atk-pierce", "bv-atk-flurry",
+                    "bv-atk-scald", "bv-atk-splash", "bv-atk-tremor", "bv-atk-shred"];
+
+                /* v5.9: Statuseffekte für Gegner */
+                const BV_STATUS_DEFS = {
+                    gift:    { label: "Gift",    icon: "🧪", color: "#a3e635", verb: "vergiftet" },
+                    brand:   { label: "Brand",   icon: "🔥", color: "#fb923c", verb: "in Brand" },
+                    blutung: { label: "Blutung", icon: "🩸", color: "#f87171", verb: "am Bluten" },
+                    stun:    { label: "Betäubt", icon: "💫", color: "#facc15", verb: "betäubt" }
+                };
                 const BV_COMBO_MAX = 5;
 
                 let bvComboStacks = 0;
@@ -33219,6 +33263,137 @@
                     }
                 }
 
+                /* ---------------- v5.9: Gegner-Status (Gift/Brand/Blutung/Betäubung) ---------------- */
+                function bvStatusStore(create) {
+                    if (!currentEnemy) return null;
+                    if (!currentEnemy.bvStatus) {
+                        if (!create) return null;
+                        currentEnemy.bvStatus = {
+                            gift: { turns: 0, dmg: 0 }, brand: { turns: 0, dmg: 0 },
+                            blutung: { turns: 0, dmg: 0 }, stun: 0
+                        };
+                    }
+                    return currentEnemy.bvStatus;
+                }
+
+                function bvStatusReset() {
+                    if (currentEnemy) currentEnemy.bvStatus = null;
+                    bvStatusUi();
+                }
+
+                function bvStatusApply(kind, turns, dmg) {
+                    const st = bvStatusStore(true);
+                    if (!st) return;
+                    if (kind === "stun") {
+                        st.stun = Math.min(2, Math.max(st.stun || 0, turns));
+                    } else {
+                        const cur = st[kind] || { turns: 0, dmg: 0 };
+                        st[kind] = { turns: Math.min(4, cur.turns + turns), dmg: Math.max(cur.dmg, dmg) };
+                    }
+                    bvStatusUi(true);
+                }
+
+                function bvStatusUi(pulse) {
+                    const hud = document.getElementById("battle-enemy-hud");
+                    if (!hud) return;
+                    let row = document.getElementById("bv-enemy-status");
+                    if (!row) {
+                        row = document.createElement("div");
+                        row.id = "bv-enemy-status";
+                        row.className = "bv-enemy-status";
+                        hud.appendChild(row);
+                    }
+                    const st = bvStatusStore(false);
+                    let html = "";
+                    if (st) {
+                        Object.keys(BV_STATUS_DEFS).forEach(k => {
+                            const d = BV_STATUS_DEFS[k];
+                            if (k === "stun") {
+                                if (st.stun > 0) html += '<span class="bvs-chip" style="color:' + d.color + '">' + d.icon + ' ×' + st.stun + '</span>';
+                            } else if (st[k] && st[k].turns > 0) {
+                                html += '<span class="bvs-chip" style="color:' + d.color + '">' + d.icon + ' ×' + st[k].turns + '</span>';
+                            }
+                        });
+                    }
+                    row.innerHTML = html;
+                    row.classList.toggle("on", !!html);
+                    if (html && pulse) {
+                        row.classList.remove("bump");
+                        void row.offsetWidth;
+                        row.classList.add("bump");
+                    }
+                }
+
+                /* Läuft zu Beginn des Gegner-Zugs. true = Zug ist bereits verbraucht. */
+                function bvStatusTick() {
+                    if (!currentEnemy || gameState !== "BATTLE" || enemyHp <= 0) return false;
+                    const st = bvStatusStore(false);
+                    if (!st) return false;
+                    const name = currentEnemy.displayName || currentEnemy.name || "Der Gegner";
+
+                    let total = 0;
+                    const kinds = [];
+                    ["gift", "brand", "blutung"].forEach(k => {
+                        const e = st[k];
+                        if (!e || e.turns <= 0) return;
+                        total += Math.max(1, Math.round(e.dmg));
+                        kinds.push(k);
+                        e.turns -= 1;
+                    });
+
+                    if (total > 0) {
+                        damageEnemy(total, false);
+                        kinds.forEach(k => spawnBattleEffect("enemy", BV_STATUS_DEFS[k].icon));
+                        battleLog("☠️ " + kinds.map(k => BV_STATUS_DEFS[k].icon).join("") +
+                            " Statusschaden! " + name + " verliert " + total + " HP.");
+                        bvStatusUi(true);
+                        const gw = document.getElementById("rpg-game-window");
+                        if (gw) {
+                            gw.style.animation = "none";
+                            void gw.offsetWidth;
+                            gw.style.animation = "battleShake 0.14s ease-in-out";
+                        }
+                        if (enemyHp <= 0) {
+                            bvComboReset();
+                            bvStatusReset();
+                            checkBattleEnd();
+                            return true;
+                        }
+                    }
+
+                    if (st.stun > 0) {
+                        st.stun -= 1;
+                        bvStatusUi(true);
+                        battleLog("💫 " + name + " ist betäubt und setzt eine Runde aus!");
+                        spawnBattleEffect("enemy", "💫");
+                        setTimeout(endEnemyTurn, 850);
+                        return true;
+                    }
+                    return false;
+                }
+
+                /* Würfelt die Status-Effekte einer Waffe aus */
+                function bvTryWeaponStatus(w) {
+                    if (!currentEnemy || enemyHp <= 0) return;
+                    const name = currentEnemy.displayName || currentEnemy.name || "Der Gegner";
+                    const lvl = Math.floor(Math.max(0, bvNumber(player && player.level, 1)) * 0.6);
+
+                    if (w.dot && Math.random() < w.dot.chance) {
+                        const lo = w.dot.dmg[0], hi = w.dot.dmg[1];
+                        const dmg = lo + Math.floor(Math.random() * (hi - lo + 1)) + lvl;
+                        bvStatusApply(w.dot.kind, w.dot.turns, dmg);
+                        const d = BV_STATUS_DEFS[w.dot.kind];
+                        battleLog(d.icon + " " + name + " ist jetzt " + d.verb + "! (" +
+                            w.dot.turns + " Runden, " + dmg + " Schaden pro Runde)");
+                        spawnBattleEffect("enemy", d.icon);
+                    }
+                    if (w.stun && Math.random() < w.stun.chance) {
+                        bvStatusApply("stun", w.stun.turns, 0);
+                        battleLog("💫 " + name + " ist betäubt und setzt eine Runde aus!");
+                        spawnBattleEffect("enemy", "💫");
+                    }
+                }
+
                 /* ---------------- Treffer-FX (billig, nur transform/opacity) ---------------- */
                 function bvWeaponFxLevel() {
                     try {
@@ -33231,11 +33406,13 @@
                     return 1;
                 }
 
+                const BV_WFX_COUNT = { slam: 6, jab: 4, pierce: 3, flurry: 5, scald: 5, splash: 7, tremor: 4, shred: 5 };
+
                 function bvWeaponImpact(w, index) {
                     if (!bvWeaponFxLevel()) return;
                     const host = document.getElementById("battle-enemy-sprite-container");
                     if (!host) return;
-                    const n = w.anim === "slam" ? 6 : (w.anim === "jab" ? 4 : (w.anim === "pierce" ? 3 : 5));
+                    const n = BV_WFX_COUNT[w.anim] || 4;
                     for (let i = 0; i < n; i++) {
                         const s = document.createElement("i");
                         s.className = "bv-wfx bv-wfx-" + w.anim;
@@ -33245,11 +33422,18 @@
                         host.appendChild(s);
                         setTimeout(() => { if (s.parentNode) s.remove(); }, 900);
                     }
+                    // Schwere Treffer bekommen zusätzlich eine billige Schockwelle (1 Element)
+                    if (w.anim === "shred" || w.anim === "slam" || w.anim === "tremor") {
+                        const ring = document.createElement("i");
+                        ring.className = "bv-wfx-ring";
+                        host.appendChild(ring);
+                        setTimeout(() => { if (ring.parentNode) ring.remove(); }, 620);
+                    }
                 }
 
                 function bvWeaponCleanup(pSprite) {
                     if (!pSprite) return;
-                    pSprite.classList.remove("bv-atk-slam", "bv-atk-jab", "bv-atk-pierce", "bv-atk-flurry");
+                    pSprite.classList.remove.apply(pSprite.classList, BV_ATK_CLASSES);
                 }
 
                 /* ---------------- Einzelner Schlag ---------------- */
@@ -33283,6 +33467,18 @@
                     battleLog(label + "! " + hit.dmg + " Schaden!" + (hit.crit ? " 💥 KRITISCH!" : "") +
                         (bvComboStacks > 1 ? " (Stapel ×" + bvComboStacks + ")" : ""));
 
+                    // Treffer-Reaktion des Gegners (billige, bestehende Hit-Animation)
+                    const eSprite = document.getElementById("battle-enemy-sprite");
+                    if (eSprite && enemyHp > 0) {
+                        eSprite.classList.remove("hit");
+                        void eSprite.offsetWidth;
+                        eSprite.classList.add("hit");
+                        setTimeout(() => { if (eSprite && enemyHp > 0) eSprite.classList.remove("hit"); }, 340);
+                    }
+
+                    // v5.9: Status-Effekte der Waffe (Gift/Brand/Blutung/Betäubung)
+                    if (enemyHp > 0) bvTryWeaponStatus(w);
+
                     // Locher: Deckung durchlöchern
                     if (w.pierce && enemyHp > 0 && Math.random() < w.pierce) {
                         const before = Math.max(0, Number(currentEnemy.def) || 0);
@@ -33295,15 +33491,18 @@
                 }
 
                 /* ---------------- Kompletter Angriff ---------------- */
+                let bvAttackSeq = 0;
+
                 function bvWeaponAttack() {
                     const w = bvWeaponCurrent();
                     const pSprite = document.getElementById("battle-player-sprite");
                     const eSprite = document.getElementById("battle-enemy-sprite");
 
                     bvWeaponUi();
+                    const seq = ++bvAttackSeq;
 
                     if (pSprite) {
-                        pSprite.classList.remove("bv-atk-slam", "bv-atk-jab", "bv-atk-pierce", "bv-atk-flurry");
+                        pSprite.classList.remove.apply(pSprite.classList, BV_ATK_CLASSES);
                         void pSprite.offsetWidth;
                         pSprite.classList.add("bv-atk-" + w.anim);
                     }
@@ -33314,6 +33513,7 @@
                     // Fehlschlag: 7 % (etwas gnädiger als vorher, dafür mehr Schläge)
                     if (Math.random() < 0.07) {
                         setTimeout(() => {
+                            if (seq !== bvAttackSeq) return;
                             bvWeaponCleanup(pSprite);
                             battleLog("Daneben! " + (currentEnemy.displayName || currentEnemy.name) + " ist ausgewichen! ❌");
                             spawnBattleEffect("enemy", "❌");
@@ -33330,14 +33530,26 @@
                         return;
                     }
 
-                    const stagger = w.hits > 1 ? 170 : 130;
+                    const stagger = w.hits > 1 ? 160 : 130;
                     const firstHitAt = 240;
                     for (let i = 0; i < w.hits; i++) {
-                        setTimeout(() => bvWeaponStrike(w, i), firstHitAt + i * stagger);
+                        setTimeout(() => {
+                            if (seq !== bvAttackSeq || gameState !== "BATTLE" || enemyHp <= 0) return;
+                            bvWeaponStrike(w, i);
+                            // v5.9: 0 HP = sofort besiegt – Death-Animation startet ohne Wartezeit,
+                            // restliche Schläge der Serie werden verworfen.
+                            if (enemyHp <= 0) {
+                                bvAttackSeq++;
+                                bvWeaponCleanup(pSprite);
+                                bvStatusReset();
+                                checkBattleEnd();
+                            }
+                        }, firstHitAt + i * stagger);
                     }
                     setTimeout(() => {
+                        if (seq !== bvAttackSeq) return;
                         bvWeaponCleanup(pSprite);
-                        checkBattleEnd();
+                        if (enemyHp > 0) checkBattleEnd();
                     }, firstHitAt + (w.hits - 1) * stagger + 330);
                 }
 
@@ -33353,7 +33565,15 @@
                     equip: bvWeaponEquip,
                     set: bvWeaponEquip,
                     cycle: bvWeaponCycle,
-                    attack: bvWeaponAttack
+                    attack: bvWeaponAttack,
+                    status: () => {
+                        const st = bvStatusStore(false);
+                        return st ? {
+                            gift: st.gift.turns, brand: st.brand.turns, blutung: st.blutung.turns, stun: st.stun
+                        } : { gift: 0, brand: 0, blutung: 0, stun: 0 };
+                    },
+                    applyStatus: (kind, turns, dmg) => { bvStatusApply(kind, turns, dmg); },
+                    tryStatus: (id) => { bvTryWeaponStatus(BV_WEAPONS[id] || bvWeaponCurrent()); }
                 };
                 window.BVCombo = {
                     info: bvComboInfo,
@@ -34821,6 +35041,9 @@ function performSkill(skillId) {
                     showTurn("Gegner-Zug!", false);
 
                     setTimeout(() => {
+                        // v5.9: Gift/Brand/Blutung ticken vor dem Gegner-Zug, Betäubung kostet den Zug
+                        if (bvStatusTick()) return;
+
                         // ===== ENEMY SKILL SYSTEM =====
                         // Check if enemy has skills and decide which action to take
                         let selectedSkill = null;
@@ -35208,6 +35431,8 @@ function performSkill(skillId) {
 
                     // v5.7: Der Aktenstapel wird für den nächsten Kampf neu aufgebaut
                     if (window.BVCombo) window.BVCombo.reset();
+                    // v5.9: Gegner-Status werden mit dem Kampfende abgeräumt
+                    if (typeof bvStatusReset === "function") bvStatusReset();
 
                     const update = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
                     update("victory-gold", currentEnemy.gold);
@@ -59615,7 +59840,11 @@ body.bv-settings-reduced-motion #battle-enemy-sprite-container .bv-wfx { display
         var chips = '<span class="bv-wpn-chip">' + (w.hits > 1 ? w.hits + " Schläge" : "1 Schlag") + '</span>' +
             '<span class="bv-wpn-chip dmg">Wucht ×' + fmt(w.mult) + '</span>' +
             '<span class="bv-wpn-chip def">Gegner-DEF ×' + fmt(w.defFactor) + '</span>' +
-            (w.pierce ? '<span class="bv-wpn-chip special">35 % DEF ↓</span>' : '');
+            (w.pierce ? '<span class="bv-wpn-chip special">35 % DEF ↓</span>' : '') +
+            (w.dot ? '<span class="bv-wpn-chip status">' +
+                (w.dot.kind === 'gift' ? '🧪 Gift' : w.dot.kind === 'brand' ? '🔥 Brand' : '🩸 Blutung') +
+                ' ' + Math.round(w.dot.chance * 100) + ' %</span>' : '') +
+            (w.stun ? '<span class="bv-wpn-chip status">💫 Betäubung ' + Math.round(w.stun.chance * 100) + ' %</span>' : '');
 
         var action;
         if (isEquipped) {
@@ -59878,5 +60107,146 @@ body.bv-settings-reduced-motion #battle-enemy-sprite-container .bv-wfx { display
     #rpg-battle-screen .bv-combo-meter .cm-label { font-size: .62rem; }
     #rpg-battle-screen .bv-combo-meter .cm-slot { width: 12px; height: 15px; }
     #rpg-battle-screen .bv-combo-meter .cm-bonus { font-size: .7rem; }
+}
+</style>
+
+<style>
+/* ============================================================
+   v5.9 – NEUE WAFFEN-ANIMATIONEN + GEGNER-STATUS
+   Nur transform/opacity – Low-Spec bekommt dieselben Treffer,
+   aber keine Partikel.
+   ============================================================ */
+
+/* ---- Angriffs-Animationen ---- */
+#battle-player-sprite.bv-atk-scald { animation: bvAtkScald .58s cubic-bezier(.3, 1.3, .5, 1) both; }
+#battle-player-sprite.bv-atk-splash { animation: bvAtkSplash .56s cubic-bezier(.25, 1.1, .4, 1) both; }
+#battle-player-sprite.bv-atk-tremor { animation: bvAtkTremor .62s ease-in-out both; }
+#battle-player-sprite.bv-atk-shred { animation: bvAtkShred .5s cubic-bezier(.2, 1.2, .3, 1) both; }
+
+@keyframes bvAtkScald {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    22%  { transform: translate(-16px, -12px) rotate(-11deg) scale(.97); }
+    52%  { transform: translate(40px, 8px) rotate(17deg) scale(1.06); }
+    72%  { transform: translate(20px, 2px) rotate(7deg) scale(1.02); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+@keyframes bvAtkSplash {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    25%  { transform: translate(-12px, -18px) rotate(-13deg) scale(.96); }
+    55%  { transform: translate(38px, -6px) rotate(25deg) scale(1.08); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+@keyframes bvAtkTremor {
+    0%   { transform: translate(0, 0) rotate(0); }
+    12%  { transform: translate(-6px, 0) rotate(-2deg); }
+    24%  { transform: translate(6px, -2px) rotate(2deg); }
+    36%  { transform: translate(-5px, 0) rotate(-1deg); }
+    48%  { transform: translate(5px, -1px) rotate(1deg); }
+    62%  { transform: translate(34px, 2px) rotate(4deg) scale(1.04); }
+    80%  { transform: translate(14px, 0) rotate(1deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+}
+
+@keyframes bvAtkShred {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    18%  { transform: translate(-18px, 6px) rotate(-9deg) scale(.98); }
+    42%  { transform: translate(48px, -6px) rotate(12deg) scale(1.07); }
+    62%  { transform: translate(12px, 3px) rotate(-5deg) scale(1.01); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+/* ---- Neue Treffer-Partikel ---- */
+#battle-enemy-sprite-container .bv-wfx-scald {
+    width: 8px; height: 11px;
+    border-radius: 4px 4px 6px 6px;
+    background: linear-gradient(180deg, #ffe3c2, #a4652e);
+}
+#battle-enemy-sprite-container .bv-wfx-splash {
+    width: 10px; height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #b9d4ff, #2b3f8c 70%);
+    box-shadow: 0 0 0 1px rgba(120, 160, 255, .45);
+}
+#battle-enemy-sprite-container .bv-wfx-tremor {
+    width: 9px; height: 9px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #ffffff, #c9d3e3);
+}
+#battle-enemy-sprite-container .bv-wfx-shred {
+    width: 4px; height: 13px;
+    margin: -6px 0 0 -2px;
+    border-radius: 1px;
+    background: linear-gradient(180deg, #fffdf5, #e5dcc4);
+}
+
+/* Schockwelle für schwere Treffer (ein einziges Element) */
+#battle-enemy-sprite-container .bv-wfx-ring {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    width: 26px;
+    height: 26px;
+    margin: -13px 0 0 -13px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 240, 210, .6);
+    pointer-events: none;
+    animation: bvWfxRing .58s cubic-bezier(.2, .8, .3, 1) forwards;
+}
+@keyframes bvWfxRing {
+    0%   { opacity: .85; transform: scale(.35); }
+    100% { opacity: 0; transform: scale(2.4); }
+}
+
+/* ---- Gegner-Status unter der Gegner-HP ---- */
+#battle-enemy-hud .bv-enemy-status {
+    display: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+}
+#battle-enemy-hud .bv-enemy-status.on { display: flex; }
+
+#battle-enemy-hud .bv-enemy-status .bvs-chip {
+    font-family: 'VT323', monospace;
+    font-size: .66rem;
+    line-height: 1.15;
+    padding: 1px 7px;
+    border-radius: 5px;
+    border: 1px solid currentColor;
+    background: rgba(6, 10, 26, .74);
+    white-space: nowrap;
+}
+#battle-enemy-hud .bv-enemy-status.bump .bvs-chip {
+    animation: bvsChipPop .3s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+@keyframes bvsChipPop {
+    0%   { transform: scale(.7); opacity: .4; }
+    60%  { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* Status-Chip im Waffen-Menü */
+.bv-wpn-chip.status { color: #c4b5fd; border-color: rgba(167, 139, 250, .38); }
+
+/* Low-Spec / reduzierte Bewegung: Status bleibt sichtbar (statisch), Partikel weg */
+body.bv-settings-lowspec #battle-enemy-sprite-container .bv-wfx-ring,
+body.bv-settings-performance #battle-enemy-sprite-container .bv-wfx-ring,
+body.bv-settings-reduced-motion #battle-enemy-sprite-container .bv-wfx-ring { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+    #battle-enemy-sprite-container .bv-wfx-ring { display: none !important; }
+    #battle-player-sprite.bv-atk-scald,
+    #battle-player-sprite.bv-atk-splash,
+    #battle-player-sprite.bv-atk-tremor,
+    #battle-player-sprite.bv-atk-shred { animation-duration: .14s !important; }
+    #battle-enemy-hud .bv-enemy-status.bump .bvs-chip { animation: none !important; }
+}
+
+@media (max-width: 560px) {
+    #battle-enemy-hud .bv-enemy-status .bvs-chip { font-size: .58rem; padding: 1px 5px; }
 }
 </style>
