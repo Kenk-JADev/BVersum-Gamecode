@@ -1370,6 +1370,10 @@
                                 <div class="editor-loadout-title">🎒 Spieler Items & Anzahl</div>
                                 <div class="editor-item-options" id="editor-player-items"></div>
                             </div>
+                            <div class="editor-loadout-card">
+                                <div class="editor-loadout-title">⚔️ Waffen (Test-Kampf)</div>
+                                <div class="editor-weapon-options" id="editor-player-weapons"></div>
+                            </div>
                         </div>
                     </div>
                     </details>
@@ -26432,6 +26436,8 @@
                     if (quitModal) quitModal.style.display = 'none';
 
                     gameState = "SPLASH";
+                    // v6.0: neues Spiel = neue Waffenkammer (kein Übernehmen alter Käufe)
+                    try { localStorage.removeItem("bv_weapons"); localStorage.removeItem("bv_weapon"); } catch (e) {}
                     player = {
                         name: "Held", x: 5, y: 7, hp: 100, maxHp: 100, mp: 10, maxMp: 10,
                         gold: 50, lvl: 1, atk: 10, def: 2, exp: 0, expNext: 30,
@@ -27961,6 +27967,8 @@
                 
                 document.getElementById("editor-back-to-title")?.addEventListener("click", () => {
                     if (isTransitioning) return;
+                    // v6.0: Beim Verlassen des Editors die echten Waffen zurückholen
+                    if (typeof bvEditorWeaponRestore === "function") bvEditorWeaponRestore();
                     playEditorTransition("Titlemenü", "Zurück zur Lobby", () => {
                         window.BVEditorTestBattle = false;
                         currentEnemy = null;
@@ -28091,9 +28099,36 @@
                 function renderBattleEditorPlayerOptions() {
                     const skillsBox = document.getElementById("editor-player-skills");
                     const itemsBox = document.getElementById("editor-player-items");
+                    const weaponsBox = document.getElementById("editor-player-weapons");
                     const enemySkillsBox = document.getElementById("editor-enemy-skills");
 
                     renderBattleEditorEnemySkills(enemySkillsBox);
+
+                    if (weaponsBox) {
+                        // v6.0: Waffen im Battle-Editor auswählbar (Auswahl + eingesetzte Waffe)
+                        const wList = (window.BVWeapons && typeof window.BVWeapons.list === "function")
+                            ? window.BVWeapons.list() : [];
+                        if (!wList.length) {
+                            weaponsBox.innerHTML = '<div class="editor-weapon-empty">Waffen werden geladen …</div>';
+                        } else {
+                            const eq = (window.BVWeapons.current && window.BVWeapons.current()) || wList[0];
+                            weaponsBox.innerHTML =
+                                wList.map(w => `
+                                    <label class="editor-weapon-option" title="${w.desc || w.hint || ''}">
+                                        <input type="checkbox" class="editor-weapon-check" value="${w.id}" checked>
+                                        <span>${w.icon}</span>
+                                        <span class="wpn-name">${w.name}</span>
+                                        <small>${w.hits}×</small>
+                                    </label>`).join('') +
+                                '<div class="editor-weapon-equip-row">' +
+                                    '<label for="editor-weapon-equip">Im Kampf:</label>' +
+                                    '<select id="editor-weapon-equip">' +
+                                        wList.map(w => `<option value="${w.id}"${eq && w.id === eq.id ? ' selected' : ''}>${w.icon} ${w.name}</option>`).join('') +
+                                    '</select>' +
+                                '</div>';
+                            if (typeof parseEmojis === "function") parseEmojis(weaponsBox);
+                        }
+                    }
 
                     if (skillsBox && skillsBox.dataset.rendered !== "true") {
                         const editorSkills = [
@@ -28147,6 +28182,22 @@
                             });
                         });
                     }
+                }
+
+                function getEditorSelectedWeapons() {
+                    // v6.0: nur Waffen, die im Editor angehakt sind
+                    const sel = Array.from(document.querySelectorAll('#editor-player-weapons .editor-weapon-check:checked'))
+                        .map(el => el.value);
+                    const equip = document.getElementById("editor-weapon-equip")?.value;
+                    const list = sel.length ? sel.slice() : ["aktenstapel"];
+                    if (equip && list.indexOf(equip) === -1) list.push(equip);
+                    return list;
+                }
+
+                function getEditorEquippedWeapon() {
+                    const list = getEditorSelectedWeapons();
+                    const equip = document.getElementById("editor-weapon-equip")?.value;
+                    return (equip && list.indexOf(equip) !== -1) ? equip : list[0];
                 }
 
                 function getEditorSelectedSkills() {
@@ -28254,6 +28305,17 @@
                         player.unlockedSkills = selectedSkills;
                         player.inventory = selectedInventory;
                         player.ueberstundenBoost = null;
+
+                        // v6.0: Waffen aus dem Editor (Snapshot für das Zurücksetzen)
+                        const editorWeapons = getEditorSelectedWeapons();
+                        const editorEquip = getEditorEquippedWeapon();
+                        window.__bvEditorWeaponSnapshot = {
+                            weapons: Array.isArray(player.weapons) ? player.weapons.slice() : null,
+                            weapon: player.weapon || null
+                        };
+                        player.weapons = editorWeapons.slice();
+                        player.weapon = editorEquip;
+                        if (typeof window.BVCombo === "object" && window.BVCombo) window.BVCombo.reset();
 
                         const updEditorPlayerUI = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
                         updEditorPlayerUI("hud-player-name", player.name);
@@ -32104,6 +32166,8 @@
 
                 // ===== SAVE/LOAD =====
                 window.saveGame = function () {
+                    // v6.0: Waffenbesitz/-auswahl vor dem Speichern sicherstellen
+                    if (typeof bvWeaponOwnedList === "function") { try { bvWeaponOwnedList(); } catch (e) {} }
                     // Ensure player object has the latest gender and dept
                     player.gender = playerGender;
                     player.dept = playerDept;
@@ -33043,7 +33107,7 @@
                         hits: 3, mult: 0.45, defFactor: 0.3, anim: "flurry", fx: "🗂️",
                         color: "#ff9a6a", price: 420,
                         hint: "Drei schnelle Schläge mit dem Ordner.",
-                        desc: "Drei schnelle Schläge. Baut den Aktenstapel am schnellsten auf."
+                        desc: "Drei schnelle Schläge. Baut den Aktenstapel schnell auf."
                     },
                     drucker: {
                         id: "drucker", name: "Drucker", icon: "🖨️",
@@ -33060,11 +33124,28 @@
                         dot: { kind: "blutung", chance: 0.65, turns: 2, dmg: [6, 8] },
                         hint: "Papierschnitt – lässt den Gegner bluten.",
                         desc: "Härtester Einzelschlag: 65 % Chance auf Blutung – 2 Runden Schaden."
+                    },
+                    feuerloescher: {
+                        id: "feuerloescher", name: "Feuerlöscher", icon: "🧯",
+                        hits: 1, mult: 1.35, defFactor: 1.35, anim: "smash", fx: "💨",
+                        color: "#7dd3fc", price: 700,
+                        stun: { chance: 0.35, turns: 2 },
+                        hint: "Ein Schlag mit dem Feuerlöscher – macht den Gegner benommen.",
+                        desc: "Wuchtiger Schlag, 35 % Chance auf 2 Runden Betäubung."
+                    },
+                    karteikasten: {
+                        id: "karteikasten", name: "Karteikasten", icon: "🗃️",
+                        hits: 5, mult: 0.34, defFactor: 0.2, anim: "barrage", fx: "📇",
+                        color: "#a5b4fc", price: 780,
+                        hint: "Fünf Treffer in Folge – die stärkste Kombo-Maschine.",
+                        desc: "Fünf schnelle Treffer hintereinander. Füllt den Aktenstapel fast allein."
                     }
                 };
-                const BV_WEAPON_ORDER = ["aktenstapel", "tacker", "locher", "kaffeekanne", "tinte", "ordner", "drucker", "schredder"];
+                const BV_WEAPON_ORDER = ["aktenstapel", "tacker", "locher", "kaffeekanne", "tinte",
+                    "ordner", "drucker", "schredder", "feuerloescher", "karteikasten"];
                 const BV_ATK_CLASSES = ["bv-atk-slam", "bv-atk-jab", "bv-atk-pierce", "bv-atk-flurry",
-                    "bv-atk-scald", "bv-atk-splash", "bv-atk-tremor", "bv-atk-shred"];
+                    "bv-atk-scald", "bv-atk-splash", "bv-atk-tremor", "bv-atk-shred",
+                    "bv-atk-smash", "bv-atk-barrage"];
 
                 /* v5.9: Statuseffekte für Gegner */
                 const BV_STATUS_DEFS = {
@@ -33073,8 +33154,8 @@
                     blutung: { label: "Blutung", icon: "🩸", color: "#f87171", verb: "am Bluten" },
                     stun:    { label: "Betäubt", icon: "💫", color: "#facc15", verb: "betäubt" }
                 };
-                const BV_COMBO_MAX = 5;
 
+                const BV_COMBO_MAX = 10;
                 let bvComboStacks = 0;
                 let bvComboLastTier = 0;
                 let bvComboBumpTimers = [];
@@ -33082,10 +33163,24 @@
                 function bvNumber(v, d) { const n = Number(v); return isFinite(n) ? n : d; }
 
                 /* v5.8: Waffen werden im Menü „Waffen“ gekauft – Besitz statt Level. */
+                /* v6.0: Waffen zusätzlich in localStorage spiegeln, damit sie auch dann
+                   erhalten bleiben, wenn der Spielstand älter ist als der Kauf. */
+                function bvWeaponMirrorRead() {
+                    try {
+                        const raw = localStorage.getItem("bv_weapons");
+                        const arr = raw ? JSON.parse(raw) : null;
+                        return Array.isArray(arr) ? arr.filter(id => !!BV_WEAPONS[id]) : [];
+                    } catch (e) { return []; }
+                }
+
                 function bvWeaponOwnedList() {
                     if (!player) return ["aktenstapel"];
                     if (!Array.isArray(player.weapons)) {
                         player.weapons = ["aktenstapel"];
+                        // Spiegel aus localStorage (Kauf nach dem letzten Spielstand)
+                        bvWeaponMirrorRead().forEach(id => {
+                            if (player.weapons.indexOf(id) === -1) player.weapons.push(id);
+                        });
                         // Migration: eine in v5.7 frei gewählte Waffe bleibt im Besitz
                         try {
                             const old = localStorage.getItem("bv_weapon");
@@ -33096,6 +33191,36 @@
                     }
                     if (player.weapons.indexOf("aktenstapel") === -1) player.weapons.unshift("aktenstapel");
                     return player.weapons;
+                }
+
+                /* Schreibt Waffenbesitz + Auswahl in localStorage und in den Spielstand. */
+                function bvWeaponPersist() {
+                    try {
+                        localStorage.setItem("bv_weapons", JSON.stringify(bvWeaponOwnedList()));
+                        localStorage.setItem("bv_weapon", bvWeaponCurrentId());
+                    } catch (e) {}
+                    try {
+                        if (typeof getSaveFile === "function" && typeof setSaveFile === "function") {
+                            const data = getSaveFile();
+                            if (data && data.player && typeof data.player === "object") {
+                                data.player.weapons = bvWeaponOwnedList().slice();
+                                data.player.weapon = bvWeaponCurrentId();
+                                setSaveFile(data);
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                /* Nach einem Editor-Testbattle die echten Waffen wiederherstellen. */
+                function bvEditorWeaponRestore() {
+                    const snap = window.__bvEditorWeaponSnapshot;
+                    if (!snap) return;
+                    window.__bvEditorWeaponSnapshot = null;
+                    if (!player) return;
+                    player.weapons = snap.weapons ? snap.weapons.slice() : ["aktenstapel"];
+                    if (player.weapons.indexOf("aktenstapel") === -1) player.weapons.unshift("aktenstapel");
+                    player.weapon = (snap.weapon && player.weapons.indexOf(snap.weapon) !== -1)
+                        ? snap.weapon : "aktenstapel";
                 }
                 function bvWeaponOwned(id) {
                     return !!BV_WEAPONS[id] && bvWeaponOwnedList().indexOf(id) !== -1;
@@ -33115,6 +33240,7 @@
                     if (!BV_WEAPONS[id] || !bvWeaponOwned(id)) return false;
                     if (player) player.weapon = id;
                     try { localStorage.setItem("bv_weapon", id); } catch (e) {}
+                    bvWeaponPersist();
                     bvWeaponUi();
                     return true;
                 }
@@ -33133,6 +33259,7 @@
                     if (player) player.gold = gold - price;
                     bvWeaponOwnedList().push(id);
                     bvWeaponEquip(id);
+                    bvWeaponPersist();
                     if (typeof window.updateHUD === "function") window.updateHUD();
                     if (typeof window.updateMenuStats === "function") window.updateMenuStats();
                     return { ok: true, msg: w.icon + " " + w.name + " gekauft und ausgerüstet! (-" + price + " G)" };
@@ -33157,7 +33284,8 @@
 
                 /* ---------------- Aktenstapel-Kombo ---------------- */
                 function bvComboBonus() {
-                    return 1 + 0.045 * Math.max(0, bvComboStacks - 1);
+                    // v6.0: bis 10 Blatt, +4 % pro Blatt (max. +36 %)
+                    return 1 + 0.04 * Math.max(0, bvComboStacks - 1);
                 }
                 function bvComboBonusPercent() {
                     return Math.round((bvComboBonus() - 1) * 100);
@@ -33181,11 +33309,14 @@
                 }
                 function bvComboAdd() {
                     if (bvComboStacks < BV_COMBO_MAX) bvComboStacks++;
-                    const tier = bvComboStacks >= 5 ? 3 : (bvComboStacks >= 3 ? 2 : (bvComboStacks >= 2 ? 1 : 0));
+                    const tier = bvComboStacks >= 10 ? 5 : (bvComboStacks >= 7 ? 4 :
+                        (bvComboStacks >= 5 ? 3 : (bvComboStacks >= 3 ? 2 : (bvComboStacks >= 2 ? 1 : 0))));
                     if (tier > bvComboLastTier && typeof battleLog === "function" && gameState === "BATTLE") {
                         if (tier === 1) battleLog("📚 Aktenstapel ×2 – +" + bvComboBonusPercent() + " % Schaden.");
                         else if (tier === 2) battleLog("📚 Aktenstapel ×3 – die Blätter stapeln sich! +" + bvComboBonusPercent() + " % Schaden.");
-                        else battleLog("📚 AKTENSTAPEL VOLL (×5) – +" + bvComboBonusPercent() + " % Schaden!");
+                        else if (tier === 3) battleLog("📚 Aktenstapel ×5 – halb voll! +" + bvComboBonusPercent() + " % Schaden.");
+                        else if (tier === 4) battleLog("📚 Aktenstapel ×7 – der Stapel wackelt! +" + bvComboBonusPercent() + " % Schaden.");
+                        else battleLog("📚 AKTENSTAPEL VOLL (×10) – +" + bvComboBonusPercent() + " % Schaden!");
                     }
                     bvComboLastTier = Math.max(bvComboLastTier, tier);
                     bvComboUi(true);
@@ -33202,38 +33333,20 @@
                     if (!screen) return null;
                     box = document.createElement("div");
                     box.id = "bv-battle-tools";
+                    // v6.0: kein Waffenfenster mehr im Kampf – nur der Aktenstapel bleibt sichtbar
                     box.innerHTML =
-                        '<button type="button" id="bv-weapon-chip" class="bv-weapon-chip" title="Klick: nächste Waffe">' +
-                            '<span class="wpn-ico"></span><span class="wpn-name"></span>' +
-                            '<span class="wpn-hits"></span><span class="wpn-tip">Menü › Waffen</span>' +
-                        '</button>' +
                         '<div id="bv-combo-meter" class="bv-combo-meter" aria-live="polite">' +
                             '<span class="cm-label">AKTENSTAPEL</span>' +
                             '<span class="cm-slots"></span>' +
                             '<span class="cm-bonus"></span>' +
                         '</div>';
                     screen.appendChild(box);
-                    // v5.8: Im Kampf wird nicht gewechselt – die Waffe wird im Menü gewählt.
                     return box;
                 }
 
                 function bvWeaponUi() {
-                    const box = bvBattleTools();
-                    if (!box) return;
-                    const w = bvWeaponCurrent();
-                    const lvlNext = BV_WEAPON_ORDER.map(id => BV_WEAPONS[id]).filter(x => !bvWeaponUnlocked(x.id))[0];
-                    const nameEl = box.querySelector(".wpn-name");
-                    const icoEl = box.querySelector(".wpn-ico");
-                    const hitsEl = box.querySelector(".wpn-hits");
-                    if (icoEl) icoEl.textContent = w.icon;
-                    if (nameEl) nameEl.textContent = w.name;
-                    if (hitsEl) hitsEl.textContent = w.hits > 1 ? "×" + w.hits : "";
-                    const chip = box.querySelector("#bv-weapon-chip");
-                    if (chip) {
-                        chip.title = w.name + " (" + (w.hits > 1 ? w.hits + " Schläge" : "1 Schlag") + ") – " + w.hint +
-                            (lvlNext ? " · Im Menü „Waffen“ kaufbar" : "");
-                        chip.classList.toggle("is-multi", w.hits > 1);
-                    }
+                    // v6.0: Die Waffe selbst wird im Menü gewählt – im Kampf zeigen wir nur den Stapel.
+                    if (!bvBattleTools()) return;
                     bvComboUi();
                 }
 
@@ -33406,7 +33519,8 @@
                     return 1;
                 }
 
-                const BV_WFX_COUNT = { slam: 6, jab: 4, pierce: 3, flurry: 5, scald: 5, splash: 7, tremor: 4, shred: 5 };
+                const BV_WFX_COUNT = { slam: 6, jab: 4, pierce: 3, flurry: 5, scald: 5, splash: 7,
+                    tremor: 4, shred: 5, smash: 7, barrage: 4 };
 
                 function bvWeaponImpact(w, index) {
                     if (!bvWeaponFxLevel()) return;
@@ -33423,7 +33537,7 @@
                         setTimeout(() => { if (s.parentNode) s.remove(); }, 900);
                     }
                     // Schwere Treffer bekommen zusätzlich eine billige Schockwelle (1 Element)
-                    if (w.anim === "shred" || w.anim === "slam" || w.anim === "tremor") {
+                    if (w.anim === "shred" || w.anim === "slam" || w.anim === "tremor" || w.anim === "smash") {
                         const ring = document.createElement("i");
                         ring.className = "bv-wfx-ring";
                         host.appendChild(ring);
@@ -33573,7 +33687,9 @@
                         } : { gift: 0, brand: 0, blutung: 0, stun: 0 };
                     },
                     applyStatus: (kind, turns, dmg) => { bvStatusApply(kind, turns, dmg); },
-                    tryStatus: (id) => { bvTryWeaponStatus(BV_WEAPONS[id] || bvWeaponCurrent()); }
+                    tryStatus: (id) => { bvTryWeaponStatus(BV_WEAPONS[id] || bvWeaponCurrent()); },
+                    persist: () => bvWeaponPersist(),
+                    editorRestore: () => bvEditorWeaponRestore()
                 };
                 window.BVCombo = {
                     info: bvComboInfo,
@@ -36013,6 +36129,8 @@ window.respawnPlayer = function () {
                 }
 
                 function endBattleToMap(after = null) {
+                    // v6.0: Nach einem Editor-Testbattle die echten Waffen wiederherstellen
+                    if (typeof bvEditorWeaponRestore === "function") bvEditorWeaponRestore();
                     const transOut = document.getElementById("battle-transition-out");
 
                     // Reset Boss HUD classes
@@ -60248,5 +60366,235 @@ body.bv-settings-reduced-motion #battle-enemy-sprite-container .bv-wfx-ring { di
 
 @media (max-width: 560px) {
     #battle-enemy-hud .bv-enemy-status .bvs-chip { font-size: .58rem; padding: 1px 5px; }
+}
+</style>
+
+<style>
+/* ============================================================
+   v6.0 – BEWEGLICHERE WAFFEN-ANIMATIONEN + KOMPO BIS ×10
+   Reine transform-Keyframes; Low-Spec kürzt nur die Dauer.
+   ============================================================ */
+
+/* ---- Aktenstapel: Sprung + schwerer Überkopf-Slam ---- */
+#battle-player-sprite.bv-atk-slam { animation: bvAtkSlamV6 .62s cubic-bezier(.35, 1.25, .45, 1) both; }
+@keyframes bvAtkSlamV6 {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    18%  { transform: translate(-10px, -26px) rotate(-13deg) scale(.96); }
+    46%  { transform: translate(30px, -12px) rotate(16deg) scale(1.08); }
+    62%  { transform: translate(52px, 14px) rotate(8deg) scale(1.12); }
+    80%  { transform: translate(22px, 2px) rotate(2deg) scale(1.02); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+/* ---- Tacker: zwei Vorstöße mit Zwischenschritt ---- */
+#battle-player-sprite.bv-atk-jab { animation: bvAtkJabV6 .5s ease-out both; }
+@keyframes bvAtkJabV6 {
+    0%   { transform: translate(0, 0) rotate(0); }
+    12%  { transform: translate(-8px, 2px) rotate(-4deg); }
+    28%  { transform: translate(40px, -6px) rotate(8deg); }
+    42%  { transform: translate(10px, 2px) rotate(-2deg); }
+    60%  { transform: translate(46px, -8px) rotate(-7deg); }
+    78%  { transform: translate(18px, 0) rotate(2deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* ---- Locher: Ausholen + tiefer Stich ---- */
+#battle-player-sprite.bv-atk-pierce { animation: bvAtkPierceV6 .55s cubic-bezier(.2, .95, .3, 1) both; }
+@keyframes bvAtkPierceV6 {
+    0%   { transform: translate(0, 0) scaleX(1); }
+    20%  { transform: translate(-26px, 4px) rotate(-8deg) scaleX(.92); }
+    46%  { transform: translate(34px, -2px) rotate(6deg) scaleX(1.12); }
+    62%  { transform: translate(58px, 0) rotate(2deg) scaleX(1.2); }
+    82%  { transform: translate(20px, 0) rotate(0) scaleX(1.02); }
+    100% { transform: translate(0, 0) rotate(0) scaleX(1); }
+}
+
+/* ---- Ordner: Drei-Schlag-Kombo mit Drehung ---- */
+#battle-player-sprite.bv-atk-flurry { animation: bvAtkFlurryV6 .78s ease-in-out both; }
+@keyframes bvAtkFlurryV6 {
+    0%   { transform: translate(0, 0) rotate(0); }
+    14%  { transform: translate(-14px, -6px) rotate(-9deg); }
+    32%  { transform: translate(34px, -14px) rotate(12deg) scale(1.06); }
+    46%  { transform: translate(6px, 6px) rotate(-8deg); }
+    62%  { transform: translate(38px, -10px) rotate(10deg) scale(1.05); }
+    78%  { transform: translate(12px, 4px) rotate(-5deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* ---- Kaffeekanne: zurücklehnen und schwungvoll vorschütten ---- */
+#battle-player-sprite.bv-atk-scald { animation: bvAtkScaldV6 .62s cubic-bezier(.3, 1.2, .5, 1) both; }
+@keyframes bvAtkScaldV6 {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    22%  { transform: translate(-22px, -14px) rotate(-14deg) scale(.95); }
+    50%  { transform: translate(36px, -8px) rotate(19deg) scale(1.08); }
+    66%  { transform: translate(52px, 6px) rotate(10deg) scale(1.05); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+/* ---- Tintenflasche: Sprung mit Drehung und Ausholen ---- */
+#battle-player-sprite.bv-atk-splash { animation: bvAtkSplashV6 .6s cubic-bezier(.25, 1.15, .4, 1) both; }
+@keyframes bvAtkSplashV6 {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    20%  { transform: translate(-14px, -22px) rotate(-18deg) scale(.94); }
+    46%  { transform: translate(26px, -18px) rotate(20deg) scale(1.06); }
+    64%  { transform: translate(50px, 2px) rotate(32deg) scale(1.1); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+/* ---- Drucker: Rütteln, dann wuchtiger Schub ---- */
+#battle-player-sprite.bv-atk-tremor { animation: bvAtkTremorV6 .68s ease-in-out both; }
+@keyframes bvAtkTremorV6 {
+    0%   { transform: translate(0, 0) rotate(0); }
+    10%  { transform: translate(-7px, -2px) rotate(-2.5deg); }
+    20%  { transform: translate(7px, -1px) rotate(2.5deg); }
+    30%  { transform: translate(-6px, -2px) rotate(-2deg); }
+    40%  { transform: translate(6px, -1px) rotate(2deg); }
+    52%  { transform: translate(-16px, 2px) rotate(-6deg); }
+    70%  { transform: translate(44px, -4px) rotate(9deg) scale(1.07); }
+    86%  { transform: translate(18px, 0) rotate(3deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* ---- Aktenschredder: zwei wütende Ausfälle ---- */
+#battle-player-sprite.bv-atk-shred { animation: bvAtkShredV6 .58s cubic-bezier(.2, 1.15, .3, 1) both; }
+@keyframes bvAtkShredV6 {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    16%  { transform: translate(-24px, 8px) rotate(-12deg) scale(.95); }
+    40%  { transform: translate(50px, -8px) rotate(15deg) scale(1.09); }
+    58%  { transform: translate(14px, 4px) rotate(-7deg) scale(1.02); }
+    76%  { transform: translate(38px, -4px) rotate(9deg) scale(1.05); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+/* ---- Feuerlöscher: Überkopf-Ausholen + Hammerschlag ---- */
+#battle-player-sprite.bv-atk-smash { animation: bvAtkSmashV6 .7s cubic-bezier(.3, 1.2, .4, 1) both; }
+@keyframes bvAtkSmashV6 {
+    0%   { transform: translate(0, 0) rotate(0) scale(1); }
+    22%  { transform: translate(-8px, -34px) rotate(-18deg) scale(1.02); }
+    52%  { transform: translate(44px, -6px) rotate(22deg) scale(1.12); }
+    66%  { transform: translate(56px, 16px) rotate(6deg) scale(1.05); }
+    82%  { transform: translate(20px, -4px) rotate(-2deg) scale(1.01); }
+    100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+
+/* ---- Karteikasten: fünf Hüpfer nach vorn ---- */
+#battle-player-sprite.bv-atk-barrage { animation: bvAtkBarrageV6 .9s ease-in-out both; }
+@keyframes bvAtkBarrageV6 {
+    0%   { transform: translate(0, 0) rotate(0); }
+    10%  { transform: translate(24px, -14px) rotate(7deg) scale(1.04); }
+    20%  { transform: translate(6px, 0) rotate(-3deg); }
+    30%  { transform: translate(38px, -16px) rotate(-8deg) scale(1.05); }
+    40%  { transform: translate(12px, -2px) rotate(4deg); }
+    52%  { transform: translate(48px, -12px) rotate(8deg) scale(1.06); }
+    64%  { transform: translate(16px, 2px) rotate(-4deg); }
+    76%  { transform: translate(40px, -10px) rotate(5deg) scale(1.03); }
+    88%  { transform: translate(14px, 0) rotate(-2deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* ---- Treffer-FX für die neuen Animationen ---- */
+#battle-enemy-sprite-container .bv-wfx-smash {
+    width: 12px; height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #eaf6ff, #7dd3fc 65%, #2b6fa8);
+    box-shadow: 0 0 0 1px rgba(180, 230, 255, .5);
+}
+#battle-enemy-sprite-container .bv-wfx-barrage {
+    width: 7px; height: 11px;
+    margin: -5px 0 0 -3px;
+    border-radius: 1px;
+    background: linear-gradient(180deg, #ffffff, #b9c4f0);
+}
+
+/* ---- Low-Spec / reduzierte Bewegung: kürzer, aber sichtbar ---- */
+@media (prefers-reduced-motion: reduce) {
+    #battle-player-sprite.bv-atk-slam,
+    #battle-player-sprite.bv-atk-jab,
+    #battle-player-sprite.bv-atk-pierce,
+    #battle-player-sprite.bv-atk-flurry,
+    #battle-player-sprite.bv-atk-scald,
+    #battle-player-sprite.bv-atk-splash,
+    #battle-player-sprite.bv-atk-tremor,
+    #battle-player-sprite.bv-atk-shred,
+    #battle-player-sprite.bv-atk-smash,
+    #battle-player-sprite.bv-atk-barrage { animation-duration: .18s !important; }
+}
+
+/* ============================================================
+   Kombo-Fenster: jetzt 10 Blätter
+   ============================================================ */
+#rpg-battle-screen .bv-combo-meter .cm-slots { flex-wrap: nowrap; gap: 4px; }
+#rpg-battle-screen .bv-combo-meter .cm-slot {
+    width: 13px;
+    height: 17px;
+    border-radius: 2px;
+}
+#rpg-battle-screen .bv-combo-meter.max .cm-slot.on {
+    background: linear-gradient(180deg, #ffffff, #ff8a2b);
+    border-color: #ffc07a;
+}
+
+@media (max-width: 560px) {
+    #rpg-battle-screen .bv-combo-meter .cm-slot { width: 10px; height: 13px; border-width: 1px; }
+    #rpg-battle-screen .bv-combo-meter .cm-slots { gap: 3px; }
+}
+
+/* ============================================================
+   Battle-Editor: Waffen-Auswahl
+   ============================================================ */
+.editor-loadout-row { grid-template-columns: 1fr 1fr; }
+.editor-weapon-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 210px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.editor-weapon-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+    font-size: .74rem;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+.editor-weapon-option:hover { background: rgba(255, 255, 255, .07); border-color: rgba(120, 170, 255, .35); }
+.editor-weapon-option input[type="checkbox"] { accent-color: #4a9fff; }
+.editor-weapon-option .wpn-name { flex: 1; min-width: 0; }
+.editor-weapon-option small { color: rgba(255, 212, 121, .85); font-family: 'VT323', monospace; }
+.editor-weapon-equip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, .12);
+    font-size: .72rem;
+}
+.editor-weapon-equip-row select {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    border-radius: 6px;
+    background: rgba(10, 16, 32, .9);
+    color: #eaf2ff;
+    border: 1px solid rgba(120, 170, 255, .35);
+    font-family: 'VT323', monospace;
+    font-size: .78rem;
+}
+.editor-weapon-empty {
+    font-family: 'VT323', monospace;
+    font-size: .76rem;
+    color: rgba(220, 232, 255, .5);
+    padding: 10px 2px;
+}
+@media (max-width: 900px) {
+    .editor-loadout-row { grid-template-columns: 1fr; }
 }
 </style>
