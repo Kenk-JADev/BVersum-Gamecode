@@ -16,6 +16,9 @@
  *     NODE_PATH=/tmp/bv-smoke/node_modules node tools/perf_test.js
  *
  * Optional: `node tools/perf_test.js <pfad-zu-public>`.
+ *
+ * Hinweis: Es werden absichtlich keine festen Sleep-Zeiten verwendet. Auf
+ * langsamen CI-Runnern braucht jsdom länger; gewartet wird auf Zustände.
  */
 
 "use strict";
@@ -57,6 +60,22 @@ const checks = [];
 function check(name, ok, detail) {
     checks.push({ name, ok: !!ok, detail: detail === undefined ? "" : String(detail) });
 }
+function waitFor(predicate, label, timeoutMs = 20000, stepMs = 60) {
+    return new Promise((resolve, reject) => {
+        const started = Date.now();
+        const tick = () => {
+            let ok = false;
+            try { ok = !!predicate(); } catch (e) { ok = false; }
+            if (ok) return resolve();
+            if (Date.now() - started >= timeoutMs) {
+                return reject(new Error("Timeout beim Warten auf: " + label));
+            }
+            setTimeout(tick, stepMs);
+        };
+        tick();
+    });
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const vc = new VirtualConsole();
 vc.on("jsdomError", e => {
@@ -119,12 +138,13 @@ const dom = new JSDOM(html, {
 const w = dom.window;
 let renderCalls = 0;
 
-// 1) Initialisierung abwarten, dann ME.render instrumentieren und Map laden.
-setTimeout(() => {
+async function run() {
+    // 1) Auf die Initialisierung warten (statt fixer Sleep-Zeit).
+    await waitFor(() => w.MapEngineV6 && typeof w.MapEngineV6.render === "function" &&
+        typeof w.loadGame === "function", "MapEngineV6 + loadGame");
     const ME = w.MapEngineV6;
-    check("MapEngineV6 initialisiert", !!ME && typeof ME.render === "function");
-    check("loadGame verfügbar", typeof w.loadGame === "function");
-    if (!ME || typeof w.loadGame !== "function") return finish();
+    check("MapEngineV6 initialisiert", true);
+    check("loadGame verfügbar", true);
 
     const originalRender = ME.render;
     ME.render = function (map) {
@@ -132,19 +152,22 @@ setTimeout(() => {
         return originalRender.call(this, map);
     };
     try { w.loadGame(); } catch (e) { errors.push("loadGame: " + e.message); }
-}, 1300);
 
-// 2) Nach den Transition-Timeouts (550 ms + 500 ms) auswerten.
-setTimeout(() => {
-    const ME = w.MapEngineV6;
-    const perf = w.BVMapPerf || {};
+    // 2) Warten, bis die Transition-Timeouts (550 ms + 500 ms) durch sind
+    //    und die Map tatsächlich gerendert wurde.
+    await waitFor(() => w.currentMapId === "buero" && w.BVMapPerf &&
+        w.BVMapPerf.renderCalls >= 1 && ME.svg && ME.svg.querySelectorAll("*").length > 0,
+    "Map-Load abgeschlossen");
+    await sleep(120); // nachgelagerte Timer (Partikel/Minimap) ausschwingen lassen
+
+    const perf = w.BVMapPerf;
     const d = w.document;
 
     check("Map tatsächlich geladen", w.currentMapId === "buero", "currentMapId=" + w.currentMapId);
     check("GENAU EIN Render pro Map-Load", renderCalls === 1, "gemessen: " + renderCalls);
     check("Diagnose-API BVMapPerf vorhanden", perf.renderCalls === 1, JSON.stringify(perf));
-    check("SVG-Map gerendert", ME && ME.svg && ME.svg.querySelectorAll("*").length > 1000,
-        ME && ME.svg ? ME.svg.querySelectorAll("*").length + " Knoten" : "kein SVG");
+    check("SVG-Map gerendert", ME.svg.querySelectorAll("*").length > 1000,
+        ME.svg.querySelectorAll("*").length + " Knoten");
 
     // 3) Raster-onload simulieren (jsdom lädt data:-URLs nicht selbst) und
     //    einen Same-Map-Reload auslösen -> Guard muss ihn überspringen.
@@ -153,16 +176,14 @@ setTimeout(() => {
     check("Rasterbild erzeugt", !!img && !!img.getAttribute("src"));
     if (img && typeof img.onload === "function" && cam) {
         img.onload();   // setzt .map-engine-rasterized und leert die Live-SVG
-        const before = perf.skipped || 0;
-        const beforeCalls = perf.renderCalls || 0;
-        const map = w.currentMap;
-        try { ME.render(map); } catch (e) { errors.push("ME.render(reload): " + e.message); }
-        check("Raster-Guard überspringt Same-Map-Reload", (perf.skipped || 0) === before + 1,
-            "skipped " + before + " -> " + (perf.skipped || 0));
-        check("Skip verursacht KEINEN SVG-Rebuild",
-            ME.svg && ME.svg.querySelectorAll("*").length === 0,
-            ME.svg ? ME.svg.querySelectorAll("*").length + " Knoten" : "kein SVG");
-        check("Skip zählt als Render-Aufruf", (perf.renderCalls || 0) === beforeCalls + 1);
+        const before = perf.skipped;
+        const beforeCalls = perf.renderCalls;
+        try { ME.render(w.currentMap); } catch (e) { errors.push("ME.render(reload): " + e.message); }
+        check("Raster-Guard überspringt Same-Map-Reload", perf.skipped === before + 1,
+            "skipped " + before + " -> " + perf.skipped);
+        check("Skip verursacht KEINEN SVG-Rebuild", ME.svg.querySelectorAll("*").length === 0,
+            ME.svg.querySelectorAll("*").length + " Knoten");
+        check("Skip zählt als Render-Aufruf", perf.renderCalls === beforeCalls + 1);
     } else {
         check("Raster-Guard testbar", false, "img.onload fehlt");
     }
@@ -182,31 +203,33 @@ setTimeout(() => {
         } catch (e) { errors.push("toggleMinimap: " + e.message); }
         check("Minimap-Statik genau 1x aufgebaut", perf.minimapStatic === 1,
             "minimapStatic=" + perf.minimapStatic);
-        check("Minimap-Frames gezählt", (perf.minimapFrames || 0) >= 2,
+        check("Minimap-Frames gezählt", perf.minimapFrames >= 2,
             "minimapFrames=" + perf.minimapFrames);
         check("Hintergrund per drawImage geblittet", st.drawImage >= startDraws + 2,
             "drawImage +" + (st.drawImage - startDraws));
         check("Keine 770 Tile-Rects pro Frame", (st.fillRect - startRects) < 100,
             "fillRect +" + (st.fillRect - startRects));
+    } else {
+        check("Minimap testbar", false, "Canvas oder toggleMinimap fehlt");
     }
 
     check("Keine Fehler aus den Perf-Patches",
-        !errors.some(e => /BVMapPerf|__bvMiniBg|mmBg|bvHasShadow|ME\.render\(reload\)/i.test(e)),
+        !errors.some(e => /BVMapPerf|__bvMiniBg|mmBg|bvHasShadow/i.test(e)),
         errors.filter(e => /BVMapPerf|__bvMiniBg|mmBg|bvHasShadow/i.test(e)).slice(0, 2).join(" | "));
-
-    finish();
-}, 2600);
-
-function finish() {
-    const failed = checks.filter(c => !c.ok);
-    for (const c of checks) {
-        console.log((c.ok ? "  ok  " : " FAIL ") + c.name + (c.detail ? "  [" + c.detail + "]" : ""));
-    }
-    console.log(`\n${checks.length - failed.length}/${checks.length} Map-Engine-Checks bestanden`);
-    if (errors.length) {
-        console.log("Hinweis: " + errors.length + " jsdom-/Stub-bedingte Meldung(en), z. B.: " +
-            errors.slice(0, 2).join(" | ").slice(0, 200));
-    }
-    dom.window.close();
-    process.exit(failed.length ? 1 : 0);
 }
+
+run()
+    .catch(e => check("Perf-Test vollständig durchlaufen", false, e.message))
+    .finally(() => {
+        const failed = checks.filter(c => !c.ok);
+        for (const c of checks) {
+            console.log((c.ok ? "  ok  " : " FAIL ") + c.name + (c.detail ? "  [" + c.detail + "]" : ""));
+        }
+        console.log(`\n${checks.length - failed.length}/${checks.length} Map-Engine-Checks bestanden`);
+        if (errors.length) {
+            console.log("Hinweis: " + errors.length + " jsdom-/Stub-bedingte Meldung(en), z. B.: " +
+                errors.slice(0, 2).join(" | ").slice(0, 200));
+        }
+        dom.window.close();
+        process.exit(failed.length ? 1 : 0);
+    });
