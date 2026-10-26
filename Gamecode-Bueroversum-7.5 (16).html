@@ -914,6 +914,7 @@
                                 <button class="menu-tab active" data-tab="status">👤 Status</button>
                                 <button class="menu-tab" data-tab="inventory">🎒 Items</button>
                                 <button class="menu-tab" data-tab="skills">📎 Skills</button>
+                                <button class="menu-tab" data-tab="weapons">⚔️ Waffen</button>
                                 <button class="menu-tab" data-tab="team">👥 Team</button>
                                 <button class="menu-tab" data-tab="quests">📜 Quests</button>
                                 <button class="menu-tab" data-tab="achievements">🏆 Erfolge</button>
@@ -970,6 +971,9 @@
                         </div>
                         <div class="menu-tab-content" id="tab-skills">
                             <div id="skills-content"></div>
+                        </div>
+                        <div class="menu-tab-content" id="tab-weapons">
+                            <div id="weapons-content"></div>
                         </div>
                         <div class="menu-tab-content" id="tab-quests">
                             <div id="questlog-content"></div>
@@ -31767,6 +31771,7 @@
                     updateMenuModeClass();
                     setTimeout(function () {
                         if (typeof window.renderSkillsTab === "function") window.renderSkillsTab();
+                        if (typeof window.renderWeaponsTab === "function") window.renderWeaponsTab();
                         if (typeof window.renderQuestTab === "function") window.renderQuestTab();
                         if (typeof window.renderAchievementTab === "function") window.renderAchievementTab();
                     }, 100);
@@ -31776,9 +31781,9 @@
                     const menuScreen = document.getElementById("rpg-menu-screen");
                     const activeTab = document.querySelector(".menu-tab.active")?.dataset.tab || "status";
                     if (!menuScreen) return;
-                    const ALL_MODES = ["menu-status-mode","menu-inventory-mode","menu-team-mode","menu-map-mode","menu-quest-mode","menu-achievement-mode","menu-skills-mode","menu-shift-mode","menu-settings-mode"];
+                    const ALL_MODES = ["menu-status-mode","menu-inventory-mode","menu-team-mode","menu-map-mode","menu-quest-mode","menu-achievement-mode","menu-skills-mode","menu-weapons-mode","menu-shift-mode","menu-settings-mode"];
                     ALL_MODES.forEach(m => menuScreen.classList.remove(m));
-                    const modeMap = { status:"menu-status-mode", inventory:"menu-inventory-mode", team:"menu-team-mode", map:"menu-map-mode", quests:"menu-quest-mode", achievements:"menu-achievement-mode", skills:"menu-skills-mode", shift:"menu-shift-mode", settings:"menu-settings-mode" };
+                    const modeMap = { status:"menu-status-mode", inventory:"menu-inventory-mode", team:"menu-team-mode", map:"menu-map-mode", quests:"menu-quest-mode", achievements:"menu-achievement-mode", skills:"menu-skills-mode", weapons:"menu-weapons-mode", shift:"menu-shift-mode", settings:"menu-settings-mode" };
                     menuScreen.classList.add(modeMap[activeTab] || "menu-status-mode");
                 }
 
@@ -31786,7 +31791,7 @@
                     if (!instant && typeof isQuitOptionsOpen === "function" && isQuitOptionsOpen()) return;
                     const menuScreen = document.getElementById("rpg-menu-screen");
                     const finishClose = () => {
-                        if (menuScreen) menuScreen.classList.remove("active", "menu-closing", "menu-opening", "menu-switching", "menu-animating", "quit-active", "menu-status-mode", "menu-inventory-mode", "menu-team-mode", "menu-map-mode", "menu-quest-mode", "menu-achievement-mode", "menu-skills-mode", "menu-shift-mode", "menu-settings-mode");
+                        if (menuScreen) menuScreen.classList.remove("active", "menu-closing", "menu-opening", "menu-switching", "menu-animating", "quit-active", "menu-status-mode", "menu-inventory-mode", "menu-team-mode", "menu-map-mode", "menu-quest-mode", "menu-achievement-mode", "menu-skills-mode", "menu-weapons-mode", "menu-shift-mode", "menu-settings-mode");
                         showScreen("rpg-game-screen");
                         gameState = "MAP";
                         const gameWin = document.getElementById("rpg-game-window");
@@ -31833,6 +31838,7 @@
                             updateMenuModeClass();
                             if (tab.dataset.tab === "map") updateWorldMapTab();
                             if (tab.dataset.tab === "skills" && typeof window.renderSkillsTab === "function") window.renderSkillsTab();
+                            if (tab.dataset.tab === "weapons" && typeof window.renderWeaponsTab === "function") window.renderWeaponsTab();
                             if (tab.dataset.tab === "quests" && typeof window.renderQuestTab === "function") window.renderQuestTab();
                             if (tab.dataset.tab === "achievements" && typeof window.renderAchievementTab === "function") window.renderAchievementTab();
                         }, 110);
@@ -32996,26 +33002,30 @@
                     aktenstapel: {
                         id: "aktenstapel", name: "Aktenstapel", icon: "📚",
                         hits: 1, mult: 1.15, defFactor: 1.0, anim: "slam", fx: "📄",
-                        color: "#ffd479", unlockLevel: 1,
-                        hint: "Ein wuchtiger Schlag mit dem ganzen Stapel."
+                        color: "#ffd479", price: 0,
+                        hint: "Ein wuchtiger Schlag mit dem ganzen Stapel.",
+                        desc: "Deine Startwaffe: Ein schwerer Stoß mit dem ganzen Stapel."
                     },
                     tacker: {
                         id: "tacker", name: "Tacker", icon: "📎",
                         hits: 2, mult: 0.62, defFactor: 0.45, anim: "jab", fx: "📎",
-                        color: "#7ad0ff", unlockLevel: 3,
-                        hint: "Zwei schnelle Klammer-Stiche."
+                        color: "#7ad0ff", price: 150,
+                        hint: "Zwei schnelle Klammer-Stiche.",
+                        desc: "Zwei schnelle Klammer-Stiche. Ignoriert viel Verteidigung."
                     },
                     locher: {
                         id: "locher", name: "Locher", icon: "🕳️",
                         hits: 1, mult: 1.0, defFactor: 0.8, anim: "pierce", fx: "⭕",
-                        color: "#9ade7b", unlockLevel: 5, pierce: 0.35,
-                        hint: "Stanzt ein Loch in die Deckung (Gegner-DEF ↓)."
+                        color: "#9ade7b", price: 260, pierce: 0.35,
+                        hint: "Stanzt ein Loch in die Deckung (Gegner-DEF ↓).",
+                        desc: "Stanzt ein Loch in die Deckung: 35 % Chance auf -1 Gegner-DEF."
                     },
                     ordner: {
                         id: "ordner", name: "Aktenordner", icon: "🗂️",
                         hits: 3, mult: 0.45, defFactor: 0.3, anim: "flurry", fx: "🗂️",
-                        color: "#ff9a6a", unlockLevel: 7,
-                        hint: "Drei schnelle Schläge mit dem Ordner."
+                        color: "#ff9a6a", price: 420,
+                        hint: "Drei schnelle Schläge mit dem Ordner.",
+                        desc: "Drei schnelle Schläge. Baut den Aktenstapel am schnellsten auf."
                     }
                 };
                 const BV_WEAPON_ORDER = ["aktenstapel", "tacker", "locher", "ordner"];
@@ -33026,11 +33036,28 @@
                 let bvComboBumpTimers = [];
 
                 function bvNumber(v, d) { const n = Number(v); return isFinite(n) ? n : d; }
-                function bvWeaponLevel() { return Math.max(1, bvNumber(player && player.level, 1)); }
-                function bvWeaponUnlocked(id) {
-                    const w = BV_WEAPONS[id];
-                    return !!w && bvWeaponLevel() >= w.unlockLevel;
+
+                /* v5.8: Waffen werden im Menü „Waffen“ gekauft – Besitz statt Level. */
+                function bvWeaponOwnedList() {
+                    if (!player) return ["aktenstapel"];
+                    if (!Array.isArray(player.weapons)) {
+                        player.weapons = ["aktenstapel"];
+                        // Migration: eine in v5.7 frei gewählte Waffe bleibt im Besitz
+                        try {
+                            const old = localStorage.getItem("bv_weapon");
+                            if (old && BV_WEAPONS[old] && player.weapons.indexOf(old) === -1) {
+                                player.weapons.push(old);
+                            }
+                        } catch (e) {}
+                    }
+                    if (player.weapons.indexOf("aktenstapel") === -1) player.weapons.unshift("aktenstapel");
+                    return player.weapons;
                 }
+                function bvWeaponOwned(id) {
+                    return !!BV_WEAPONS[id] && bvWeaponOwnedList().indexOf(id) !== -1;
+                }
+                // Kompatibilität: früher bedeutete "unlocked" eine Level-Freischaltung
+                function bvWeaponUnlocked(id) { return bvWeaponOwned(id); }
 
                 function bvWeaponCurrentId() {
                     let id = (player && player.weapon) || null;
@@ -33040,15 +33067,36 @@
                 }
                 function bvWeaponCurrent() { return BV_WEAPONS[bvWeaponCurrentId()]; }
 
-                function bvWeaponSet(id) {
-                    if (!BV_WEAPONS[id] || !bvWeaponUnlocked(id)) return false;
+                function bvWeaponEquip(id) {
+                    if (!BV_WEAPONS[id] || !bvWeaponOwned(id)) return false;
                     if (player) player.weapon = id;
                     try { localStorage.setItem("bv_weapon", id); } catch (e) {}
                     bvWeaponUi();
                     return true;
                 }
+                function bvWeaponSet(id) { return bvWeaponEquip(id); }
+
+                /* Kauf im Menü: Gold abziehen, Waffe in den Besitz, direkt ausrüsten. */
+                function bvWeaponBuy(id) {
+                    const w = BV_WEAPONS[id];
+                    if (!w) return { ok: false, msg: "Unbekannte Waffe." };
+                    if (bvWeaponOwned(id)) return { ok: false, msg: "Diese Waffe besitzt du schon." };
+                    const price = Math.max(0, bvNumber(w.price, 0));
+                    const gold = bvNumber(player && player.gold, 0);
+                    if (gold < price) {
+                        return { ok: false, msg: "Zu wenig Gold – es fehlen " + (price - gold) + " G." };
+                    }
+                    if (player) player.gold = gold - price;
+                    bvWeaponOwnedList().push(id);
+                    bvWeaponEquip(id);
+                    if (typeof window.updateHUD === "function") window.updateHUD();
+                    if (typeof window.updateMenuStats === "function") window.updateMenuStats();
+                    return { ok: true, msg: w.icon + " " + w.name + " gekauft und ausgerüstet! (-" + price + " G)" };
+                }
 
                 function bvWeaponCycle() {
+                    // v5.8: nur außerhalb des Kampfes (Menü/Test), im Kampf gesperrt
+                    if (gameState === "BATTLE") return;
                     const unlocked = BV_WEAPON_ORDER.filter(bvWeaponUnlocked);
                     if (!unlocked.length) return;
                     const cur = bvWeaponCurrentId();
@@ -33113,7 +33161,7 @@
                     box.innerHTML =
                         '<button type="button" id="bv-weapon-chip" class="bv-weapon-chip" title="Klick: nächste Waffe">' +
                             '<span class="wpn-ico"></span><span class="wpn-name"></span>' +
-                            '<span class="wpn-hits"></span><span class="wpn-tip">wechseln</span>' +
+                            '<span class="wpn-hits"></span><span class="wpn-tip">Menü › Waffen</span>' +
                         '</button>' +
                         '<div id="bv-combo-meter" class="bv-combo-meter" aria-live="polite">' +
                             '<span class="cm-label">AKTENSTAPEL</span>' +
@@ -33121,14 +33169,7 @@
                             '<span class="cm-bonus"></span>' +
                         '</div>';
                     screen.appendChild(box);
-                    const chip = box.querySelector("#bv-weapon-chip");
-                    if (chip) {
-                        chip.addEventListener("click", function (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            bvWeaponCycle();
-                        });
-                    }
+                    // v5.8: Im Kampf wird nicht gewechselt – die Waffe wird im Menü gewählt.
                     return box;
                 }
 
@@ -33146,7 +33187,7 @@
                     const chip = box.querySelector("#bv-weapon-chip");
                     if (chip) {
                         chip.title = w.name + " (" + (w.hits > 1 ? w.hits + " Schläge" : "1 Schlag") + ") – " + w.hint +
-                            (lvlNext ? " · Nächste Waffe ab Level " + lvlNext.unlockLevel : "");
+                            (lvlNext ? " · Im Menü „Waffen“ kaufbar" : "");
                         chip.classList.toggle("is-multi", w.hits > 1);
                     }
                     bvComboUi();
@@ -33302,9 +33343,15 @@
 
                 /* ---------------- Öffentliche Brücke ---------------- */
                 window.BVWeapons = {
-                    list: () => BV_WEAPON_ORDER.map(id => Object.assign({ unlocked: bvWeaponUnlocked(id) }, BV_WEAPONS[id])),
+                    list: () => BV_WEAPON_ORDER.map(id => Object.assign(
+                        { owned: bvWeaponOwned(id), equipped: id === bvWeaponCurrentId(), unlocked: bvWeaponOwned(id) },
+                        BV_WEAPONS[id])),
                     current: () => BV_WEAPONS[bvWeaponCurrentId()],
-                    set: bvWeaponSet,
+                    currentId: bvWeaponCurrentId,
+                    owned: () => bvWeaponOwnedList().slice(),
+                    buy: bvWeaponBuy,
+                    equip: bvWeaponEquip,
+                    set: bvWeaponEquip,
                     cycle: bvWeaponCycle,
                     attack: bvWeaponAttack
                 };
@@ -51277,6 +51324,7 @@ body.bv-low-end .bv-daily-deal-banner::after { display: none !important; }
     const MODE_CLASSES = [
         'menu-status-mode','menu-inventory-mode','menu-team-mode','menu-map-mode',
         'menu-quest-mode','menu-settings-mode','menu-shift-mode','menu-skills-mode','menu-achievement-mode',
+        'menu-weapons-mode',
         'menu-opening','menu-closing','menu-switching'
     ];
 
@@ -51297,6 +51345,7 @@ body.bv-low-end .bv-daily-deal-banner::after { display: none !important; }
         if (tab === 'shift') return 'menu-shift-mode';
         if (tab === 'skills') return 'menu-skills-mode';
         if (tab === 'achievements') return 'menu-achievement-mode';
+        if (tab === 'weapons') return 'menu-weapons-mode';
         return 'menu-status-mode';
     }
 
@@ -51382,6 +51431,7 @@ body.bv-low-end .bv-daily-deal-banner::after { display: none !important; }
         if (tab === 'quests') window.BVQuestLog?.render?.();
         if (tab === 'settings') { window.BVSettings?.ensureTab?.(); window.BVSettings?.apply?.(); }
         if (tab === 'shift') window.BVShiftSystem?.updateUI?.();
+        if (tab === 'weapons') window.renderWeaponsTab?.();
     }
 
     function activateTab(tabName, focusButton = false) {
@@ -52579,7 +52629,8 @@ body.bv-settings-particles-off .title-canvas-bg {
     'use strict';
     const MODE_CLASSES = [
         'menu-status-mode','menu-inventory-mode','menu-team-mode','menu-map-mode',
-        'menu-quest-mode','menu-settings-mode','menu-shift-mode','menu-skills-mode','menu-achievement-mode'
+        'menu-quest-mode','menu-settings-mode','menu-shift-mode','menu-skills-mode','menu-achievement-mode',
+        'menu-weapons-mode'
     ];
     const TRANSIENT_CLASSES = ['menu-opening','menu-closing','menu-switching','menu-animating'];
     const MOVE_KEYS = new Set(['w','a','s','d','W','A','S','D','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
@@ -52595,6 +52646,7 @@ body.bv-settings-particles-off .title-canvas-bg {
         if (tab === 'shift') return 'menu-shift-mode';
         if (tab === 'skills') return 'menu-skills-mode';
         if (tab === 'achievements') return 'menu-achievement-mode';
+        if (tab === 'weapons') return 'menu-weapons-mode';
         return 'menu-status-mode';
     }
     function typingTarget(el){
@@ -59526,5 +59578,305 @@ body.bv-settings-reduced-motion #battle-enemy-sprite-container .bv-wfx { display
     #rpg-battle-screen .bv-weapon-chip { font-size: .58rem; padding: 2px 7px; }
     #rpg-battle-screen .bv-combo-meter { font-size: .52rem; padding: 2px 6px; }
     #rpg-battle-screen .bv-combo-meter .cm-slot { width: 7px; height: 9px; }
+}
+</style>
+
+<script>
+/* ============================================================
+   v5.8 – WAFFEN-MENÜ (kaufen + ausrüsten, ohne Kampfwechsel)
+   ============================================================ */
+(function () {
+    var BVW_PRICE_FALLBACK = 0;
+
+    function wApi() { return window.BVWeapons; }
+    function player() {
+        if (typeof window.getBvPlayer === "function") return window.getBvPlayer();
+        return window.player || {};
+    }
+    function gold(p) { return Math.max(0, Number(p && p.gold) || 0); }
+    function fmt(n) { return String(n).replace(".", ","); }
+
+    function toast(text, type) {
+        if (typeof window.showMenuToast === "function") window.showMenuToast(text, type || "");
+    }
+
+    function refreshHud() {
+        if (typeof window.updateHUD === "function") window.updateHUD();
+        if (typeof window.updateMenuStats === "function") window.updateMenuStats();
+    }
+
+    function cardHtml(w, p) {
+        var isOwned = !!w.owned;
+        var isEquipped = !!w.equipped;
+        var canAfford = gold(p) >= (w.price || 0);
+        var cls = "ach-menu-item bv-wpn-card " + (isOwned ? "unlocked" : "locked") +
+            (isEquipped ? " is-equipped" : "") + (!isOwned && !canAfford ? " is-poor" : "");
+
+        var chips = '<span class="bv-wpn-chip">' + (w.hits > 1 ? w.hits + " Schläge" : "1 Schlag") + '</span>' +
+            '<span class="bv-wpn-chip dmg">Wucht ×' + fmt(w.mult) + '</span>' +
+            '<span class="bv-wpn-chip def">Gegner-DEF ×' + fmt(w.defFactor) + '</span>' +
+            (w.pierce ? '<span class="bv-wpn-chip special">35 % DEF ↓</span>' : '');
+
+        var action;
+        if (isEquipped) {
+            action = '<button class="bv-wpn-btn is-eq" type="button" disabled>Ausgerüstet</button>';
+        } else if (isOwned) {
+            action = '<button class="bv-wpn-btn equip" type="button" data-wpn-equip="' + w.id + '">Ausrüsten</button>';
+        } else if (w.price > 0) {
+            action = '<button class="bv-wpn-btn buy' + (canAfford ? "" : " is-poor") + '" type="button" data-wpn-buy="' +
+                w.id + '"' + (canAfford ? "" : " disabled") + '>' +
+                '<span class="bv-wpn-price">' + (w.price || BVW_PRICE_FALLBACK) + ' G</span> Kaufen</button>';
+        } else {
+            action = '<button class="bv-wpn-btn equip" type="button" data-wpn-equip="' + w.id + '">Ausrüsten</button>';
+        }
+
+        return '<div class="' + cls + '">' +
+            '<span class="ach-item-icon">' + (isOwned || canAfford ? w.icon : "🔒") + '</span>' +
+            '<div class="ach-item-info">' +
+                '<div class="ach-item-title">' + w.name +
+                    (isEquipped ? '<span class="bv-wpn-tag">IM EINSATZ</span>' : '') + '</div>' +
+                '<div class="ach-item-desc">' + (w.desc || w.hint || '') + '</div>' +
+                '<div class="bv-wpn-chips">' + chips + '</div>' +
+            '</div>' +
+            '<div class="bv-wpn-side">' + action + '</div>' +
+        '</div>';
+    }
+
+    window.renderWeaponsTab = function () {
+        var host = document.getElementById("weapons-content");
+        if (!host) return;
+        var api = wApi();
+        var p = player();
+        if (!api) {
+            host.innerHTML = '<div class="ach-menu-header">⚔️ WAFFEN</div>' +
+                '<div class="bv-wpn-empty">Waffen werden noch geladen …</div>';
+            return;
+        }
+        var list = api.list ? api.list() : [];
+        var ownedCount = list.filter(function (w) { return w.owned; }).length;
+        var eq = list.filter(function (w) { return w.equipped; })[0] || list[0] || null;
+
+        var html = '<div class="ach-menu-header">⚔️ WAFFEN</div>' +
+            '<div class="ach-menu-stats">' +
+                '<div class="ach-menu-stat"><span class="ach-stat-num">' + ownedCount + '/' + list.length +
+                    '</span><span class="ach-stat-label">Im Besitz</span></div>' +
+                '<div class="ach-menu-stat"><span class="ach-stat-num">💰 ' + gold(p) +
+                    '</span><span class="ach-stat-label">Gold</span></div>' +
+                '<div class="ach-menu-stat"><span class="ach-stat-num">' + (eq ? eq.icon : "–") +
+                    '</span><span class="ach-stat-label">Im Einsatz</span></div>' +
+            '</div>' +
+            '<div class="bv-wpn-hint">Waffe hier kaufen und ausrüsten. Im Kampf kann sie <strong>nicht</strong> gewechselt werden – ' +
+                'jeder Treffer legt ein Blatt auf den <strong>Aktenstapel</strong> (+4,5 % Schaden pro Blatt).</div>' +
+            '<div class="ach-menu-grid bv-wpn-grid">';
+
+        list.forEach(function (w) { html += cardHtml(w, p); });
+        html += '</div>';
+
+        host.innerHTML = html;
+        if (typeof window.parseEmojis === "function") window.parseEmojis(host);
+
+        host.querySelectorAll("[data-wpn-buy]").forEach(function (btn) {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                var id = btn.getAttribute("data-wpn-buy");
+                var res = api.buy(id);
+                toast(res.msg, res.ok ? "good" : "bad");
+                window.renderWeaponsTab();
+                refreshHud();
+            });
+        });
+        host.querySelectorAll("[data-wpn-equip]").forEach(function (btn) {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                var id = btn.getAttribute("data-wpn-equip");
+                var ok = api.equip(id);
+                var w = ok ? api.current() : null;
+                toast(ok ? (w.icon + " " + w.name + " ausgerüstet.") : "Diese Waffe besitzt du noch nicht.", ok ? "good" : "bad");
+                window.renderWeaponsTab();
+                refreshHud();
+            });
+        });
+    };
+
+    // Menü-Öffnen abfangen (openMenu ist eine window-Funktion)
+    var _origOpen = window.openMenu;
+    function wrapOpen() {
+        var base = window.openMenu;
+        if (typeof base !== "function" || base._bvWeaponsWrapped) return;
+        var wrapped = function () {
+            var res = base.apply(this, arguments);
+            setTimeout(function () { if (typeof window.renderWeaponsTab === "function") window.renderWeaponsTab(); }, 60);
+            return res;
+        };
+        wrapped._bvWeaponsWrapped = true;
+        window.openMenu = wrapped;
+    }
+    wrapOpen();
+    var tries = 0;
+    var t = setInterval(function () {
+        tries++;
+        wrapOpen();
+        if (tries > 20 || (window.openMenu && window.openMenu._bvWeaponsWrapped)) clearInterval(t);
+    }, 400);
+
+    function install() {
+        if (document.getElementById("weapons-content")) window.renderWeaponsTab();
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install, { once: true });
+    else install();
+})();
+</script>
+
+<style>
+/* ============================================================
+   v5.8 – WAFFEN-MENÜ + größeres Aktenstapel-Kombo-Fenster
+   ============================================================ */
+#rpg-menu-screen.menu-weapons-mode .menu-window {
+    width: min(600px, 96vw) !important;
+    height: min(540px, 90vh) !important;
+}
+#rpg-menu-screen.menu-weapons-mode .menu-tab-content.active {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+}
+#rpg-menu-screen.menu-weapons-mode .menu-tab-content.active::-webkit-scrollbar { width: 6px; }
+#rpg-menu-screen.menu-weapons-mode .menu-tab-content.active::-webkit-scrollbar-thumb {
+    background: rgba(120, 160, 255, .35);
+    border-radius: 3px;
+}
+
+.bv-wpn-hint {
+    font-family: 'VT323', monospace;
+    font-size: .92rem;
+    line-height: 1.35;
+    color: rgba(220, 232, 255, .62);
+    background: rgba(74, 159, 255, .08);
+    border: 1px solid rgba(74, 159, 255, .18);
+    border-radius: 8px;
+    padding: 7px 10px;
+    margin-bottom: 12px;
+}
+.bv-wpn-hint strong { color: #ffd479; }
+
+.bv-wpn-grid { gap: 9px; }
+
+.bv-wpn-card { position: relative; align-items: flex-start; }
+.bv-wpn-card.is-equipped {
+    border-color: rgba(255, 212, 121, .55) !important;
+    background: rgba(255, 212, 121, .07) !important;
+}
+.bv-wpn-card.is-poor .ach-item-title { color: rgba(255, 255, 255, .55); }
+
+.bv-wpn-card .bv-wpn-tag {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: .55rem;
+    letter-spacing: 1px;
+    color: #1b1204;
+    background: linear-gradient(180deg, #ffe9b0, #ffc94a);
+    vertical-align: middle;
+}
+
+.bv-wpn-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.bv-wpn-chip {
+    font-size: .6rem;
+    letter-spacing: .4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: rgba(220, 232, 255, .8);
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .08);
+    white-space: nowrap;
+}
+.bv-wpn-chip.dmg { color: #ffd479; border-color: rgba(255, 212, 121, .3); }
+.bv-wpn-chip.def { color: #9ec9ff; border-color: rgba(120, 170, 255, .28); }
+.bv-wpn-chip.special { color: #9ade7b; border-color: rgba(154, 222, 123, .3); }
+
+.bv-wpn-side { flex: 0 0 auto; display: flex; align-items: center; }
+
+.bv-wpn-btn {
+    font-family: 'VT323', monospace;
+    font-size: .78rem;
+    letter-spacing: .5px;
+    padding: 5px 11px;
+    border-radius: 7px;
+    border: 1px solid rgba(74, 159, 255, .45);
+    background: linear-gradient(180deg, rgba(74, 159, 255, .28), rgba(74, 159, 255, .12));
+    color: #eaf2ff;
+    cursor: pointer;
+    transition: transform .14s ease, border-color .14s ease, background .14s ease;
+    white-space: nowrap;
+}
+.bv-wpn-btn:hover { transform: translateY(-1px); border-color: rgba(150, 200, 255, .9); }
+.bv-wpn-btn.buy {
+    border-color: rgba(255, 212, 121, .5);
+    background: linear-gradient(180deg, rgba(255, 212, 121, .26), rgba(255, 180, 60, .12));
+    color: #fff4d8;
+}
+.bv-wpn-btn.buy:hover { border-color: rgba(255, 228, 160, .95); }
+.bv-wpn-btn.buy.is-poor,
+.bv-wpn-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
+    border-color: rgba(255, 255, 255, .12);
+    background: rgba(255, 255, 255, .05);
+    color: rgba(255, 255, 255, .5);
+}
+.bv-wpn-btn .bv-wpn-price { color: #ffd479; margin-right: 5px; }
+.bv-wpn-btn.is-eq {
+    border-color: rgba(255, 212, 121, .35);
+    background: rgba(255, 212, 121, .12);
+    color: #ffe6a8;
+    opacity: 1;
+}
+.bv-wpn-empty {
+    font-family: 'VT323', monospace;
+    color: rgba(220, 232, 255, .5);
+    text-align: center;
+    padding: 18px 0;
+}
+
+@media (max-width: 560px) {
+    .bv-wpn-btn { font-size: .7rem; padding: 4px 8px; }
+    .bv-wpn-chip { font-size: .54rem; }
+    .bv-wpn-hint { font-size: .82rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bv-wpn-btn { transition: none; }
+    .bv-wpn-btn:hover { transform: none; }
+}
+
+/* ---- v5.8: Aktenstapel-Kombo-Fenster größer ---- */
+#rpg-battle-screen .bv-combo-meter {
+    gap: 8px;
+    padding: 6px 13px;
+    border-width: 2px;
+    border-radius: 8px;
+    font-size: .82rem;
+    letter-spacing: 1.4px;
+}
+#rpg-battle-screen .bv-combo-meter .cm-label { font-size: .74rem; color: rgba(220, 235, 255, .78); }
+#rpg-battle-screen .bv-combo-meter .cm-slots { gap: 5px; }
+#rpg-battle-screen .bv-combo-meter .cm-slot {
+    width: 15px;
+    height: 19px;
+    border-radius: 2px;
+    border-width: 2px;
+}
+#rpg-battle-screen .bv-combo-meter .cm-bonus { font-size: .84rem; }
+
+/* Der Kampf-Chip ist nur noch Anzeige (kein Wechseln per Klick) */
+#rpg-battle-screen .bv-weapon-chip { cursor: default; pointer-events: none; }
+#rpg-battle-screen .bv-weapon-chip:hover { transform: none; }
+
+@media (max-width: 560px) {
+    #rpg-battle-screen .bv-combo-meter { font-size: .7rem; padding: 5px 9px; gap: 6px; }
+    #rpg-battle-screen .bv-combo-meter .cm-label { font-size: .62rem; }
+    #rpg-battle-screen .bv-combo-meter .cm-slot { width: 12px; height: 15px; }
+    #rpg-battle-screen .bv-combo-meter .cm-bonus { font-size: .7rem; }
 }
 </style>
