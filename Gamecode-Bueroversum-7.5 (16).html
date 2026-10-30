@@ -33314,7 +33314,7 @@ body.bv-settings-particles-off #rpg-fx-particles {
 #battle-ui {
     box-sizing: border-box;
     display: grid !important;
-    grid-template-columns: 170px minmax(0, 1fr) 132px;
+    grid-template-columns: 212px minmax(0, 1fr) 152px;
     align-items: stretch;
     gap: 10px;
     height: 152px !important;
@@ -33392,6 +33392,19 @@ body.bv-settings-particles-off #rpg-fx-particles {
 .bv-partner-hp-text { color: #c7ddf2; font-size: .65rem; font-variant-numeric: tabular-nums; text-align: right; }
 .bv-partner-mp { display: flex; justify-content: space-between; color: #b8d7ff; font-size: .62rem; font-variant-numeric: tabular-nums; }
 .bv-partner-level { color: #fde68a; font-size: .62rem; font-weight: 800; }
+/* EP-Balken wie der Spieler-XP-Balken, aber schmal, damit die Karte kompakt bleibt */
+.bv-partner-ep { height: 4px; margin-top: 3px; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
+.bv-partner-ep span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #60a5fa, #a78bfa); transition: width .4s ease; }
+.bv-victory-partners { display: grid; gap: 6px; width: 100%; }
+.bv-victory-partner-row { display: grid; gap: 3px; }
+.bv-vp-top { color: #bbf7d0; font-size: .8rem; }
+.bv-vp-bar { height: 6px; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
+.bv-vp-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #60a5fa, #a78bfa); transition: width .5s ease; }
+/* Zeile: Balken links, Level-Up-Hinweis rechts (nur bei Aufstieg, sonst nimmt der Balken die volle Breite) */
+.bv-vp-line { display: flex; align-items: center; gap: 8px; }
+.bv-vp-line .bv-vp-bar { flex: 1; min-width: 0; }
+.bv-vp-levelup { flex: 0 0 auto; padding: 1px 7px; border-radius: 99px; background: linear-gradient(90deg, #fde68a, #fbbf24); color: #3b2300; font-size: .72rem; font-weight: 800; white-space: nowrap; animation: bvVpLevelPop .6s ease-out both; }
+@keyframes bvVpLevelPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .bv-partner-sprite-battle {
     position: absolute;
     left: 58%;
@@ -33427,7 +33440,7 @@ body.bv-settings-particles-off #rpg-fx-particles {
     box-sizing: border-box;
     align-items: center !important;
     gap: 10px;
-    height: 100%;
+    height: 126px;
     padding: 10px 12px !important;
     border: 1px solid rgba(125, 211, 252, .5);
     border-radius: 9px;
@@ -33450,7 +33463,7 @@ body.bv-settings-particles-off #rpg-fx-particles {
     letter-spacing: .035em;
     text-shadow: 0 1px 8px rgba(56, 189, 248, .24);
 }
-#battle-player-hud .player-bars-battle { gap: 5px !important; }
+#battle-player-hud .player-bars-battle { gap: 5px !important; width: 190px; max-width: 100%; box-sizing: border-box; }
 #battle-player-hud .p-bar { gap: 5px !important; }
 #battle-player-hud .p-bar-label {
     min-width: 22px !important;
@@ -33487,13 +33500,13 @@ body.bv-settings-particles-off #rpg-fx-particles {
     min-width: 0;
     width: 100%;
     margin: 0;
-    padding: 9px 12px;
+    padding: 5px 8px;
     border: 1px solid rgba(255, 255, 255, .09);
     border-radius: 10px;
     background: linear-gradient(135deg, rgba(4, 12, 23, .62), rgba(10, 24, 39, .56));
     color: #e7f3ff;
-    font-size: .94rem;
-    line-height: 1.35;
+    font-size: .72rem;
+    line-height: 1.25;
     text-align: left;
     overflow: hidden;
 }
@@ -33574,6 +33587,7 @@ body.bv-settings-particles-off #rpg-fx-particles {
     #bv-partner-hud .bv-partner-name { font-size: .68rem; }
     #bv-partner-hud .bv-partner-bar { height: 5px; margin: 3px 0 2px; }
     #bv-partner-hud .bv-partner-hp-text, #bv-partner-hud .bv-partner-mp, #bv-partner-hud .bv-partner-level { font-size: .57rem; }
+    #battle-player-hud .player-bars-battle { width: 100%; }
     #battle-player-hud .battle-hud-frame {
         gap: 6px;
         min-height: 0;
@@ -44859,9 +44873,13 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     mp.innerHTML = "<span>☕ MP</span><b></b>";
                     const level = document.createElement("div");
                     level.className = "bv-partner-level";
-                    info.append(name, bar, hpText, mp, level);
+                    const ep = document.createElement("div");
+                    ep.className = "bv-partner-ep";
+                    const epFill = document.createElement("span");
+                    ep.appendChild(epFill);
+                    info.append(name, bar, hpText, mp, level, ep);
                     card.append(portrait, info);
-                    card._refs = { portrait, name, fill, hpText, mpVal: mp.querySelector("b"), level };
+                    card._refs = { portrait, name, fill, hpText, mpVal: mp.querySelector("b"), level, epFill, ep };
                     bvFillPartnerCard(card, p);
                     return card;
                 }
@@ -44879,6 +44897,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     r.hpText.textContent = Math.max(0, p.hp) + "/" + p.maxHp;
                     r.mpVal.textContent = Math.max(0, p.mp) + "/" + p.maxMp;
                     r.level.textContent = "LV " + p.level;
+                    r.ep.title = "EP " + (p.exp || 0) + "/" + (p.expNext || 30);
+                    r.epFill.style.width = Math.min(100, Math.round((p.exp || 0) / Math.max(1, p.expNext || 30) * 100)) + "%";
                 }
 
                 function bvUpdatePartnerHud() {
@@ -48183,6 +48203,15 @@ function performSkill(skillId) {
                     setTimeout(() => sprite.classList.remove(selected), 1450);
                 }
 
+                // Balken erst nach dem Einblenden des Sieg-Bildschirms auf den Zielwert setzen,
+                // sonst startet die CSS-Übergangsanimation unsichtbar.
+                function bvFillVictoryPartnerBars() {
+                    const bars = document.querySelectorAll("#victory-screen .bv-vp-bar span");
+                    if (!bars.length) return;
+                    void document.getElementById("victory-screen").offsetWidth;
+                    setTimeout(() => bars.forEach(s => { s.style.width = s.dataset.target + "%"; }), 350);
+                }
+
                 function showVictory() {
                     // Besiegte Partner kehren nach dem Kampf mit 1 HP zurück
                     bvBattleParty.forEach(p => {
@@ -48217,7 +48246,12 @@ function performSkill(skillId) {
                     player.gold += currentEnemy.gold;
                     player.exp += currentEnemy.exp;
                     if (bvBattleParty.length && !currentEnemy.isEditorTest) {
-                        const partnerLevels = bvBattleParty.reduce((sum, p) => sum + bvGainPartnerExp(p, currentEnemy.exp), 0);
+                        // Stand vor dem EP-Gewinn merken, damit der Balken von dort nach oben läuft
+                        const gains = bvBattleParty.map(p => {
+                            const startPct = Math.min(100, Math.round((p.exp || 0) / Math.max(1, p.expNext || 30) * 100));
+                            const lv = bvGainPartnerExp(p, currentEnemy.exp);
+                            return { p, lv, startPct };
+                        });
                         bvBattleParty.forEach(p => bvSavePartnerProgress(p));
                         const rewardsBox = document.querySelector("#victory-screen .victory-rewards");
                         if (rewardsBox) {
@@ -48225,12 +48259,35 @@ function performSkill(skillId) {
                             if (!pEl) {
                                 pEl = document.createElement("div");
                                 pEl.id = "victory-partner-exp";
-                                pEl.className = "reward-item";
-                                pEl.style.color = "#86efac";
+                                pEl.className = "bv-victory-partners";
                                 rewardsBox.appendChild(pEl);
                             }
-                            const parts = bvBattleParty.map(p => p.name + " +" + currentEnemy.exp + " EP (LV " + p.level + ")");
-                            pEl.textContent = "🤝 " + parts.join(" · ") + (partnerLevels > 0 ? " ✨ Levelaufstieg!" : "");
+                            pEl.replaceChildren(...gains.map(({ p, lv, startPct }) => {
+                                const row = document.createElement("div");
+                                row.className = "bv-victory-partner-row";
+                                const top = document.createElement("div");
+                                top.className = "bv-vp-top";
+                                top.textContent = "🤝 " + p.name + " +" + currentEnemy.exp + " EP · LV " + p.level;
+                                const line = document.createElement("div");
+                                line.className = "bv-vp-line";
+                                const bar = document.createElement("div");
+                                bar.className = "bv-vp-bar";
+                                const fill = document.createElement("span");
+                                line.appendChild(bar);
+                                if (lv > 0) {
+                                    const up = document.createElement("div");
+                                    up.className = "bv-vp-levelup";
+                                    up.textContent = "✨ LV " + p.level + "!";
+                                    line.appendChild(up);
+                                }
+                                // Bei Levelaufstieg startet der Balken bei 0, sonst beim alten Stand
+                                fill.style.width = (lv > 0 ? 0 : startPct) + "%";
+                                fill.dataset.target = Math.min(100, Math.round((p.exp || 0) / Math.max(1, p.expNext || 30) * 100));
+                                bar.appendChild(fill);
+                                row.append(top, line);
+                                return row;
+                            }));
+                            // Zielwert wird erst gesetzt, wenn der Sieg-Bildschirm sichtbar ist (bvFillVictoryPartnerBars)
                         }
                     } else {
                         document.getElementById("victory-partner-exp")?.remove();
@@ -48344,7 +48401,8 @@ function performSkill(skillId) {
                     }
                     const victoryScreen = document.getElementById("victory-screen");
                     if (victoryScreen) { 
-                        victoryScreen.classList.add("visible"); 
+                        victoryScreen.classList.add("visible");
+                        bvFillVictoryPartnerBars();
                         parseEmojis(victoryScreen); 
                         // Tanz startet jetzt mit der Sieg-Szene, nicht vorher.
                         setTimeout(triggerVictoryDance, 80);
