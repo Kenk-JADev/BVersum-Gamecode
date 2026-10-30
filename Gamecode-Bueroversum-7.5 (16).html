@@ -1373,6 +1373,21 @@
                                 <div class="editor-loadout-title">⚔️ Waffen (Test-Kampf)</div>
                                 <div class="editor-weapon-options" id="editor-player-weapons"></div>
                             </div>
+                            <div class="editor-loadout-card">
+                                <div class="editor-loadout-title">🤝 Partner (Test-Kampf)</div>
+                                <select id="editor-partners" class="editor-partner-select">
+                                    <option value="team" selected>👥 Aktuelles Partner-Team</option>
+                                    <option value="none">🚫 Keine Partner</option>
+                                    <option value="justin">👨‍💻 Justin</option>
+                                    <option value="jannik">👨‍🦱 Jannik</option>
+                                    <option value="hamda">👨‍🦱 Hamda</option>
+                                    <option value="deborha">👩 Deborha</option>
+                                </select>
+                                <div class="editor-partner-hint">
+                                    Partner kämpfen im Testkampf mit (Angriff, Heilung, Treffer, K.O.).
+                                    Ohne eigenes Team springt Justin als Test-Partner ein.
+                                </div>
+                            </div>
                         </div>
                     </div>
                     </details>
@@ -16976,6 +16991,31 @@
         .editor-loadout-title {
             font-size: .7rem;
             margin-bottom: 12px;
+        }
+
+        /* v7.12: Partner-Auswahl im Battle-Editor */
+        select.editor-partner-select {
+            width: 100%;
+            padding: 9px 11px;
+            border-radius: 11px;
+            border: 1px solid rgba(255,214,140,.32);
+            background: rgba(10,16,30,.94);
+            color: #ffe7c2;
+            font-family: 'VT323', monospace;
+            font-size: 1.02rem;
+            cursor: pointer;
+        }
+        select.editor-partner-select:focus {
+            outline: none;
+            border-color: rgba(125,211,252,.7);
+            box-shadow: 0 0 0 2px rgba(125,211,252,.16);
+        }
+        .editor-partner-hint {
+            margin-top: 8px;
+            color: rgba(255,231,194,.58);
+            font-family: 'VT323', monospace;
+            font-size: .88rem;
+            line-height: 1.3;
         }
 
         .editor-skill-options,
@@ -40621,6 +40661,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         const selectedEnemySkills = getEditorSelectedEnemySkills();
                         
                         window.BVEditorTestBattle = true;
+                        // v7.12: Partner-Auswahl aus dem Battle-Editor übernehmen
+                        window.BVEditorPartnerSelection = document.getElementById("editor-partners")?.value || "team";
                         const editorBoss = {
                             enemyId: "custom_editor_boss",
                             name: bossName,
@@ -45095,6 +45137,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 function bvSavePartnerProgress(partner) {
                     if (!partner || !player) return;
+                    // v7.12: Im Battle-Editor ist der Kampf nur ein Test – der echte
+                    // Spielstand (Partner-HP/EP) bleibt unangetastet.
+                    if (currentEnemy && currentEnemy.isEditorTest) return;
                     player.bvPartnerProgress = player.bvPartnerProgress || {};
                     player.bvPartnerProgress[partner.id] = { level: partner.level, hp: partner.hp, mp: partner.mp, exp: partner.exp || 0, expNext: partner.expNext || 30 };
                     player.bvPartnerHp = player.bvPartnerHp || {};
@@ -45155,6 +45200,49 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 function bvEnsureBattlePartner() {
                     return bvEnsurePartnerById(bvPartnerParty()[0]) || null;
+                }
+
+                // ===== v7.12: Partner im Battle-Editor =====
+                // Baut einen Test-Partner direkt aus der Definition, ohne den echten
+                // Spielstand zu verändern (kein Eintrag in player.bvPartners/Progress).
+                function bvBuildEditorPartner(id) {
+                    const def = BV_PARTNER_DEFS[id];
+                    if (!def) return null;
+                    const lvlInput = parseInt(document.getElementById("editor-player-lvl")?.value || "", 10);
+                    const st = bvPartnerStats(def, Math.max(1, Math.min(99, lvlInput || 10)));
+                    return {
+                        ...def,
+                        id,
+                        level: st.level,
+                        maxHp: st.maxHp,
+                        hp: st.maxHp,
+                        maxMp: st.maxMp,
+                        mp: st.maxMp,
+                        atk: st.atk,
+                        exp: 0,
+                        expNext: 30,
+                        active: true,
+                        cooldown: 0,
+                        npcRef: null
+                    };
+                }
+
+                // Auswahl aus dem Editor: "team" (echtes Team), "none" oder eine Partner-ID.
+                function bvBuildEditorBattleParty() {
+                    const sel = window.BVEditorPartnerSelection || "team";
+                    if (sel === "none") return [];
+                    if (sel !== "team") return [bvBuildEditorPartner(sel)].filter(Boolean);
+                    const team = bvPartnerParty()
+                        .map(pid => bvEnsurePartnerById(pid))
+                        .filter(Boolean)
+                        // Im Test sind alle Partner kampfbereit (Kopien – der Spielstand
+                        // bleibt unverändert), sonst würde ein K.O.-Partner nicht mitkämpfen.
+                        .map(p => ({ ...p, hp: p.maxHp, mp: p.maxMp, active: true }));
+                    // Ohne eigenes Team trotzdem einen Partner zeigen – sonst bleibt der
+                    // Editor-Test leer und Partner-Animationen sind nicht prüfbar.
+                    return team.length
+                        ? team.slice(0, BV_PARTNER_TEAM_LIMIT)
+                        : [bvBuildEditorPartner("justin")].filter(Boolean);
                 }
 
                 function bvPartnerLog(text) {
@@ -45655,7 +45743,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     stopCameraLoop();
 
                     currentEnemy = { ...enemyData, enemyId: npc?.enemyId || enemyData.enemyId, npcRef: npc };
-                    bvBattleParty = npc?.isEditorTest ? [] : bvPartnerParty().map(pid => bvEnsurePartnerById(pid)).filter(Boolean);
+                    // v7.12: Im Battle-Editor kämpfen die Partner mit (Auswahl im Editor),
+                    // im normalen Spiel weiterhin das echte Partner-Team.
+                    bvBattleParty = npc?.isEditorTest
+                        ? bvBuildEditorBattleParty()
+                        : bvPartnerParty().map(pid => bvEnsurePartnerById(pid)).filter(Boolean);
                     bvPartnerActionBusy = false;
                     bvUpdatePartnerHud();
                     
