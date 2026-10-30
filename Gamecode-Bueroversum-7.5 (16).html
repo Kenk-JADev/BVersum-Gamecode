@@ -45421,7 +45421,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const partnerSkill = partner.skill || "Spezialangriff";
                     const partnerIcon = partner.icon || "🤝";
                     const partnerColor = partner.color || "#67e8f9";
-                    showBattleActionBubble("player", partnerName + " hilft!", partnerIcon, partnerColor);
+                    // Sprechblase über dem Partner-Sprite, nicht über dem Spieler
+                    showBattleActionBubble("player", partnerName + " hilft!", partnerIcon, partnerColor, bvPartnerSpriteEl(partner));
                     // Gleiche Angriffsbewegung wie beim Spieler: die Klasse der aktuellen Spielerwaffe
                     const pw = (typeof bvWeaponCurrent === "function") ? bvWeaponCurrent() : null;
                     bvPlayPartnerAnim("bv-p-attack", 660, partner.id, pw ? "bv-atk-" + pw.anim : null);
@@ -48140,7 +48141,7 @@ function performSkill(skillId) {
                     container.classList.add("effect-show");
                 }
 
-                function showBattleActionBubble(target, text, icon = "", color = "#4a9fff") {
+                function showBattleActionBubble(target, text, icon = "", color = "#4a9fff", anchorEl = null) {
                     const host = document.getElementById(target === "enemy" ? "battle-enemy-area" : "battle-player-area");
                     if (!host || !text) return;
                     const bubble = document.createElement("div");
@@ -48148,6 +48149,18 @@ function performSkill(skillId) {
                     bubble.style.setProperty("--bubble-color", color);
                     bubble.style.borderColor = color + "99";
                     bubble.style.boxShadow = `0 12px 32px rgba(0,0,0,.45), 0 0 22px ${color}55`;
+                    // v7.12: Optionales Anker-Element – die Sprechblase sitzt dann über
+                    // genau diesem Sprite (z. B. Partner) statt über der Spieler-Mitte.
+                    if (anchorEl && anchorEl.getBoundingClientRect) {
+                        const hostRect = host.getBoundingClientRect();
+                        const aRect = anchorEl.getBoundingClientRect();
+                        if (hostRect.width > 0 && aRect.width > 0) {
+                            const cx = aRect.left - hostRect.left + aRect.width / 2;
+                            const clamped = Math.max(70, Math.min(hostRect.width - 70, cx));
+                            bubble.style.left = clamped + "px";
+                            bubble.style.bottom = (hostRect.bottom - aRect.top + 4) + "px";
+                        }
+                    }
                     bubble.innerHTML = `${icon ? `<span class="bubble-icon">${icon}</span>` : ""}<span class="bubble-text">${text}</span>`;
                     host.appendChild(bubble);
                     parseEmojis(bubble);
