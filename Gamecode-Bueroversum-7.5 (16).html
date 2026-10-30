@@ -1589,19 +1589,21 @@
                             <div class="reward-item exp"><span class="reward-icon">⭐</span><span
                                     class="reward-text">+<span id="victory-exp">0</span> EXP</span></div>
                         </div>
-                        <div id="xp-bar-container">
-                            <div class="xp-bar-label">Erfahrung</div>
-                            <div class="xp-bar-bg">
-                                <div class="xp-bar-fill" id="xp-bar-fill"></div>
+                        <div class="bv-victory-resultrow">
+                            <div id="xp-bar-container">
+                                <div class="xp-bar-label">Erfahrung</div>
+                                <div class="xp-bar-bg">
+                                    <div class="xp-bar-fill" id="xp-bar-fill"></div>
+                                </div>
+                                <div class="xp-bar-text"><span id="xp-current">0</span> / <span id="xp-max">100</span></div>
                             </div>
-                            <div class="xp-bar-text"><span id="xp-current">0</span> / <span id="xp-max">100</span></div>
-                        </div>
-                        <div id="levelup-display">
-                            <div class="levelup-text">🎉 LEVEL UP!</div>
-                            <div class="levelup-transition">
-                                <span class="old-level">Lvl <span id="old-level">1</span></span>
-                                <span class="level-arrow">→</span>
-                                <span class="new-level">Lvl <span id="new-level">2</span></span>
+                            <div id="levelup-display">
+                                <div class="levelup-text">🎉 LEVEL UP!</div>
+                                <div class="levelup-transition">
+                                    <span class="old-level">Lvl <span id="old-level">1</span></span>
+                                    <span class="level-arrow">→</span>
+                                    <span class="new-level">Lvl <span id="new-level">2</span></span>
+                                </div>
                             </div>
                         </div>
                         <div id="victory-chest" class="chest-container">
@@ -18013,6 +18015,30 @@
         #victory-screen.visible .victory-rewards { margin: 6px 0 8px; }
         #victory-screen.visible #xp-bar-container { margin: 6px 0; padding: 10px 18px; }
         #victory-screen.visible #levelup-display { margin: 6px 0; padding: 10px 20px; }
+
+        /* ===== v7.12: XP-Balken links, Level-Up-Feld rechts daneben =====
+           Beide lagen vorher untereinander und haben den Sieg-Screen in die Höhe
+           getrieben. Die Zeile bricht auf schmalen Screens automatisch um. */
+        #victory-screen.visible .bv-victory-resultrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            width: 100%;
+            max-width: 640px;
+            margin: 6px 0;
+        }
+        #victory-screen.visible .bv-victory-resultrow #xp-bar-container,
+        #victory-screen.visible .bv-victory-resultrow #levelup-display {
+            margin: 0;
+            flex: 0 1 auto;
+            max-width: 100%;
+        }
+        @media (max-width: 560px) {
+            #victory-screen.visible .bv-victory-resultrow { gap: 8px; }
+            #victory-screen.visible .bv-victory-resultrow #levelup-display { padding: 8px 14px; }
+        }
         #victory-screen.visible .chest-container { margin: 6px 0; padding: 10px 18px; }
         #victory-screen.visible .victory-btn { margin-top: 8px; padding: 12px 34px; }
 
