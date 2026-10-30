@@ -33560,6 +33560,10 @@ body.bv-settings-particles-off #rpg-fx-particles {
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-cheer,
     #bv-party-sprites .bv-partner-sprite-battle[class*="bv-atk-"],
     .bv-partner-card.bv-p-card-act,
+    .bv-partner-dmg,
+    .bv-partner-miss,
+    .bv-partner-hitfx,
+    #bv-party-sprites .bv-partner-sprite-battle.bv-p-down,
     .bv-pv-card,
     .bv-pv-card::after,
     .bv-pv-ring,
@@ -33995,6 +33999,67 @@ body.bv-settings-particles-off #rpg-fx-particles {
     0%   { transform: scale(1); box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
     38%  { transform: scale(1.045); box-shadow: 0 0 0 2px rgba(125, 211, 252, .55), 0 12px 28px rgba(0, 0, 0, .42); }
     100% { transform: scale(1); box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+}
+
+/* ===== v7.11: Treffer-Feedback am Partner-Sprite =====
+   Gegnerangriffe auf Partner werden hier verankert (Position wird pro Treffer aus
+   dem Sprite berechnet). Vorher lief die Schadenszahl über #battle-dmg-player und
+   wirkte dadurch wie ein Treffer am Spieler. */
+.bv-partner-dmg,
+.bv-partner-miss {
+    position: absolute;
+    z-index: 61;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #f9a8d4;
+    text-shadow: 2px 2px 0 #000, 0 0 12px rgba(249, 168, 212, .55);
+    animation: bvPartnerDmgPop .92s ease-out both;
+}
+.bv-partner-dmg.crit {
+    color: #ffe066;
+    font-size: 1.18rem;
+    text-shadow: 2px 2px 0 #000, 0 0 16px rgba(255, 224, 102, .7);
+}
+.bv-partner-miss {
+    color: #9dd7ff;
+    font-size: .8rem;
+    text-shadow: 2px 2px 0 #000, 0 0 10px rgba(157, 215, 255, .55);
+}
+@keyframes bvPartnerDmgPop {
+    0%   { opacity: 0; transform: translate(-50%, 8px) scale(.55); }
+    18%  { opacity: 1; transform: translate(-50%, -2px) scale(1.2); }
+    42%  { opacity: 1; transform: translate(-50%, -18px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -42px) scale(.95); }
+}
+.bv-partner-hitfx {
+    position: absolute;
+    z-index: 60;
+    transform: translateX(-50%);
+    pointer-events: none;
+    font-size: 1.45rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 120, 120, .85));
+    animation: bvPartnerHitFx .62s ease-out both;
+}
+@keyframes bvPartnerHitFx {
+    0%   { opacity: 0; transform: translate(-50%, 0) scale(.4) rotate(-18deg); }
+    30%  { opacity: 1; transform: translate(-50%, -8px) scale(1.35) rotate(6deg); }
+    100% { opacity: 0; transform: translate(-50%, -22px) scale(.9) rotate(0); }
+}
+
+/* K.O.: Partner kippt sichtbar um, statt sofort zu verschwinden */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-down {
+    animation: bvPartnerDownV2 .62s cubic-bezier(.4, 0, .6, 1) both;
+}
+@keyframes bvPartnerDownV2 {
+    0%   { transform: none; opacity: 1; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    18%  { transform: translate3d(-6px, -4px, 0) rotate(-10deg) scale(1.05); opacity: 1; filter: brightness(2.2) saturate(.4) drop-shadow(0 0 12px #fb7185); }
+    55%  { transform: translate3d(10px, 8px, 0) rotate(14deg) scale(.95, .9); opacity: .9; filter: grayscale(1) brightness(.75); }
+    100% { transform: translate3d(14px, 16px, 0) rotate(22deg) scale(.8, .82); opacity: 0; filter: grayscale(1) brightness(.5); }
 }
 #rpg-battle-screen .bv-combo-meter.bump { animation: bvComboBump .22s ease-out; }
 #rpg-battle-screen .bv-combo-meter.toppling { animation: bvComboTopple .42s ease-in; }
@@ -45130,10 +45195,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         }
                         // Einflug nur beim (Wieder-)Erscheinen, nicht bei jedem HUD-Update
                         // und vor allem nicht als Fallback nach einer Kampf-Animation.
-                        const shouldShow = !!(p.active && p.hp > 0);
+                        // Während des K.O.-Umkippens (.bv-p-down) bleibt der Sprite sichtbar.
+                        const isDying = el.classList.contains("bv-p-down");
+                        const shouldShow = isDying || !!(p.active && p.hp > 0);
                         const wasVisible = el.classList.contains("visible");
                         el.classList.toggle("visible", shouldShow);
-                        if (shouldShow && !wasVisible) {
+                        if (shouldShow && !wasVisible && !isDying) {
                             clearTimeout(el._bvEnterTimer);
                             el.classList.add("bv-p-enter");
                             el._bvEnterTimer = setTimeout(() => el.classList.remove("bv-p-enter"), 520);
@@ -45142,6 +45209,65 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     box.querySelectorAll("[data-pid]").forEach(el => {
                         if (!members.some(p => p.id === el.dataset.pid)) el.remove();
                     });
+                }
+
+                // ===== v7.11: Gegner-Angriffe auf Partner =====
+                // Alles Visuelle (Zahl, Treffer-Icon, K.O.) hängt am Partner-Sprite.
+                function bvPartnerSpriteEl(p) {
+                    return p && p.id ? document.querySelector('#bv-party-sprites [data-pid="' + p.id + '"]') : null;
+                }
+
+                // Erzeugt ein kurzes Feedback-Element direkt über dem Partner-Sprite.
+                function bvPartnerFloat(p, text, className, lifetime) {
+                    const el = bvPartnerSpriteEl(p);
+                    const box = document.getElementById("bv-party-sprites");
+                    if (!el || !box || el.offsetWidth === 0) return null;
+                    const node = document.createElement("div");
+                    node.className = className;
+                    node.textContent = text;
+                    node.style.left = (el.offsetLeft + el.offsetWidth / 2) + "px";
+                    node.style.bottom = Math.max(22, el.offsetHeight * 0.9) + "px";
+                    box.appendChild(node);
+                    if (typeof window.parseEmojis === "function") window.parseEmojis(node);
+                    setTimeout(() => node.remove(), lifetime || 950);
+                    return node;
+                }
+
+                function bvPartnerDamageFeedback(p, dmg, isCrit) {
+                    bvPartnerFloat(p, (isCrit ? "💥" : "") + dmg, "bv-partner-dmg" + (isCrit ? " crit" : ""), 950);
+                    bvPartnerFloat(p, isCrit ? "💥" : "💢", "bv-partner-hitfx", 680);
+                }
+
+                function bvPartnerMissFeedback(p) {
+                    bvPartnerFloat(p, "Daneben!", "bv-partner-miss", 950);
+                }
+
+                // Gültiges Partnerziel des laufenden Gegnerzugs (oder null).
+                function bvEnemyPartnerTargetActive() {
+                    return (enemyAttackTarget === "partner" && enemyPartnerTarget && enemyPartnerTarget.active && enemyPartnerTarget.hp > 0)
+                        ? enemyPartnerTarget : null;
+                }
+
+                // K.O.-Umkippen: Sprite bleibt kurz sichtbar, danach wird ausgeblendet.
+                function bvPartnerDown(p) {
+                    const el = bvPartnerSpriteEl(p);
+                    const card = document.querySelector('#bv-partner-hud .bv-partner-card[data-pid="' + (p && p.id) + '"]');
+                    if (card) {
+                        card.classList.remove("bv-p-card-act");
+                        void card.offsetWidth;
+                        card.classList.add("bv-p-card-act");
+                        setTimeout(() => card.classList.remove("bv-p-card-act"), 700);
+                    }
+                    if (!el) { bvUpdatePartnerHud(); return; }
+                    clearTimeout(el._bvEnterTimer);
+                    clearTimeout(el._bvDownTimer);
+                    el.classList.remove("bv-p-enter", "bv-p-attack", "bv-p-hurt", "bv-p-cheer", ...BV_ATK_CLASSES);
+                    void el.offsetWidth;
+                    el.classList.add("bv-p-down");
+                    el._bvDownTimer = setTimeout(() => {
+                        el.classList.remove("bv-p-down");
+                        bvUpdatePartnerHud();
+                    }, 660);
                 }
 
                 function bvPlayPartnerAnim(cls, ms, pid, extraCls) {
@@ -45159,7 +45285,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     // Laufenden Einflug abbrechen. Sonst würde er nach dem Entfernen der
                     // Aktionsklasse als Fallback wieder anspringen (Rücksprung-Effekt).
                     clearTimeout(el._bvEnterTimer);
-                    el.classList.remove("bv-p-enter");
+                    clearTimeout(el._bvDownTimer);
+                    el.classList.remove("bv-p-enter", "bv-p-down");
                     el.classList.remove("bv-p-attack", "bv-p-hurt", "bv-p-cheer", ...BV_ATK_CLASSES);
                     void el.offsetWidth;
                     el.classList.add(cls);
@@ -45172,20 +45299,29 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 }
 
                 function bvDamagePartner(p, dmg, isCrit) {
-                    const taken = Math.min(p.hp, Math.max(1, Math.floor(dmg)));
-                    p.hp -= taken;
-                    // 460 ms > Keyframe-Dauer (.42 s), damit die Klasse erst nach dem Ende fällt
-                    bvPlayPartnerAnim("bv-p-hurt", 460, p.id);
+                    if (!p) return { dmg: 0, crit: false, target: "partner" };
+                    const taken = Math.min(Math.max(0, p.hp), Math.max(1, Math.floor(dmg)));
+                    p.hp = Math.max(0, p.hp - taken);
                     bvSavePartnerProgress(p);
-                    bvUpdatePartnerHud();
-                    showDmgPopup("battle-dmg-player", taken, isCrit ? "#ffe066" : "#f9a8d4", isCrit);
-                    battleLog(currentEnemy.name + " greift " + p.name + " an! " + taken + " Schaden!" + (isCrit ? " 💥" : ""));
+
+                    // Feedback sitzt am Partner-Sprite (Zahl + Treffer-Icon),
+                    // NICHT mehr über #battle-dmg-player wie ein Spielertreffer.
+                    bvPartnerDamageFeedback(p, taken, isCrit);
+
                     if (p.hp <= 0) {
                         p.active = false;
-                        bvUpdatePartnerHud();
+                        bvPartnerDown(p);               // sichtbares K.O.-Umkippen, danach ausblenden
+                    } else {
+                        // 460 ms > Keyframe-Dauer (.42 s), damit die Klasse erst nach dem Ende fällt
+                        bvPlayPartnerAnim("bv-p-hurt", 460, p.id);
+                    }
+                    bvUpdatePartnerHud();
+
+                    battleLog(currentEnemy.name + " greift " + p.name + " an! " + taken + " Schaden!" + (isCrit ? " 💥" : ""));
+                    if (p.hp <= 0) {
                         setTimeout(() => battleLog("„" + p.name + " ist kampfunfähig!"), 900);
                     }
-                    return { dmg: taken, crit: isCrit, target: "partner" };
+                    return { dmg: taken, crit: isCrit, target: "partner", partner: p.name };
                 }
 
                 function bvEndPartnerTurn() {
@@ -47586,6 +47722,19 @@ function performSkill(skillId) {
                     const targetArea = profile.target === "enemy" ? enemyArea : playerArea;
                     if (!enemyArea || !targetArea) return;
 
+                    // v7.11: Ist ein Partner das Ziel, sitzen Aura/Wellen/Partikel am Partner-Sprite
+                    // statt in der Mitte der Spielerfläche.
+                    const partnerTarget = profile.target === "player" ? bvEnemyPartnerTargetActive() : null;
+                    const partnerSprite = partnerTarget ? bvPartnerSpriteEl(partnerTarget) : null;
+                    const areaRect = partnerSprite ? playerArea.getBoundingClientRect() : null;
+                    const spriteRect = partnerSprite ? partnerSprite.getBoundingClientRect() : null;
+                    const anchorAtTarget = (node) => {
+                        if (!node || !spriteRect || !areaRect) return node;
+                        node.style.left = (spriteRect.left - areaRect.left + spriteRect.width / 2) + "px";
+                        node.style.top = (spriteRect.top - areaRect.top + spriteRect.height / 2) + "px";
+                        return node;
+                    };
+
                     // Caster rune (Gegner zaubert/skillt sichtbar)
                     const rune = document.createElement("div");
                     rune.className = "enemy-skill-rune-v448";
@@ -47598,6 +47747,7 @@ function performSkill(skillId) {
                     const aura = document.createElement("div");
                     aura.className = "enemy-skill-aura-v447 " + profile.type;
                     aura.style.setProperty("--fx-color", color);
+                    anchorAtTarget(aura);
                     targetArea.appendChild(aura);
                     setTimeout(() => aura.remove(), 850);
 
@@ -47617,6 +47767,7 @@ function performSkill(skillId) {
                         wave.className = "enemy-skill-wave-v448";
                         wave.style.setProperty("--fx-color", color);
                         wave.style.animationDelay = (i * 0.11).toFixed(2) + "s";
+                        anchorAtTarget(wave);
                         targetArea.appendChild(wave);
                         setTimeout(() => wave.remove(), 1000);
                     }
@@ -47634,6 +47785,7 @@ function performSkill(skillId) {
                         p.style.setProperty("--dx", Math.cos(angle) * dist + "px");
                         p.style.setProperty("--dy", Math.sin(angle) * dist + "px");
                         p.style.animationDelay = (i * 0.035).toFixed(2) + "s";
+                        anchorAtTarget(p);
                         targetArea.appendChild(p);
                         setTimeout(() => p.remove(), 1100);
                     }
@@ -48192,10 +48344,13 @@ function performSkill(skillId) {
                         const enemyMiss = Math.random() < 0.15; // 15% miss for enemies (reduced for more action)
                         
                         if (enemyMiss && !selectedSkill) {
-                            // Basic attack missed
-                            battleLog("Daneben! " + currentEnemy.name + " verfehlt! ❌");
-                            spawnBattleEffect("player", "❌");
-                            const playerSprite = document.getElementById("battle-player-sprite");
+                            // Basic attack missed – Feedback dort, wo das Ziel steht
+                            const missTarget = bvEnemyPartnerTargetActive();
+                            battleLog("Daneben! " + currentEnemy.name + (missTarget ? " verfehlt " + missTarget.name : " verfehlt dich") + "! ❌");
+                            if (missTarget) bvPartnerMissFeedback(missTarget);
+                            else spawnBattleEffect("player", "❌");
+                            // Ausweich-Bewegung nur, wenn wirklich der Spieler das Ziel war
+                            const playerSprite = missTarget ? null : document.getElementById("battle-player-sprite");
                             if (playerSprite) {
                                 playerSprite.style.transition = "all 0.25s ease-out";
                                 playerSprite.style.transform = "translateX(30px) rotateZ(12deg)";
@@ -48216,10 +48371,14 @@ function performSkill(skillId) {
                             const rawDmg = Math.max(1, baseDmg - player.def);
                             playEnemyAttackAnimation("basic");
                             const enemyHit = damagePlayer(rawDmg) || { dmg: rawDmg, crit: false };
-                            battleLog(enemyHit.crit
-                                ? currentEnemy.name + " trifft KRITISCH! " + enemyHit.dmg + " Schaden! 💥"
-                                : currentEnemy.name + " greift an! " + enemyHit.dmg + " Schaden!");
-                            spawnBattleEffect("player", enemyHit.crit ? "💥" : "💢");
+                            // Bei Partnertreffer hat bvDamagePartner bereits geloggt und
+                            // das Feedback am Partner-Sprite gesetzt – kein Spieler-Effekt.
+                            if (enemyHit.target !== "partner") {
+                                battleLog(enemyHit.crit
+                                    ? currentEnemy.name + " trifft KRITISCH! " + enemyHit.dmg + " Schaden! 💥"
+                                    : currentEnemy.name + " greift an! " + enemyHit.dmg + " Schaden!");
+                                spawnBattleEffect("player", enemyHit.crit ? "💥" : "💢");
+                            }
                             
                             if (player.hp > 0) {
                                 setTimeout(endEnemyTurn, 1000);
@@ -48241,10 +48400,12 @@ function performSkill(skillId) {
                         // Partnerziel: Status-Skills (Schelle, Betäubung, Gift, Debuffs) wirken nur als Schaden,
                         // weil Partner (noch) keine Statuswerte haben und der Spieler nicht betroffen sein darf.
                         const PARTNER_DAMAGE_ONLY_EFFECTS = ["italianSlap", "stun", "poison", "atkDown", "defDown"];
-                        if (enemyAttackTarget === "partner" && enemyPartnerTarget?.hp > 0 && PARTNER_DAMAGE_ONLY_EFFECTS.includes(skill.effect)) {
-                            const partnerDmg = Math.max(1, Math.floor(currentEnemy.atk * (skill.dmgMult || 1)) - (enemyPartnerTarget.def || 0));
-                            bvDamagePartner(enemyPartnerTarget, partnerDmg, false);
-                            spawnBattleEffect("enemy", skill.icon || "💢");
+                        const partnerSkillTarget = PARTNER_DAMAGE_ONLY_EFFECTS.includes(skill.effect) ? bvEnemyPartnerTargetActive() : null;
+                        if (partnerSkillTarget) {
+                            const partnerDmg = Math.max(1, Math.floor(currentEnemy.atk * (skill.dmgMult || 1)) - (partnerSkillTarget.def || 0));
+                            bvDamagePartner(partnerSkillTarget, partnerDmg, false);
+                            // Skill-Icon zusätzlich am Partner zeigen (Feedback kommt aus bvDamagePartner)
+                            bvPartnerFloat(partnerSkillTarget, skill.icon || "💢", "bv-partner-hitfx", 680);
                         }
                         // Handle different skill effects
                         else switch (skill.effect) {
@@ -48384,8 +48545,11 @@ function performSkill(skillId) {
                                 // Normal damage skill
                                 const skillDmg = Math.max(1, Math.floor((currentEnemy.atk + Math.floor(Math.random() * 8)) * skill.dmgMult) - player.def);
                                 const skillHit = damagePlayer(skillDmg);
-                                battleLog(currentEnemy.name + " nutzt " + skill.icon + " " + skill.name + "! " + skillHit.dmg + " Schaden!");
-                                spawnBattleEffect("player", skill.icon);
+                                // Partnertreffer: Log + Effekt kommen bereits aus bvDamagePartner
+                                if (skillHit.target !== "partner") {
+                                    battleLog(currentEnemy.name + " nutzt " + skill.icon + " " + skill.name + "! " + skillHit.dmg + " Schaden!");
+                                    spawnBattleEffect("player", skill.icon);
+                                }
                         }
                         
                         if (player.hp > 0) {
