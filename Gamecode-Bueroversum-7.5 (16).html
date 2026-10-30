@@ -45182,6 +45182,10 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 let bvRoundQueue = [];
                 // v7.12: Platz für ALLE definierten Partner (vorher hart auf 3 begrenzt).
                 const BV_PARTNER_TEAM_LIMIT = Math.max(1, Object.keys(BV_PARTNER_DEFS).length);
+                // v7.14: Im Kampf laufen höchstens 3 Partner gleichzeitig mit. Mehr ist
+                // unübersichtlich (HUD-Karten, Sprites, Rundenlog, VS-Splash). Das Team
+                // selbst darf weiter alle Partner halten – gewechselt wird im Team-Menü.
+                const BV_PARTNER_PARTY_LIMIT = 3;
 
                 function bvPartnerDefForNpc(npc) {
                     if (!npc || npc.type !== "talk") return null;
@@ -45195,7 +45199,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const id = def.name.toLowerCase();
                     if (!player.bvPartners.includes(id)) {
                         if (player.bvPartners.length >= BV_PARTNER_TEAM_LIMIT) {
-                            showMessage("Dein Team ist schon voll (maximal 3 Partner). Wähle erst einen Partner ab.", "📋 Team", "🤝");
+                            showMessage("Dein Team ist schon voll (maximal " + BV_PARTNER_TEAM_LIMIT + " Partner). Wähle erst einen Partner ab.", "📋 Team", "🤝");
                             return;
                         }
                         player.bvPartners.push(id);
@@ -45212,11 +45216,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     player.bvPartnerHp[id] = player.bvPartnerProgress[id].hp;
                     const previousId = player.bvActivePartner;
                     player.bvActivePartner = id;
-                    bvAddToParty(id);
+                    const joinedFight = bvAddToParty(id);
                     const previousName = BV_PARTNER_DEFS[previousId]?.name;
                     const switchNote = previousId && previousId !== id && previousName ? " " + previousName + " bleibt in deinem Team; " + def.name + " ist jetzt aktiv." : "";
+                    const partyNote = joinedFight ? "" : " Im Kampf sind aber schon " + BV_PARTNER_PARTY_LIMIT + " Partner dabei – " + def.name + " bleibt im Team und kann im Team-Menü nachrücken.";
                     showMessage(def.name + ": ‚Gern! Wir sind jetzt ein Team.‘", "🤝 Partner-Team", def.sprite);
-                    queueMessage("Dein Team hat " + player.bvPartners.length + " von " + BV_PARTNER_TEAM_LIMIT + " Partnern. Im Kampf begleitet dich jetzt " + def.name + "." + switchNote, "📋 Team", def.sprite);
+                    queueMessage("Dein Team hat " + player.bvPartners.length + " von " + BV_PARTNER_TEAM_LIMIT + " Partnern. Im Kampf begleitet dich jetzt " + def.name + "." + switchNote + partyNote, "📋 Team", def.sprite);
                     if (typeof saveGame === "function") saveGame();
                 }
 
@@ -45243,7 +45248,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 queueMessage(def.role + ": „Mein Kampfskill ist „" + def.skill + "“. Ich starte mit LV " + progress.level + ", " + progress.hp + "/" + progress.maxHp + " HP und " + progress.mp + "/" + progress.maxMp + " MP; Angriff " + def.atk + ".“", def.name, def.sprite, () => bvOpenPartnerChoice(npc));
                             } else if (value === "select") {
                                 if (!bvAddToParty(id)) {
-                                    showMessage("Deine Kampfgruppe ist voll (3 Partner). Nimm erst jemanden heraus.", "📋 Team", def.sprite);
+                                    showMessage("Deine Kampfgruppe ist voll (" + BV_PARTNER_PARTY_LIMIT + " Partner). Nimm erst jemanden heraus.", "📋 Team", def.sprite);
                                     return;
                                 }
                                 player.bvPartnerProgress = player.bvPartnerProgress || {};
@@ -45348,14 +45353,14 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     if (!Array.isArray(player.bvActiveParty)) player.bvActiveParty = player.bvActivePartner ? [player.bvActivePartner] : [];
                     player.bvActiveParty = [...new Set(player.bvActiveParty)]
                         .filter(pid => BV_PARTNER_DEFS[pid] && (player.bvPartners || []).includes(pid))
-                        .slice(0, BV_PARTNER_TEAM_LIMIT);
+                        .slice(0, BV_PARTNER_PARTY_LIMIT);
                     return player.bvActiveParty;
                 }
 
                 function bvAddToParty(id) {
                     const party = bvPartnerParty();
                     if (party.includes(id)) return true;
-                    if (party.length >= BV_PARTNER_TEAM_LIMIT) return false;
+                    if (party.length >= BV_PARTNER_PARTY_LIMIT) return false;
                     party.push(id);
                     return true;
                 }
@@ -45417,7 +45422,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     // Ohne eigenes Team trotzdem einen Partner zeigen – sonst bleibt der
                     // Editor-Test leer und Partner-Animationen sind nicht prüfbar.
                     return team.length
-                        ? team.slice(0, BV_PARTNER_TEAM_LIMIT)
+                        ? team.slice(0, BV_PARTNER_PARTY_LIMIT)
                         : [bvBuildEditorPartner("justin")].filter(Boolean);
                 }
 
