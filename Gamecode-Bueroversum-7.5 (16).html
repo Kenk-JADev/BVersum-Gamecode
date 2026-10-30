@@ -33565,9 +33565,47 @@ body.bv-settings-particles-off #rpg-fx-particles {
 .bv-partner-name { overflow: hidden; font-size: .78rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .bv-partner-bar { height: 7px; margin: 5px 0 3px; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
 .bv-partner-bar span { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #34d399, #86efac); transition: width .25s ease; }
-.bv-partner-hp-text { color: #c7ddf2; font-size: .65rem; font-variant-numeric: tabular-nums; text-align: right; }
-.bv-partner-mp { display: flex; justify-content: space-between; color: #b8d7ff; font-size: .62rem; font-variant-numeric: tabular-nums; }
+.bv-partner-namerow { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.bv-partner-statrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.bv-partner-hp-text { color: #c7ddf2; font-size: .65rem; text-align: right; }
+.bv-partner-mp { color: #b8d7ff; font-size: .62rem; font-variant-numeric: tabular-nums; }
+.bv-partner-mp b { font-weight: 800; }
 .bv-partner-level { color: #fde68a; font-size: .62rem; font-weight: 800; }
+
+/* ===== v7.13: Partner-MP, Skill-Anzeige und Partner-Status (Gift/Brand/Blutung/Betäubung) ===== */
+/* Eigener, schmaler MP-Balken direkt unter dem HP-Balken */
+.bv-partner-mpbar { height: 4px; margin: 3px 0 0; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
+.bv-partner-mpbar span { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6366f1, #38bdf8); transition: width .25s ease; }
+/* Skill-Zeile: Name + Kosten; leuchtet, sobald die MP für den Skill reichen */
+.bv-partner-skill { display: flex; align-items: center; gap: 4px; margin-top: 3px; color: #8fa6c0; font-size: .6rem; line-height: 1.3; }
+.bv-partner-skill .bv-ps-icon { flex: 0 0 auto; }
+.bv-partner-skill .bv-ps-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bv-partner-skill .bv-ps-cost { flex: 0 0 auto; margin-left: auto; padding: 0 5px; border: 1px solid rgba(125, 211, 252, .3); border-radius: 99px; font-variant-numeric: tabular-nums; }
+.bv-partner-skill.ready { color: #cbe9ff; }
+.bv-partner-skill.ready .bv-ps-cost { border-color: #38bdf8; background: rgba(56, 189, 248, .2); color: #e0f2fe; box-shadow: 0 0 10px -2px #38bdf8; }
+.bv-partner-skill.ready .bv-ps-name { text-shadow: 0 0 10px rgba(56, 189, 248, .55); }
+/* Status-Chips auf der Karte – nur sichtbar, wenn wirklich etwas anhaftet */
+.bv-partner-status { display: none; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.bv-partner-status.has { display: flex; }
+.bv-partner-status .bv-ps-chip { display: inline-flex; align-items: center; gap: 2px; padding: 0 5px; border: 1px solid currentColor; border-radius: 5px; background: rgba(6, 10, 26, .78); font-variant-numeric: tabular-nums; font-size: .58rem; line-height: 1.35; }
+.bv-partner-status .bv-ps-chip b { font-weight: 800; }
+.bv-partner-status.bump .bv-ps-chip { animation: bvsChipPop .3s cubic-bezier(.2, 1.4, .4, 1) both; }
+/* Karte pulsiert kurz, wenn ein Status dazukommt oder tickt */
+.bv-partner-card.bv-p-card-status { animation: bvPartnerCardStatus .6s ease-out both; }
+@keyframes bvPartnerCardStatus {
+    0%   { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+    30%  { box-shadow: 0 0 0 2px rgba(248, 113, 113, .6), 0 10px 26px rgba(0, 0, 0, .4); }
+    100% { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+}
+/* Dauerhafte (nicht animierte) Färbung des Partner-Sprites, solange der Status läuft */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-gift { filter: hue-rotate(70deg) saturate(1.5) drop-shadow(0 0 9px rgba(163, 230, 53, .75)); }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-brand { filter: sepia(.55) saturate(2) hue-rotate(-18deg) drop-shadow(0 0 9px rgba(251, 146, 60, .8)); }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-blutung { filter: saturate(1.7) hue-rotate(-28deg) drop-shadow(0 0 9px rgba(248, 113, 113, .8)); }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-stun { filter: brightness(1.15) saturate(.7) drop-shadow(0 0 9px rgba(250, 204, 21, .8)); }
+@media (prefers-reduced-motion: reduce) {
+    .bv-partner-card.bv-p-card-status,
+    .bv-partner-status.bump .bv-ps-chip { animation: none !important; }
+}
 /* EP-Balken wie der Spieler-XP-Balken, aber schmal, damit die Karte kompakt bleibt */
 .bv-partner-ep { height: 4px; margin-top: 3px; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
 .bv-partner-ep span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #60a5fa, #a78bfa); transition: width .4s ease; }
@@ -33798,6 +33836,9 @@ body.bv-settings-particles-off #rpg-fx-particles {
     #bv-partner-hud .bv-partner-name { font-size: .68rem; }
     #bv-partner-hud .bv-partner-bar { height: 5px; margin: 3px 0 2px; }
     #bv-partner-hud .bv-partner-hp-text, #bv-partner-hud .bv-partner-mp, #bv-partner-hud .bv-partner-level { font-size: .57rem; }
+    #bv-partner-hud .bv-partner-skill { font-size: .54rem; margin-top: 2px; }
+    #bv-partner-hud .bv-partner-mpbar { height: 3px; }
+    #bv-partner-hud .bv-partner-status .bv-ps-chip { font-size: .52rem; padding: 0 4px; }
     #battle-player-hud .player-bars-battle { width: 100%; }
     #battle-player-hud .battle-hud-frame {
         gap: 6px;
@@ -45602,6 +45643,199 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     return { dmg: taken, crit: isCrit, target: "partner", partner: p.name };
                 }
 
+                // ===== v7.13: Partner-MP, Skills und Statuswerte =====
+                // MP gab es bei Partnern schon (maxMp/mp in bvPartnerStats), war aber
+                // praktisch unsichtbar und lief leer. Jetzt:
+                //   · eigener MP-Balken + Skill-Kosten auf der HUD-Karte
+                //   · +1 MP pro Kampfrunde und ein garantierter Skill zu Kampfbeginn
+                //   · Gift / Brand / Blutung / Betäubung wie beim Gegner (BV_STATUS_DEFS)
+                const BV_PARTNER_STATUS_MAX_TURNS = 4;
+                const BV_PARTNER_STATUS_DOT = ["gift", "brand", "blutung"];
+
+                function bvPartnerSkillCost(p) {
+                    if (!p) return 3;
+                    // Deborhas Kaffee-Pause ist der günstigste Skill
+                    return p.id === "deborha" ? 2 : 3;
+                }
+
+                function bvPartnerStatusStore(p, create) {
+                    if (!p) return null;
+                    if (!p.status) {
+                        if (!create) return null;
+                        p.status = {
+                            gift: { turns: 0, dmg: 0 }, brand: { turns: 0, dmg: 0 },
+                            blutung: { turns: 0, dmg: 0 }, stun: 0
+                        };
+                    }
+                    return p.status;
+                }
+
+                // Chips für die HUD-Karte (leer, wenn nichts anhaftet)
+                function bvPartnerStatusChipsHtml(p) {
+                    const st = bvPartnerStatusStore(p, false);
+                    if (!st) return "";
+                    let html = "";
+                    Object.keys(BV_STATUS_DEFS).forEach(k => {
+                        const d = BV_STATUS_DEFS[k];
+                        if (k === "stun") {
+                            if (st.stun > 0) html += '<span class="bv-ps-chip" style="color:' + d.color + '" title="' + d.label + ': ' + st.stun + ' Runde(n)">' + d.icon + '<b>' + st.stun + '</b></span>';
+                        } else if (st[k] && st[k].turns > 0) {
+                            html += '<span class="bv-ps-chip" style="color:' + d.color + '" title="' + d.label + ': ' + st[k].turns + ' Runde(n), ' + Math.round(st[k].dmg) + ' Schaden/Runde">' + d.icon + '<b>' + st[k].turns + '</b></span>';
+                        }
+                    });
+                    return html;
+                }
+
+                // Sprite einfärben + Karte aktualisieren (pulse = kurzer Karten-Stoß)
+                function bvPartnerStatusUi(p, pulse) {
+                    if (!p) return;
+                    const st = bvPartnerStatusStore(p, false);
+                    const el = bvPartnerSpriteEl(p);
+                    if (el) {
+                        BV_PARTNER_STATUS_DOT.forEach(k => {
+                            el.classList.toggle("bv-p-st-" + k, !!(st && st[k] && st[k].turns > 0));
+                        });
+                        el.classList.toggle("bv-p-st-stun", !!(st && st.stun > 0));
+                    }
+                    const card = document.querySelector('#bv-partner-hud .bv-partner-card[data-pid="' + p.id + '"]');
+                    if (!card) return;
+                    bvFillPartnerCard(card, p);
+                    if (!pulse) return;
+                    const row = card.querySelector(".bv-partner-status");
+                    card.classList.remove("bv-p-card-status");
+                    if (row) row.classList.remove("bump");
+                    void card.offsetWidth;
+                    card.classList.add("bv-p-card-status");
+                    if (row) row.classList.add("bump");
+                    setTimeout(() => {
+                        card.classList.remove("bv-p-card-status");
+                        if (row) row.classList.remove("bump");
+                    }, 640);
+                }
+
+                function bvPartnerStatusApply(p, kind, turns, dmg) {
+                    if (!p || p.hp <= 0 || !BV_STATUS_DEFS[kind]) return;
+                    const st = bvPartnerStatusStore(p, true);
+                    if (!st) return;
+                    if (kind === "stun") {
+                        st.stun = Math.min(2, Math.max(st.stun || 0, turns));
+                    } else {
+                        const cur = st[kind] || { turns: 0, dmg: 0 };
+                        st[kind] = {
+                            turns: Math.min(BV_PARTNER_STATUS_MAX_TURNS, cur.turns + turns),
+                            dmg: Math.max(cur.dmg, Math.max(1, Math.round(dmg)))
+                        };
+                    }
+                    const d = BV_STATUS_DEFS[kind];
+                    const rest = kind === "stun" ? st.stun : st[kind].turns;
+                    bvPartnerFloat(p, d.icon, "bv-partner-hitfx", 820);
+                    battleLog("☠️ " + p.name + " ist jetzt " + d.verb + "! " + d.icon + " (" + rest + " Runde" + (rest === 1 ? "" : "n") + ")");
+                    bvPartnerStatusUi(p, true);
+                }
+
+                // Gegner-Skill auf den Partner übertragen (früher: "Partner haben keine Statuswerte")
+                function bvPartnerStatusFromSkill(p, skill) {
+                    if (!p || p.hp <= 0 || !skill) return;
+                    const eff = String(skill.effect || "");
+                    const label = String(skill.name || "") + " " + String(skill.icon || "");
+                    const atk = Number(currentEnemy?.atk) || 5;
+                    if (eff === "poison" || /gift|virus|toxic|seuche|schimmel/i.test(label)) {
+                        bvPartnerStatusApply(p, "gift", 3, Math.max(1, Math.round(atk * 0.3)));
+                        return;
+                    }
+                    if (eff === "stun" || eff === "italianSlap" || /betäub|schelle|stun|schock/i.test(label)) {
+                        // Partner haben keinen eigenen Immunitäts-Zähler – 40 % Widerstand genügt
+                        if (Math.random() < 0.4) {
+                            bvPartnerFloat(p, "🛡️", "bv-partner-hitfx", 700);
+                            battleLog(p.name + " widersteht der Betäubung! 🛡️");
+                        } else {
+                            bvPartnerStatusApply(p, "stun", 1, 0);
+                        }
+                        return;
+                    }
+                    if (eff === "brand" || /feuer|fire|brand|flamm|hitze|glut/i.test(label)) {
+                        bvPartnerStatusApply(p, "brand", 2, Math.max(1, Math.round(atk * 0.25)));
+                    }
+                }
+
+                // Kritische Treffer lassen Partner bluten
+                function bvPartnerStatusFromCrit(p) {
+                    if (!p || p.hp <= 0 || Math.random() >= 0.35) return;
+                    bvPartnerStatusApply(p, "blutung", 2, Math.max(1, Math.round((Number(currentEnemy?.atk) || 5) * 0.2)));
+                }
+
+                // Läuft zu Beginn des Partnerzugs. true = Zug ist verbraucht.
+                function bvPartnerStatusTick(p) {
+                    if (!p || p.hp <= 0 || gameState !== "BATTLE") return false;
+                    const st = bvPartnerStatusStore(p, false);
+                    if (!st) return false;
+                    let total = 0;
+                    const kinds = [];
+                    BV_PARTNER_STATUS_DOT.forEach(k => {
+                        const e = st[k];
+                        if (!e || e.turns <= 0) return;
+                        total += Math.max(1, Math.round(e.dmg));
+                        kinds.push(k);
+                        e.turns -= 1;
+                    });
+                    if (total > 0) {
+                        const real = Math.min(Math.max(0, p.hp), total);
+                        p.hp = Math.max(0, p.hp - real);
+                        bvSavePartnerProgress(p);
+                        bvPartnerFloat(p, "-" + real, "bv-partner-dmg", 950);
+                        kinds.forEach(k => bvPartnerFloat(p, BV_STATUS_DEFS[k].icon, "bv-partner-hitfx", 700));
+                        battleLog("☠️ " + kinds.map(k => BV_STATUS_DEFS[k].icon).join("") + " " + p.name + " verliert " + real + " HP durch Status!");
+                        bvPlayPartnerAnim("bv-p-hurt", 460, p.id);
+                        bvPartnerStatusUi(p, true);
+                        bvUpdatePartnerHud();
+                        if (p.hp <= 0) {
+                            p.active = false;
+                            bvPartnerDown(p);
+                            battleLog("„" + p.name + " ist kampfunfähig!");
+                            bvEndPartnerTurn();
+                            return true;
+                        }
+                    }
+                    if (st.stun > 0) {
+                        st.stun -= 1;
+                        bvPartnerStatusUi(p, true);
+                        battleLog("💫 " + p.name + " ist betäubt und setzt eine Runde aus!");
+                        bvPartnerFloat(p, "💫", "bv-partner-hitfx", 900);
+                        bvEndPartnerTurn();
+                        return true;
+                    }
+                    return false;
+                }
+
+                // Zu Beginn jeder Kampfrunde: +1 MP für jeden aktiven Partner
+                function bvPartnerRoundStart() {
+                    let changed = false;
+                    (bvBattleParty || []).forEach(p => {
+                        if (!p || !p.active || p.hp <= 0) return;
+                        const max = Math.max(1, Number(p.maxMp) || 1);
+                        const cur = Math.max(0, Number(p.mp) || 0);
+                        if (cur < max) {
+                            p.mp = Math.min(max, cur + 1);
+                            changed = true;
+                        }
+                    });
+                    if (changed) bvUpdatePartnerHud();
+                    return changed;
+                }
+
+                // Kampfstart: Status zurücksetzen und sicherstellen, dass ein Skill drin ist
+                function bvPartnerPrepareBattle() {
+                    (bvBattleParty || []).forEach(p => {
+                        if (!p) return;
+                        p.status = null;
+                        const max = Math.max(1, Number(p.maxMp) || 1);
+                        const need = Math.min(bvPartnerSkillCost(p), max);
+                        if ((Number(p.mp) || 0) < need) p.mp = need;
+                        const el = bvPartnerSpriteEl(p);
+                        if (el) el.classList.remove("bv-p-st-gift", "bv-p-st-brand", "bv-p-st-blutung", "bv-p-st-stun");
+                    });
+                }
+
                 function bvEndPartnerTurn() {
                     bvPartnerActionBusy = false;
                     if (gameState !== "BATTLE" || enemyHp <= 0) return;
@@ -45620,26 +45854,52 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     portrait.className = "bv-partner-portrait";
                     const info = document.createElement("div");
                     info.className = "bv-partner-info";
+                    // v7.13: Name + Level in einer Zeile, darunter HP, MP und der Skill
+                    const nameRow = document.createElement("div");
+                    nameRow.className = "bv-partner-namerow";
                     const name = document.createElement("div");
                     name.className = "bv-partner-name";
+                    const level = document.createElement("div");
+                    level.className = "bv-partner-level";
+                    nameRow.append(name, level);
                     const bar = document.createElement("div");
                     bar.className = "bv-partner-bar";
                     const fill = document.createElement("span");
                     bar.appendChild(fill);
-                    const hpText = document.createElement("div");
+                    const statRow = document.createElement("div");
+                    statRow.className = "bv-partner-statrow";
+                    const hpText = document.createElement("span");
                     hpText.className = "bv-partner-hp-text";
-                    const mp = document.createElement("div");
+                    const mp = document.createElement("span");
                     mp.className = "bv-partner-mp";
-                    mp.innerHTML = "<span>☕ MP</span><b></b>";
-                    const level = document.createElement("div");
-                    level.className = "bv-partner-level";
+                    const mpVal = document.createElement("b");
+                    mp.append("☕ ", mpVal);
+                    statRow.append(hpText, mp);
+                    // Eigener MP-Balken – zeigt direkt, ob der Skill bezahlbar ist
+                    const mpBar = document.createElement("div");
+                    mpBar.className = "bv-partner-mpbar";
+                    const mpFill = document.createElement("span");
+                    mpBar.appendChild(mpFill);
+                    // Skill-Zeile (Icon, Name, MP-Kosten)
+                    const skill = document.createElement("div");
+                    skill.className = "bv-partner-skill";
+                    const skillIcon = document.createElement("span");
+                    skillIcon.className = "bv-ps-icon";
+                    const skillName = document.createElement("span");
+                    skillName.className = "bv-ps-name";
+                    const skillCost = document.createElement("span");
+                    skillCost.className = "bv-ps-cost";
+                    skill.append(skillIcon, skillName, skillCost);
+                    // Status-Chips (nur sichtbar, wenn Gift/Brand/Blutung/Betäubung aktiv ist)
+                    const status = document.createElement("div");
+                    status.className = "bv-partner-status";
                     const ep = document.createElement("div");
                     ep.className = "bv-partner-ep";
                     const epFill = document.createElement("span");
                     ep.appendChild(epFill);
-                    info.append(name, bar, hpText, mp, level, ep);
+                    info.append(nameRow, bar, statRow, mpBar, skill, status, ep);
                     card.append(portrait, info);
-                    card._refs = { portrait, name, fill, hpText, mpVal: mp.querySelector("b"), level, epFill, ep };
+                    card._refs = { portrait, name, level, fill, hpText, mpVal, mpFill, skill, skillIcon, skillName, skillCost, status, epFill, ep };
                     bvFillPartnerCard(card, p);
                     return card;
                 }
@@ -45653,10 +45913,35 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         if (typeof window.parseEmojis === "function") window.parseEmojis(r.portrait);
                     }
                     r.name.textContent = p.name;
+                    r.level.textContent = "LV " + p.level;
                     r.fill.style.width = Math.max(0, Math.min(100, p.hp / Math.max(1, p.maxHp) * 100)) + "%";
                     r.hpText.textContent = Math.max(0, p.hp) + "/" + p.maxHp;
-                    r.mpVal.textContent = Math.max(0, p.mp) + "/" + p.maxMp;
-                    r.level.textContent = "LV " + p.level;
+                    const mpNow = Math.max(0, Number(p.mp) || 0);
+                    const mpMax = Math.max(1, Number(p.maxMp) || 1);
+                    r.mpVal.textContent = mpNow + "/" + mpMax;
+                    r.mpFill.style.width = Math.max(0, Math.min(100, mpNow / mpMax * 100)) + "%";
+                    // Skill-Zeile: leuchtet, sobald die MP reichen
+                    const cost = bvPartnerSkillCost(p);
+                    if (r.skillIcon.dataset.icon !== (p.icon || "🤝")) {
+                        r.skillIcon.dataset.icon = p.icon || "🤝";
+                        r.skillIcon.textContent = p.icon || "🤝";
+                        if (typeof window.parseEmojis === "function") window.parseEmojis(r.skillIcon);
+                    }
+                    const skillLabel = p.skill || "Spezialangriff";
+                    if (r.skillName.textContent !== skillLabel) r.skillName.textContent = skillLabel;
+                    const costLabel = cost + " MP";
+                    if (r.skillCost.textContent !== costLabel) r.skillCost.textContent = costLabel;
+                    const ready = mpNow >= cost && p.hp > 0;
+                    r.skill.classList.toggle("ready", ready);
+                    r.skill.title = skillLabel + " · " + cost + " MP" + (ready ? " – bereit!" : " – zu wenig MP");
+                    // Status-Chips nur neu schreiben, wenn sich etwas geändert hat
+                    const sig = bvPartnerStatusChipsHtml(p);
+                    if (r.status.dataset.sig !== sig) {
+                        r.status.dataset.sig = sig;
+                        r.status.innerHTML = sig;
+                        r.status.classList.toggle("has", !!sig);
+                        if (sig && typeof window.parseEmojis === "function") window.parseEmojis(r.status);
+                    }
                     r.ep.title = "EP " + (p.exp || 0) + "/" + (p.expNext || 30);
                     r.epFill.style.width = Math.min(100, Math.round((p.exp || 0) / Math.max(1, p.expNext || 30) * 100)) + "%";
                 }
@@ -45680,8 +45965,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 function bvPartnerAttack(p) {
                     const partner = p;
                     if (!partner || !partner.active || partner.hp <= 0 || enemyHp <= 0 || bvPartnerActionBusy || gameState !== "BATTLE") return;
+                    // v7.13: Statuswerte zuerst – Gift/Brand/Blutung ticken und eine
+                    // Betäubung kostet den Zug, bevor der Partner angreift.
+                    if (bvPartnerStatusTick(partner)) return;
                     bvPartnerActionBusy = true;
-                    const skillCost = partner.id === "deborha" ? 2 : 3;
+                    const skillCost = bvPartnerSkillCost(partner);
                     const usesSkill = partner.mp >= skillCost;
                     if (usesSkill) partner.mp -= skillCost;
                     const raw = Math.max(1, Math.floor((partner.atk + Math.random() * 5) * (usesSkill ? partner.mult : 0.7) + (partner.level - 1) * 1.5 - (currentEnemy.def || 0) * 0.35));
@@ -45907,6 +46195,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     // Nach einer Flucht sind die Sprites ausgeblendet (.bv-p-fled) –
                     // ein neuer Kampf startet immer mit sichtbaren Partnern.
                     document.querySelectorAll("#bv-party-sprites .bv-p-fled").forEach(el => el.classList.remove("bv-p-fled"));
+                    // v7.13: Partner-Status gelten pro Kampf – Heftung zurücksetzen und
+                    // genug MP sicherstellen, damit mindestens ein Skill möglich ist.
+                    bvPartnerPrepareBattle();
                     bvUpdatePartnerHud();
                     
                     // Calculate HP based on level (only for non-boss enemies)
@@ -48351,7 +48642,10 @@ function performSkill(skillId) {
                     if (!Number.isFinite(dmg)) dmg = 0;
                     dmg = Math.max(0, Math.floor(dmg));
                     if (enemyAttackTarget === "partner" && enemyPartnerTarget?.active && enemyPartnerTarget.hp > 0 && !godMode) {
-                        return bvDamagePartner(enemyPartnerTarget, dmg, isCrit);
+                        const partnerHit = bvDamagePartner(enemyPartnerTarget, dmg, isCrit);
+                        // v7.13: Kritische Treffer können den Partner bluten lassen
+                        if (isCrit && partnerHit && partnerHit.dmg > 0) bvPartnerStatusFromCrit(enemyPartnerTarget);
+                        return partnerHit;
                     }
                     const wasDefending = defendable && !!player._bvDefending;
                     const counterSuccess = wasDefending && !!player._bvStrongAttackIncoming && dmg > 0 && !godMode;
@@ -48742,8 +49036,9 @@ function performSkill(skillId) {
                     playEnemySkillCastFX(skill);
                     
                     setTimeout(() => {
-                        // Partnerziel: Status-Skills (Schelle, Betäubung, Gift, Debuffs) wirken nur als Schaden,
-                        // weil Partner (noch) keine Statuswerte haben und der Spieler nicht betroffen sein darf.
+                        // Partnerziel: Status-Skills (Schelle, Betäubung, Gift, Debuffs) treffen den
+                        // Partner statt den Spieler. v7.13: Gift/Betäubung/Brand landen jetzt auch
+                        // auf dem Partner (Statuswerte), nicht mehr nur als reiner Schaden.
                         const PARTNER_DAMAGE_ONLY_EFFECTS = ["italianSlap", "stun", "poison", "atkDown", "defDown"];
                         const partnerSkillTarget = PARTNER_DAMAGE_ONLY_EFFECTS.includes(skill.effect) ? bvEnemyPartnerTargetActive() : null;
                         if (partnerSkillTarget) {
@@ -48751,6 +49046,7 @@ function performSkill(skillId) {
                             bvDamagePartner(partnerSkillTarget, partnerDmg, false);
                             // Skill-Icon zusätzlich am Partner zeigen (Feedback kommt aus bvDamagePartner)
                             bvPartnerFloat(partnerSkillTarget, skill.icon || "💢", "bv-partner-hitfx", 680);
+                            bvPartnerStatusFromSkill(partnerSkillTarget, skill);
                         }
                         // Handle different skill effects
                         else switch (skill.effect) {
@@ -48905,7 +49201,11 @@ function performSkill(skillId) {
 
                 function endEnemyTurn(partnerAlreadyActed = false) {
                     // Jeder kampfbereite Partner greift nacheinander an, danach kommt der Spielerzug.
-                    if (!partnerAlreadyActed) bvRoundQueue = bvBattleParty.filter(p => p.active && p.hp > 0);
+                    if (!partnerAlreadyActed) {
+                        // v7.13: MP-Regeneration zu Beginn der Partnerrunde
+                        bvPartnerRoundStart();
+                        bvRoundQueue = bvBattleParty.filter(p => p.active && p.hp > 0);
+                    }
                     if (bvRoundQueue.length && enemyHp > 0 && gameState === "BATTLE") {
                         if (!bvPartnerActionBusy) bvPartnerAttack(bvRoundQueue.shift());
                         return;
