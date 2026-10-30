@@ -33554,6 +33554,7 @@ body.bv-settings-particles-off #rpg-fx-particles {
 }
 @media (prefers-reduced-motion: reduce) {
     #bv-party-sprites .bv-partner-sprite-battle.visible,
+    #bv-party-sprites .bv-partner-sprite-battle.bv-p-enter,
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-attack,
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-hurt,
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-cheer,
@@ -33811,6 +33812,13 @@ body.bv-settings-particles-off #rpg-fx-particles {
 #bv-party-sprites .bv-partner-sprite-battle { left: 68px; bottom: 0; width: 56px; height: 64px; font-size: 2.9rem; }
 #bv-party-sprites .bv-partner-sprite-battle.visible {
     display: flex;
+    /* WICHTIG: Hier darf keine Dauer-Animation hängen. Sonst greift nach dem Entfernen
+       einer Angriffs-/Trefferklasse wieder diese Regel und die Einflug-Animation startet
+       erneut – genau der sichtbare Rücksprung nach jeder Aktion. */
+    animation: none;
+}
+/* Einflug läuft genau einmal pro (Wieder-)Erscheinen über eine eigene Klasse. */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-enter {
     animation: bvPartnerEnterV2 .46s cubic-bezier(.2, 1.5, .4, 1) both;
 }
 
@@ -44892,6 +44900,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 };
                 let bvBattleParty = [];
                 let bvPartnerActionBusy = false;
+                // Zählt Kämpfe mit: verhindert, dass die Siegesbühne innerhalb desselben
+                // Sieges doppelt aufgebaut wird (sonst starten die Animationen neu).
+                let bvVictoryToken = 0;
                 // Ziel des aktuellen Gegnerangriffs: genau ein Ziel pro Angriff
                 let enemyAttackTarget = "player";
                 let enemyPartnerTarget = null;
@@ -45117,7 +45128,16 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             el.textContent = p.sprite;
                             if (typeof window.parseEmojis === "function") window.parseEmojis(el);
                         }
-                        el.classList.toggle("visible", !!(p.active && p.hp > 0));
+                        // Einflug nur beim (Wieder-)Erscheinen, nicht bei jedem HUD-Update
+                        // und vor allem nicht als Fallback nach einer Kampf-Animation.
+                        const shouldShow = !!(p.active && p.hp > 0);
+                        const wasVisible = el.classList.contains("visible");
+                        el.classList.toggle("visible", shouldShow);
+                        if (shouldShow && !wasVisible) {
+                            clearTimeout(el._bvEnterTimer);
+                            el.classList.add("bv-p-enter");
+                            el._bvEnterTimer = setTimeout(() => el.classList.remove("bv-p-enter"), 520);
+                        }
                     });
                     box.querySelectorAll("[data-pid]").forEach(el => {
                         if (!members.some(p => p.id === el.dataset.pid)) el.remove();
@@ -45136,19 +45156,26 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         setTimeout(() => card.classList.remove("bv-p-card-act"), Math.min(ms, 700));
                     }
                     if (!el) return;
+                    // Laufenden Einflug abbrechen. Sonst würde er nach dem Entfernen der
+                    // Aktionsklasse als Fallback wieder anspringen (Rücksprung-Effekt).
+                    clearTimeout(el._bvEnterTimer);
+                    el.classList.remove("bv-p-enter");
                     el.classList.remove("bv-p-attack", "bv-p-hurt", "bv-p-cheer", ...BV_ATK_CLASSES);
                     void el.offsetWidth;
                     el.classList.add(cls);
                     if (extraCls) el.classList.add(extraCls);
+                    // Erst NACH dem Animationsende entfernen (ms enthält bereits Puffer),
+                    // damit der Endzustand nicht vorzeitig auf den Startwert springt.
                     setTimeout(() => el.classList.remove(cls), ms);
-                    // Waffen-Animationen dauern bis 0,9 s, daher eigene Entfernungszeit
+                    // Waffen-Animationen dauern bis 0,86 s, daher eigene Entfernungszeit
                     if (extraCls) setTimeout(() => el.classList.remove(extraCls), 1000);
                 }
 
                 function bvDamagePartner(p, dmg, isCrit) {
                     const taken = Math.min(p.hp, Math.max(1, Math.floor(dmg)));
                     p.hp -= taken;
-                    bvPlayPartnerAnim("bv-p-hurt", 400, p.id);
+                    // 460 ms > Keyframe-Dauer (.42 s), damit die Klasse erst nach dem Ende fällt
+                    bvPlayPartnerAnim("bv-p-hurt", 460, p.id);
                     bvSavePartnerProgress(p);
                     bvUpdatePartnerHud();
                     showDmgPopup("battle-dmg-player", taken, isCrit ? "#ffe066" : "#f9a8d4", isCrit);
@@ -45252,7 +45279,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     showBattleActionBubble("player", partnerName + " hilft!", partnerIcon, partnerColor);
                     // Gleiche Angriffsbewegung wie beim Spieler: die Klasse der aktuellen Spielerwaffe
                     const pw = (typeof bvWeaponCurrent === "function") ? bvWeaponCurrent() : null;
-                    bvPlayPartnerAnim("bv-p-attack", 600, partner.id, pw ? "bv-atk-" + pw.anim : null);
+                    bvPlayPartnerAnim("bv-p-attack", 660, partner.id, pw ? "bv-atk-" + pw.anim : null);
                     setTimeout(() => {
                         if (gameState !== "BATTLE" || enemyHp <= 0) { bvPartnerActionBusy = false; return; }
                         const beforeEnemyHp = enemyHp;
@@ -45293,6 +45320,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 function startBattle(npc) {
                     if (isBattleStarting) return;
+                    // Neuer Kampf = neuer Token: die Partner-Siegesbühne darf beim
+                    // nächsten Sieg wieder frisch aufgebaut und animiert werden.
+                    bvVictoryToken++;
                     const battleUi = document.getElementById("battle-ui");
                     if (battleUi) battleUi.classList.remove("bv-ui-visible", "bv-ui-leaving");
                     interruptNPCSocialConversation(true);
@@ -47397,7 +47427,7 @@ function performSkill(skillId) {
                     if (p.hp > 0) p.active = true;
                     bvSavePartnerProgress(p);
                     bvUpdatePartnerHud();
-                    bvPlayPartnerAnim("bv-p-cheer", 600, p.id);
+                    bvPlayPartnerAnim("bv-p-cheer", 660, p.id);
                     battleLog("🩹 " + p.name + (wasDown ? " kommt zurück ins Gefecht! " : " wird versorgt! ") + "+" + (p.hp - (wasDown ? 0 : p.hp - gain)) + (p.hp - before) + " HP");
                     updateBattleUI();
                     setTimeout(enemyTurn, 800);
@@ -48541,6 +48571,15 @@ function performSkill(skillId) {
                     if (!screen || !host) return;
 
                     const party = (bvBattleParty || []).filter(p => p && p.active && p.hp > 0);
+
+                    // Idempotent: ein zweiter Aufruf für denselben Sieg darf die Bühne NICHT
+                    // neu aufbauen – sonst starten Einflug/Tänze erneut (sichtbarer Reset).
+                    // Der Token wechselt pro Kampf, damit der nächste Sieg wieder frisch startet.
+                    // Nur Token + Zusammensetzung: Level-Ups innerhalb des Sieges dürfen
+                    // keinen Neuaufbau (und damit keinen Animations-Neustart) auslösen.
+                    const sig = bvVictoryToken + "#" + party.map(p => p.id).join("|");
+                    if (party.length && host.dataset.sig === sig && host.childElementCount) return;
+                    host.dataset.sig = sig;
                     host.replaceChildren();
 
                     const subtitle = screen.querySelector(".victory-subtitle");
