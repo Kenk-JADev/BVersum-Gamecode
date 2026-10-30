@@ -33342,7 +33342,10 @@ body.bv-settings-particles-off #rpg-fx-particles {
     pointer-events: none;
 }
 /* The submenu appears to slide out from behind the rising battle dock. */
-#rpg-battle-screen .battle-submenu.bv-submenu-open,
+/* v7.12: Beim Schließen darf es hinter dem Dock verschwinden (99), geöffnet muss es
+   aber ÜBER dem Dock (100) und den Partner-Karten (#bv-partner-hud = 101) liegen –
+   sonst verdecken die Partner-Karten das Skill-/Item-Fenster. */
+#rpg-battle-screen .battle-submenu.bv-submenu-open { z-index: 140 !important; }
 #rpg-battle-screen .battle-submenu.bv-submenu-close { z-index: 99 !important; }
 #battle-ui { z-index: 100 !important; }
 #bv-partner-hud {
@@ -33427,6 +33430,7 @@ body.bv-settings-particles-off #rpg-fx-particles {
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-cheer,
     #bv-party-sprites .bv-partner-sprite-battle[class*="bv-atk-"],
     #bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-win-"],
+    #bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-flee-"],
     .bv-partner-card.bv-p-card-act,
     .bv-partner-card.bv-p-card-heal,
     .bv-partner-dmg,
@@ -33936,6 +33940,34 @@ body.bv-settings-particles-off #rpg-fx-particles {
 #bv-party-sprites .bv-partner-sprite-battle.bv-p-win-slide { animation: winDanceSlideV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
 #bv-party-sprites .bv-partner-sprite-battle.bv-p-win-pose  { animation: winDancePoseV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
 #bv-party-sprites .bv-partner-sprite-battle.bv-p-win-wave  { animation: winDanceWaveV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+
+/* ===== v7.12: Flucht der Partner =====
+   Drei Richtungen, damit die Gruppe nicht synchron in dieselbe Ecke läuft. */
+#bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-flee-"] { will-change: transform, opacity; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-left  { animation: bvPartnerFleeLeft .9s cubic-bezier(.45, 0, .75, .4) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-right { animation: bvPartnerFleeRight .9s cubic-bezier(.45, 0, .75, .4) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-up    { animation: bvPartnerFleeUp .9s cubic-bezier(.45, 0, .75, .4) both !important; }
+@keyframes bvPartnerFleeLeft {
+    0%   { opacity: 1; transform: none; }
+    14%  { opacity: 1; transform: translate3d(8px, -14px, 0) rotate(8deg) scale(1.06); }
+    38%  { opacity: 1; transform: translate3d(-58px, 0, 0) rotate(-8deg) scale(.98); }
+    64%  { opacity: .95; transform: translate3d(-118px, -12px, 0) rotate(-14deg) scale(.9); }
+    100% { opacity: 0; transform: translate3d(-210px, -4px, 0) rotate(-22deg) scale(.7); }
+}
+@keyframes bvPartnerFleeRight {
+    0%   { opacity: 1; transform: none; }
+    14%  { opacity: 1; transform: translate3d(-8px, -14px, 0) rotate(-8deg) scale(1.06); }
+    38%  { opacity: 1; transform: translate3d(58px, 0, 0) rotate(8deg) scale(.98); }
+    64%  { opacity: .95; transform: translate3d(118px, -12px, 0) rotate(14deg) scale(.9); }
+    100% { opacity: 0; transform: translate3d(210px, -4px, 0) rotate(22deg) scale(.7); }
+}
+@keyframes bvPartnerFleeUp {
+    0%   { opacity: 1; transform: none; }
+    16%  { opacity: 1; transform: translate3d(0, 8px, 0) scale(.9, 1.1); }
+    44%  { opacity: 1; transform: translate3d(14px, -64px, 0) rotate(180deg) scale(1.05); }
+    74%  { opacity: .9; transform: translate3d(-10px, -120px, 0) rotate(340deg) scale(.85); }
+    100% { opacity: 0; transform: translate3d(6px, -190px, 0) rotate(520deg) scale(.4); }
+}
 
 /* ===== v7.12: Heil-Effekte am Partner =====
    Ring + aufsteigende Funken + grüne Zahl. Alle Elemente werden per JS getimert
@@ -47574,8 +47606,12 @@ function performSkill(skillId) {
                             playerSprite.style.transform = "translateX(-200px) scale(0.8)";
                             playerSprite.style.opacity = "0";
                         }
-                        
-                        setTimeout(endBattleToMap, 1000);
+
+                        // v7.12: Partner fliehen mit – jede/r in eine andere Richtung
+                        // und mit eigener Animation, damit die Gruppe lebendig wirkt.
+                        bvPartnerFleeAnimation();
+
+                        setTimeout(endBattleToMap, 1150);
                     } else {
                         battleLog("Flucht gescheitert!");
                         setTimeout(enemyTurn, 1000);
@@ -48244,9 +48280,6 @@ function performSkill(skillId) {
 
                         battleLog(currentEnemy.name + " wurde besiegt! 🎉");
 
-                        // Partner jubeln sofort am eigenen Sprite – sichtbar, bevor der Sieg-Screen greift.
-                        bvPartnerVictoryDance();
-
                         // Kleine, lagarme Abschluss-Pops statt großer Effekt-Spam
                         const particles = ["✨", "💥", "💰"];
                         particles.forEach((p, i) => setTimeout(() => spawnBattleEffect("enemy", p), i * 120));
@@ -48734,6 +48767,27 @@ function performSkill(skillId) {
                     });
                 }
 
+                // v7.12: Flucht-Animation der Partner. Jeder bekommt eine andere
+                // Richtung (links rennen, rechts rennen, nach oben wegspringen),
+                // leicht gestaffelt und mit eigener Klasse – danach wird aufgeräumt.
+                function bvPartnerFleeAnimation() {
+                    const moves = ["bv-p-flee-left", "bv-p-flee-right", "bv-p-flee-up", "bv-p-flee-right"];
+                    (bvBattleParty || []).forEach((p, i) => {
+                        if (!p || !p.active || p.hp <= 0) return;
+                        const el = bvPartnerSpriteEl(p);
+                        if (!el) return;
+                        el.classList.remove(...moves);
+                        void el.offsetWidth;
+                        const cls = moves[i % moves.length];
+                        setTimeout(() => {
+                            if (!el.isConnected) return;
+                            el.classList.add(cls);
+                            clearTimeout(el._bvFleeTimer);
+                            el._bvFleeTimer = setTimeout(() => el.classList.remove(cls), 950);
+                        }, i * 70);
+                    });
+                }
+
                 // Balken erst nach dem Einblenden des Sieg-Bildschirms auf den Zielwert setzen,
                 // sonst startet die CSS-Übergangsanimation unsichtbar.
                 function bvFillVictoryPartnerBars() {
@@ -48937,8 +48991,9 @@ function performSkill(skillId) {
                         victoryScreen.classList.add("visible");
                         bvFillVictoryPartnerBars();
                         parseEmojis(victoryScreen); 
-                        // Tanz startet jetzt mit der Sieg-Szene, nicht vorher.
-                        setTimeout(triggerVictoryDance, 80);
+                        // Tanz startet jetzt mit der Sieg-Szene, nicht vorher –
+                        // Partner tanzen exakt im selben Moment wie der Spieler.
+                        setTimeout(() => { triggerVictoryDance(); bvPartnerVictoryDance(); }, 80);
                     }
                 }
 
