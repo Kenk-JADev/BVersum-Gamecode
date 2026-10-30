@@ -48149,20 +48149,42 @@ function performSkill(skillId) {
                     bubble.style.setProperty("--bubble-color", color);
                     bubble.style.borderColor = color + "99";
                     bubble.style.boxShadow = `0 12px 32px rgba(0,0,0,.45), 0 0 22px ${color}55`;
-                    // v7.12: Optionales Anker-Element – die Sprechblase sitzt dann über
-                    // genau diesem Sprite (z. B. Partner) statt über der Spieler-Mitte.
+                    // v7.12: Optionales Anker-Element – die Sprechblase sitzt dann direkt
+                    // über dem Kopf genau dieses Sprites (z. B. Partner), nicht über dem Spieler.
+                    let anchorCx = null;
+                    let hostLeft = 0;
                     if (anchorEl && anchorEl.getBoundingClientRect) {
                         const hostRect = host.getBoundingClientRect();
                         const aRect = anchorEl.getBoundingClientRect();
-                        if (hostRect.width > 0 && aRect.width > 0) {
-                            const cx = aRect.left - hostRect.left + aRect.width / 2;
-                            const clamped = Math.max(70, Math.min(hostRect.width - 70, cx));
-                            bubble.style.left = clamped + "px";
-                            bubble.style.bottom = (hostRect.bottom - aRect.top + 4) + "px";
+                        if (aRect.width > 0 && aRect.height > 0 && hostRect.height > 0) {
+                            // Horizontal: Mitte des Sprites, umgerechnet auf die Spielerfläche.
+                            // Wichtig: NICHT auf die Breite der Spielerfläche klemmen – die ist nur
+                            // so breit wie die Spieler-Sprite; Partner stehen weit daneben.
+                            anchorCx = aRect.left - hostRect.left + aRect.width / 2;
+                            hostLeft = hostRect.left;
+                            bubble.style.left = anchorCx + "px";
+                            // Vertikal: Sprite-Box ist unten ausgerichtet (align-items: flex-end),
+                            // daher liegt der sichtbare Emoji-Kopf bei ~72 % der Boxhöhe.
+                            const headTop = aRect.bottom - aRect.height * 0.72;
+                            bubble.style.bottom = (hostRect.bottom - headTop + 6) + "px";
                         }
                     }
                     bubble.innerHTML = `${icon ? `<span class="bubble-icon">${icon}</span>` : ""}<span class="bubble-text">${text}</span>`;
                     host.appendChild(bubble);
+                    // Feinkorrektur mit echter Blasenbreite (offsetWidth ist transform-frei):
+                    // die Blase darf nicht aus dem Kampfbild ragen.
+                    if (anchorCx !== null) {
+                        const screenEl = document.getElementById("rpg-battle-screen");
+                        if (screenEl) {
+                            const sr = screenEl.getBoundingClientRect();
+                            const halfW = bubble.offsetWidth / 2;
+                            const centerScreen = hostLeft + anchorCx;
+                            let shift = 0;
+                            if (centerScreen - halfW < sr.left + 8) shift = (sr.left + 8) - (centerScreen - halfW);
+                            else if (centerScreen + halfW > sr.right - 8) shift = (sr.right - 8) - (centerScreen + halfW);
+                            if (shift) bubble.style.left = (anchorCx + shift) + "px";
+                        }
+                    }
                     parseEmojis(bubble);
                     setTimeout(() => bubble.remove(), 1450);
                 }
