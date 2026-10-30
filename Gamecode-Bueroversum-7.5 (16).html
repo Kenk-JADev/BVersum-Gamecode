@@ -1445,12 +1445,15 @@
                                 <div class="vs-name" id="vs-player-name">HELD</div>
                                 <div class="vs-title">Azubi</div>
                             </div>
+                            <!-- v7.12: Partner, die mit in den Kampf kommen -->
+                            <div class="vs-partners" id="vs-partners" aria-live="polite"></div>
                         </div>
                         <div class="vs-middle">
                             <div class="vs-spark spark-1">⚡</div>
                             <div class="vs-text">VS</div>
                             <div class="vs-spark spark-2">⚡</div>
                             <div class="vs-clash-effect"></div>
+                            <div class="vs-impact"></div>
                         </div>
                         <div class="vs-fighter vs-enemy">
                             <div class="vs-fighter-bg enemy"></div>
@@ -11953,8 +11956,10 @@
         }
 
         @keyframes vsScreenIn {
-            0% { opacity: 0 }
-            100% { opacity: 1 }
+            /* v7.12: leichter Kamera-Punch beim Einblenden */
+            0%   { opacity: 0; transform: scale(1.06); }
+            60%  { opacity: 1; }
+            100% { opacity: 1; transform: scale(1); }
         }
 
         @keyframes vsBgFadeOut {
@@ -12252,7 +12257,9 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.7)) drop-shadow(0 0 25px rgba(255, 136, 0, 0.5)) drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-            animation: vsTextEntrance 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.35) both, vsPulse 0.4s infinite alternate;
+            /* v7.12: Puls animiert nur noch den Glow – vorher überschrieb er den
+               transform der Entrance-Animation (zweite Animation gewinnt). */
+            animation: vsTextEntrance 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.35) both, vsPulse 0.7s ease-in-out .7s infinite alternate;
         }
 
         @keyframes vsTextEntrance {
@@ -12270,8 +12277,12 @@
         }
 
         @keyframes vsPulse {
-            from { transform: scale(0.95); }
-            to { transform: scale(1.05); }
+            from {
+                filter: drop-shadow(0 0 10px rgba(255, 215, 0, .55)) drop-shadow(0 4px 8px rgba(0, 0, 0, .6));
+            }
+            to {
+                filter: drop-shadow(0 0 24px rgba(255, 215, 0, .95)) drop-shadow(0 0 40px rgba(255, 136, 0, .6)) drop-shadow(0 4px 8px rgba(0, 0, 0, .6));
+            }
         }
 
         .vs-spark {
@@ -12324,6 +12335,99 @@
                 transform: translate(-50%, -50%) scale(2.2);
                 opacity: 0;
             }
+        }
+
+        /* ===== v7.12: VS-Splash aufgewertet =====
+           Licht-Sweep beim Einblenden, Impact-Ring hinter dem VS und die
+           Partner-Chips auf der Spieler-Seite. Nur transform/opacity. */
+        #battle-vs-splash::before {
+            content: '';
+            position: absolute;
+            top: -25%;
+            left: 0;
+            width: 45%;
+            height: 150%;
+            z-index: 3;
+            pointer-events: none;
+            background: linear-gradient(100deg,
+                transparent 0%,
+                rgba(255, 255, 255, .10) 42%,
+                rgba(160, 220, 255, .30) 50%,
+                rgba(255, 255, 255, .10) 58%,
+                transparent 100%);
+            transform: skewX(-12deg) translateX(-160%);
+            animation: vsLightSweep 1.15s cubic-bezier(.3, 0, .2, 1) .12s both;
+        }
+        @keyframes vsLightSweep {
+            0%   { opacity: 0; transform: skewX(-12deg) translateX(-160%); }
+            18%  { opacity: 1; }
+            100% { opacity: 0; transform: skewX(-12deg) translateX(320%); }
+        }
+        #battle-vs-splash.vs-fade-out::before { animation: none; opacity: 0; }
+
+        .vs-impact {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            margin: -60px 0 0 -60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 236, 150, .9);
+            box-shadow: 0 0 26px rgba(255, 200, 60, .75), inset 0 0 20px rgba(255, 220, 120, .45);
+            opacity: 0;
+            pointer-events: none;
+            animation: vsImpactRing .85s cubic-bezier(.16, 1, .3, 1) .28s both;
+        }
+        @keyframes vsImpactRing {
+            0%   { opacity: 0; transform: scale(.25); }
+            22%  { opacity: .95; }
+            100% { opacity: 0; transform: scale(2.6); }
+        }
+
+        /* Partner-Chips unter dem Spieler-Namen (nur wenn Partner dabei sind) */
+        .vs-partners {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 14px;
+            min-height: 0;
+        }
+        .vs-partner-chip {
+            display: grid;
+            justify-items: center;
+            gap: 1px;
+            padding: 4px 9px 5px;
+            border-radius: 12px;
+            border: 1px solid var(--pc, #7dd3fc);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(8, 14, 28, .78));
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .35), 0 0 16px -6px var(--pc, #7dd3fc);
+            opacity: 0;
+            animation: vsPartnerChipIn .52s cubic-bezier(.16, 1, .3, 1) calc(.5s + var(--i, 0) * .12s) both;
+        }
+        .vs-partner-emoji {
+            font-size: 1.75rem;
+            line-height: 1;
+            filter: drop-shadow(0 0 10px var(--pc, #7dd3fc));
+        }
+        .vs-partner-lvl {
+            font-family: 'VT323', monospace;
+            font-size: .8rem;
+            letter-spacing: .05em;
+            color: #e6f6ff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+        }
+        @keyframes vsPartnerChipIn {
+            0%   { opacity: 0; transform: translateY(16px) scale(.55) rotate(-8deg); }
+            60%  { opacity: 1; transform: translateY(-4px) scale(1.09) rotate(3deg); }
+            100% { opacity: 1; transform: none; }
+        }
+        #battle-vs-splash.vs-fade-out .vs-partner-chip {
+            animation: vsPartnerChipOut .32s ease-in forwards;
+        }
+        @keyframes vsPartnerChipOut {
+            to { opacity: 0; transform: translateY(14px) scale(.8); }
         }
 
         .vs-message {
@@ -33422,7 +33526,9 @@ body.bv-settings-particles-off #rpg-fx-particles {
     bottom: calc(100% + 8px);
     z-index: 101;
     max-width: calc(100% - 24px);
-    flex-wrap: nowrap;
+    /* v7.12: Bei 4 Partnern dürfen die Karten in eine zweite Reihe umbrechen */
+    flex-wrap: wrap;
+    row-gap: 6px;
     justify-content: flex-end;
     align-items: flex-end;
     gap: 6px;
@@ -34008,31 +34114,47 @@ body.bv-settings-particles-off #rpg-fx-particles {
 #bv-party-sprites .bv-partner-sprite-battle.bv-p-win-wave  { animation: winDanceWaveV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
 
 /* ===== v7.12: Flucht der Partner =====
-   Drei Richtungen, damit die Gruppe nicht synchron in dieselbe Ecke läuft. */
+   Vier Richtungen mit Anlauf, Sprüngen und Auslaufen – jede/r rennt anders weg.
+   Nach der Animation setzt das JS zusätzlich .bv-p-fled (display:none), damit
+   kein Sprite kurz vor dem Kampfende wieder auftaucht. */
 #bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-flee-"] { will-change: transform, opacity; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-left  { animation: bvPartnerFleeLeft .9s cubic-bezier(.45, 0, .75, .4) both !important; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-right { animation: bvPartnerFleeRight .9s cubic-bezier(.45, 0, .75, .4) both !important; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-up    { animation: bvPartnerFleeUp .9s cubic-bezier(.45, 0, .75, .4) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-left  { animation: bvPartnerFleeLeft 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-right { animation: bvPartnerFleeRight 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-up    { animation: bvPartnerFleeUp 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-down  { animation: bvPartnerFleeDown 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+/* Endgültig weg: kein Zurückblitzen bis zum nächsten Kampfstart */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-fled { display: none !important; }
 @keyframes bvPartnerFleeLeft {
     0%   { opacity: 1; transform: none; }
-    14%  { opacity: 1; transform: translate3d(8px, -14px, 0) rotate(8deg) scale(1.06); }
-    38%  { opacity: 1; transform: translate3d(-58px, 0, 0) rotate(-8deg) scale(.98); }
-    64%  { opacity: .95; transform: translate3d(-118px, -12px, 0) rotate(-14deg) scale(.9); }
-    100% { opacity: 0; transform: translate3d(-210px, -4px, 0) rotate(-22deg) scale(.7); }
+    10%  { opacity: 1; transform: translate3d(11px, 6px, 0) rotate(12deg) scale(1.08); }
+    26%  { opacity: 1; transform: translate3d(-32px, -24px, 0) rotate(-13deg) scale(1.04); }
+    44%  { opacity: 1; transform: translate3d(-78px, 0, 0) rotate(7deg) scale(.98); }
+    62%  { opacity: .98; transform: translate3d(-126px, -20px, 0) rotate(-11deg) scale(.93); }
+    80%  { opacity: .8; transform: translate3d(-172px, 2px, 0) rotate(5deg) scale(.85); }
+    100% { opacity: 0; transform: translate3d(-235px, -8px, 0) rotate(-18deg) scale(.7); }
 }
 @keyframes bvPartnerFleeRight {
     0%   { opacity: 1; transform: none; }
-    14%  { opacity: 1; transform: translate3d(-8px, -14px, 0) rotate(-8deg) scale(1.06); }
-    38%  { opacity: 1; transform: translate3d(58px, 0, 0) rotate(8deg) scale(.98); }
-    64%  { opacity: .95; transform: translate3d(118px, -12px, 0) rotate(14deg) scale(.9); }
-    100% { opacity: 0; transform: translate3d(210px, -4px, 0) rotate(22deg) scale(.7); }
+    10%  { opacity: 1; transform: translate3d(-11px, 6px, 0) rotate(-12deg) scale(1.08); }
+    26%  { opacity: 1; transform: translate3d(32px, -24px, 0) rotate(13deg) scale(1.04); }
+    44%  { opacity: 1; transform: translate3d(78px, 0, 0) rotate(-7deg) scale(.98); }
+    62%  { opacity: .98; transform: translate3d(126px, -20px, 0) rotate(11deg) scale(.93); }
+    80%  { opacity: .8; transform: translate3d(172px, 2px, 0) rotate(-5deg) scale(.85); }
+    100% { opacity: 0; transform: translate3d(235px, -8px, 0) rotate(18deg) scale(.7); }
 }
 @keyframes bvPartnerFleeUp {
     0%   { opacity: 1; transform: none; }
-    16%  { opacity: 1; transform: translate3d(0, 8px, 0) scale(.9, 1.1); }
-    44%  { opacity: 1; transform: translate3d(14px, -64px, 0) rotate(180deg) scale(1.05); }
-    74%  { opacity: .9; transform: translate3d(-10px, -120px, 0) rotate(340deg) scale(.85); }
-    100% { opacity: 0; transform: translate3d(6px, -190px, 0) rotate(520deg) scale(.4); }
+    12%  { opacity: 1; transform: translate3d(0, 12px, 0) scale(.88, 1.12); }
+    40%  { opacity: 1; transform: translate3d(18px, -72px, 0) rotate(200deg) scale(1.06); }
+    70%  { opacity: .9; transform: translate3d(-12px, -150px, 0) rotate(400deg) scale(.8); }
+    100% { opacity: 0; transform: translate3d(8px, -240px, 0) rotate(620deg) scale(.35); }
+}
+@keyframes bvPartnerFleeDown {
+    0%   { opacity: 1; transform: none; }
+    14%  { opacity: 1; transform: translate3d(0, -16px, 0) rotate(-5deg) scale(1.05); }
+    45%  { opacity: 1; transform: translate3d(-10px, 34px, 0) rotate(6deg) scale(1.34); }
+    75%  { opacity: .7; transform: translate3d(8px, 82px, 0) rotate(-5deg) scale(1.72); }
+    100% { opacity: 0; transform: translate3d(0, 140px, 0) scale(2.15); }
 }
 
 /* ===== v7.12: Heil-Effekte am Partner =====
@@ -45005,7 +45127,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 let enemyAttackTarget = "player";
                 let enemyPartnerTarget = null;
                 let bvRoundQueue = [];
-                const BV_PARTNER_TEAM_LIMIT = 3;
+                // v7.12: Platz für ALLE definierten Partner (vorher hart auf 3 begrenzt).
+                const BV_PARTNER_TEAM_LIMIT = Math.max(1, Object.keys(BV_PARTNER_DEFS).length);
 
                 function bvPartnerDefForNpc(npc) {
                     if (!npc || npc.type !== "talk") return null;
@@ -45245,6 +45368,37 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         : [bvBuildEditorPartner("justin")].filter(Boolean);
                 }
 
+                // v7.12: Partner im VS-Splash zeigen – nur wenn wirklich welche mitkämpfen.
+                // Die Chips werden vor dem Einblenden gebaut; ihre CSS-Animation startet
+                // erst, wenn der Splash sichtbar wird (display:none hält sie an).
+                function bvRenderVsPartners() {
+                    const host = document.getElementById("vs-partners");
+                    if (!host) return;
+                    const party = (bvBattleParty || []).filter(p => p && p.active && p.hp > 0);
+                    if (!party.length) {
+                        host.replaceChildren();
+                        host.removeAttribute("aria-label");
+                        return;
+                    }
+                    host.replaceChildren(...party.map((p, i) => {
+                        const chip = document.createElement("div");
+                        chip.className = "vs-partner-chip";
+                        chip.style.setProperty("--i", i);
+                        chip.style.setProperty("--pc", p.color || "#7dd3fc");
+                        chip.title = (p.name || "Partner") + " · LV " + (p.level || 1);
+                        const emoji = document.createElement("span");
+                        emoji.className = "vs-partner-emoji";
+                        emoji.textContent = p.sprite || "🤝";
+                        const lvl = document.createElement("span");
+                        lvl.className = "vs-partner-lvl";
+                        lvl.textContent = "LV " + (p.level || 1);
+                        chip.append(emoji, lvl);
+                        return chip;
+                    }));
+                    if (typeof window.parseEmojis === "function") window.parseEmojis(host);
+                    host.setAttribute("aria-label", "Mit im Kampf: " + party.map(p => p.name || "Partner").join(", "));
+                }
+
                 function bvPartnerLog(text) {
                     const log = document.getElementById("battle-log-text");
                     if (log) {
@@ -45266,7 +45420,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             el.dataset.pid = p.id;
                             box.appendChild(el);
                         }
-                        el.style.left = (68 + i * 56) + "px";
+                        // Bei 4 Partnern enger staffeln, damit die Reihe im Kampffeld bleibt
+                        el.style.left = (68 + i * (members.length > 3 ? 50 : 56)) + "px";
                         if (el.dataset.sprite !== p.sprite) {
                             el.dataset.sprite = p.sprite;
                             el.textContent = p.sprite;
@@ -45749,6 +45904,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         ? bvBuildEditorBattleParty()
                         : bvPartnerParty().map(pid => bvEnsurePartnerById(pid)).filter(Boolean);
                     bvPartnerActionBusy = false;
+                    // Nach einer Flucht sind die Sprites ausgeblendet (.bv-p-fled) –
+                    // ein neuer Kampf startet immer mit sichtbaren Partnern.
+                    document.querySelectorAll("#bv-party-sprites .bv-p-fled").forEach(el => el.classList.remove("bv-p-fled"));
                     bvUpdatePartnerHud();
                     
                     // Calculate HP based on level (only for non-boss enemies)
@@ -45798,6 +45956,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     update("vs-enemy-name", currentEnemy.displayName);
                     update("vs-enemy-sprite", currentEnemy.sprite);
                     update("vs-player-sprite", player.sprite);
+                    // v7.12: Partner-Chips im VS-Splash
+                    bvRenderVsPartners();
 
                     const vsMessageText = currentEnemy.vsMessage || "";
                     // Anzeigedauer flexibel an die Textlänge anpassen:
@@ -47730,7 +47890,8 @@ function performSkill(skillId) {
                         // und mit eigener Animation, damit die Gruppe lebendig wirkt.
                         bvPartnerFleeAnimation();
 
-                        setTimeout(endBattleToMap, 1150);
+                        // Genug Zeit für die letzte, gestaffelte Partner-Animation (110 ms * n + 1,06 s)
+                        setTimeout(endBattleToMap, 1400);
                     } else {
                         battleLog("Flucht gescheitert!");
                         setTimeout(enemyTurn, 1000);
@@ -48920,24 +49081,29 @@ function performSkill(skillId) {
                     });
                 }
 
-                // v7.12: Flucht-Animation der Partner. Jeder bekommt eine andere
-                // Richtung (links rennen, rechts rennen, nach oben wegspringen),
-                // leicht gestaffelt und mit eigener Klasse – danach wird aufgeräumt.
+                // v7.12: Flucht-Animation der Partner. Jede/r rennt anders weg
+                // (links, rechts, nach oben, auf die Kamera zu), deutlich gestaffelt.
+                // Nach dem Lauf wird das Sprite endgültig ausgeblendet (.bv-p-fled),
+                // damit es nicht kurz vor dem Kampfende wieder auftaucht.
                 function bvPartnerFleeAnimation() {
-                    const moves = ["bv-p-flee-left", "bv-p-flee-right", "bv-p-flee-up", "bv-p-flee-right"];
+                    const moves = ["bv-p-flee-left", "bv-p-flee-right", "bv-p-flee-up", "bv-p-flee-down"];
                     (bvBattleParty || []).forEach((p, i) => {
                         if (!p || !p.active || p.hp <= 0) return;
                         const el = bvPartnerSpriteEl(p);
                         if (!el) return;
-                        el.classList.remove(...moves);
+                        el.classList.remove(...moves, "bv-p-fled");
                         void el.offsetWidth;
                         const cls = moves[i % moves.length];
                         setTimeout(() => {
                             if (!el.isConnected) return;
                             el.classList.add(cls);
                             clearTimeout(el._bvFleeTimer);
-                            el._bvFleeTimer = setTimeout(() => el.classList.remove(cls), 950);
-                        }, i * 70);
+                            el._bvFleeTimer = setTimeout(() => {
+                                el.classList.remove(cls);
+                                void el.offsetWidth;
+                                el.classList.add("bv-p-fled");
+                            }, 1060);
+                        }, i * 110);
                     });
                 }
 
