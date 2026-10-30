@@ -33526,19 +33526,31 @@ body.bv-settings-particles-off #rpg-fx-particles {
     bottom: calc(100% + 8px);
     z-index: 101;
     max-width: calc(100% - 24px);
-    /* v7.12: Bei 4 Partnern dürfen die Karten in eine zweite Reihe umbrechen */
-    flex-wrap: wrap;
-    row-gap: 6px;
-    justify-content: flex-end;
-    align-items: flex-end;
+    /* v7.13: Eine Spalte – alle Partnerkarten untereinander am rechten Rand,
+       jede Karte gleich breit. Vorher brachen sie in zwei Reihen um und die
+       letzte Karte hing allein rechts. */
+    width: 196px;
+    max-height: 62vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    /* Reihenfolge bleibt oben→unten; bei knapper Höhe scrollt die Spalte statt oben abzuschneiden */
+    justify-content: flex-start;
     gap: 6px;
+    padding: 2px;
 }
 /* Eine Karte pro Gruppenmitglied */
 .bv-partner-card {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    flex: 0 1 190px;
+    /* v7.13: Breite kommt aus der Spalte (#bv-partner-hud) – so sind alle Karten gleich breit */
+    flex: 0 0 auto;
+    width: 100%;
     min-width: 0;
     gap: 9px;
     padding: 7px 8px;
@@ -33830,8 +33842,8 @@ body.bv-settings-particles-off #rpg-fx-particles {
         padding: 7px !important;
     }
     #battle-player-hud { grid-column: 1; grid-row: 1; min-height: 0; overflow: hidden; }
-    #bv-partner-hud { right: 8px; bottom: calc(100% + 6px); width: auto; max-width: calc(100% - 16px); padding: 0; gap: 4px; }
-    #bv-partner-hud .bv-partner-card { flex: 0 1 142px; padding: 5px 6px; gap: 6px; }
+    #bv-partner-hud { right: 8px; bottom: calc(100% + 6px); width: min(168px, calc(100% - 16px)); max-width: calc(100% - 16px); padding: 1px; gap: 4px; }
+    #bv-partner-hud .bv-partner-card { flex: 0 0 auto; padding: 5px 6px; gap: 6px; }
     #bv-partner-hud .bv-partner-portrait { flex-basis: 31px; width: 31px; height: 31px; font-size: 1rem; }
     #bv-partner-hud .bv-partner-name { font-size: .68rem; }
     #bv-partner-hud .bv-partner-bar { height: 5px; margin: 3px 0 2px; }
