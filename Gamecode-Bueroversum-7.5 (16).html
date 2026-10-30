@@ -1583,7 +1583,6 @@
                         <div class="victory-stars">⭐ ⭐ ⭐</div>
                         <div class="victory-title">🏆 SIEG!</div>
                         <div class="victory-subtitle">Kampf gewonnen!</div>
-                        <div id="bv-partner-victory" class="bv-partner-victory" aria-live="polite"></div>
                         <div class="victory-rewards">
                             <div class="reward-item gold"><span class="reward-icon">💰</span><span
                                     class="reward-text">+<span id="victory-gold">0</span> Gold</span></div>
@@ -33408,128 +33407,6 @@ body.bv-settings-particles-off #rpg-fx-particles {
 .bv-vp-levelup { flex: 0 0 auto; padding: 1px 7px; border-radius: 99px; background: linear-gradient(90deg, #fde68a, #fbbf24); color: #3b2300; font-size: .72rem; font-weight: 800; white-space: nowrap; animation: bvVpLevelPop .6s ease-out both; }
 @keyframes bvVpLevelPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* ===== v7.11: Partner-Siegesbühne im Sieg-Screen =====
-   Vorher lief der Partner-Tanz hinter dem deckenden Victory-Overlay und war unsichtbar.
-   Jetzt feiern die Partner direkt im Sieg-Screen: gestaffeltes Einfliegen, Ring-Impuls,
-   Lichtblitz und eine von drei Dauertanz-Varianten. Nur transform/opacity/filter. */
-.bv-partner-victory {
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    margin: 0;
-    min-height: 0;
-    pointer-events: none;
-}
-#victory-screen.bv-has-partners .bv-partner-victory { display: flex; }
-
-.bv-pv-card {
-    position: relative;
-    display: grid;
-    justify-items: center;
-    gap: 1px;
-    width: 84px;
-    padding: 7px 6px 8px;
-    border-radius: 14px;
-    border: 1px solid var(--pc, #7dd3fc);
-    background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(8, 12, 24, .8));
-    box-shadow: 0 10px 22px rgba(0, 0, 0, .35), 0 0 18px -6px var(--pc, #7dd3fc);
-    animation: bvPvCardIn .6s cubic-bezier(.16, 1, .3, 1) calc(var(--i, 0) * .14s) both;
-}
-.bv-pv-card::after {
-    content: "";
-    position: absolute;
-    inset: -10px;
-    border-radius: 24px;
-    pointer-events: none;
-    opacity: 0;
-    background: radial-gradient(circle, rgba(255, 255, 255, .75) 0%, rgba(255, 255, 255, 0) 65%);
-    animation: bvPvFlash .8s ease-out calc(.3s + var(--i, 0) * .14s) both;
-}
-.bv-pv-ring {
-    position: absolute;
-    inset: -6px;
-    border-radius: 18px;
-    border: 2px solid var(--pc, #7dd3fc);
-    opacity: 0;
-    pointer-events: none;
-    animation: bvPvRing .9s ease-out calc(.35s + var(--i, 0) * .14s) both;
-}
-.bv-pv-portrait {
-    font-size: 1.9rem;
-    line-height: 1.1;
-    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .55));
-}
-.bv-pv-portrait img { width: 1em; height: 1em; vertical-align: middle; }
-.bv-pv-name {
-    max-width: 100%;
-    overflow: hidden;
-    color: #fff;
-    font-family: 'VT323', monospace;
-    font-size: .84rem;
-    letter-spacing: .04em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, .8);
-}
-.bv-pv-tag {
-    padding: 0 7px;
-    border-radius: 999px;
-    background: var(--pc, #7dd3fc);
-    color: #0b1220;
-    font-family: 'VT323', monospace;
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .06em;
-}
-
-/* Drei Tanz-Varianten, damit eine Gruppe nicht synchron wirkt */
-.bv-pv-hop .bv-pv-portrait {
-    animation: bvPvHop 1.05s ease-in-out calc(.65s + var(--i, 0) * .14s) infinite;
-}
-.bv-pv-spin .bv-pv-portrait {
-    animation: bvPvSpin 1.25s ease-in-out calc(.65s + var(--i, 0) * .14s) infinite;
-}
-.bv-pv-pose .bv-pv-portrait {
-    animation: bvPvPose 1.15s ease-in-out calc(.65s + var(--i, 0) * .14s) infinite;
-}
-
-@keyframes bvPvCardIn {
-    0%   { opacity: 0; transform: translateY(22px) scale(.6) rotate(-6deg); }
-    62%  { opacity: 1; transform: translateY(-6px) scale(1.09) rotate(2deg); }
-    100% { opacity: 1; transform: none; }
-}
-@keyframes bvPvFlash {
-    0%   { opacity: 0; transform: scale(.4); }
-    35%  { opacity: .9; }
-    100% { opacity: 0; transform: scale(1.6); }
-}
-@keyframes bvPvRing {
-    0%   { opacity: 0; transform: scale(.7); }
-    30%  { opacity: .95; }
-    100% { opacity: 0; transform: scale(1.35); }
-}
-@keyframes bvPvHop {
-    0%, 100% { transform: translateY(0) rotate(0) scale(1); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .55)); }
-    15%      { transform: translateY(-9px) rotate(-10deg) scale(1.12); filter: brightness(1.5) drop-shadow(0 0 12px var(--pc, #7dd3fc)); }
-    32%      { transform: translateY(0) rotate(8deg) scale(1.03); }
-    52%      { transform: translateY(-6px) rotate(6deg) scale(1.08); filter: brightness(1.3) drop-shadow(0 0 10px var(--pc, #7dd3fc)); }
-    74%      { transform: translateY(0) rotate(-4deg) scale(1); }
-}
-@keyframes bvPvSpin {
-    0%, 100% { transform: rotate(0) scale(1); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .55)); }
-    20%      { transform: translateY(-7px) rotate(-18deg) scale(1.1); filter: brightness(1.5) drop-shadow(0 0 12px var(--pc, #7dd3fc)); }
-    50%      { transform: translateY(-4px) rotate(20deg) scale(1.06); }
-    72%      { transform: translateY(0) rotate(-8deg) scale(1.02); }
-}
-@keyframes bvPvPose {
-    0%, 100% { transform: scale(1) rotate(0); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .55)); }
-    22%      { transform: translateY(-10px) scale(1.16, .94) rotate(-6deg); filter: brightness(1.6) drop-shadow(0 0 14px var(--pc, #7dd3fc)); }
-    46%      { transform: translateY(-10px) scale(1.18) rotate(6deg); filter: brightness(1.7); }
-    68%      { transform: translateY(-3px) scale(1.06) rotate(-2deg); }
-}
-
 /* EP-Zeilen der Partner erscheinen gestaffelt statt alle gleichzeitig */
 #victory-screen.bv-has-partners .bv-victory-partner-row {
     animation: bvVpRowIn .5s cubic-bezier(.16, 1, .3, 1) both;
@@ -33542,17 +33419,6 @@ body.bv-settings-particles-off #rpg-fx-particles {
     to   { opacity: 1; transform: none; }
 }
 
-@media (max-width: 560px) {
-    .bv-partner-victory { gap: 7px; }
-    .bv-pv-card { width: 66px; padding: 5px 4px 6px; }
-    .bv-pv-portrait { font-size: 1.55rem; }
-    .bv-pv-name { font-size: .72rem; }
-    .bv-pv-tag { font-size: .6rem; }
-}
-@media (max-height: 620px) {
-    .bv-pv-card { width: 68px; padding: 5px 5px 6px; }
-    .bv-pv-portrait { font-size: 1.5rem; }
-}
 @media (prefers-reduced-motion: reduce) {
     #bv-party-sprites .bv-partner-sprite-battle.visible,
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-enter,
@@ -33560,17 +33426,16 @@ body.bv-settings-particles-off #rpg-fx-particles {
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-hurt,
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-cheer,
     #bv-party-sprites .bv-partner-sprite-battle[class*="bv-atk-"],
+    #bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-win-"],
     .bv-partner-card.bv-p-card-act,
+    .bv-partner-card.bv-p-card-heal,
     .bv-partner-dmg,
     .bv-partner-miss,
     .bv-partner-hitfx,
+    .bv-partner-heal,
+    .bv-heal-ring,
+    .bv-heal-spark,
     #bv-party-sprites .bv-partner-sprite-battle.bv-p-down,
-    .bv-pv-card,
-    .bv-pv-card::after,
-    .bv-pv-ring,
-    .bv-pv-hop .bv-pv-portrait,
-    .bv-pv-spin .bv-pv-portrait,
-    .bv-pv-pose .bv-pv-portrait,
     #victory-screen.bv-has-partners .bv-victory-partner-row {
         animation: none !important;
     }
@@ -34062,6 +33927,76 @@ body.bv-settings-particles-off #rpg-fx-particles {
     55%  { transform: translate3d(10px, 8px, 0) rotate(14deg) scale(.95, .9); opacity: .9; filter: grayscale(1) brightness(.75); }
     100% { transform: translate3d(14px, 16px, 0) rotate(22deg) scale(.8, .82); opacity: 0; filter: grayscale(1) brightness(.5); }
 }
+/* ===== v7.12: Partner-Siegestanz am Partner-Emoji =====
+   Gleiche fünf Tänze wie beim Spieler (#battle-player-sprite), nur auf die
+   Partner-Sprites gescopet. Wichtig: !important, weil `.visible` animation:none setzt. */
+#bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-win-"] { will-change: transform, filter; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-hop   { animation: winDanceHopV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-spin  { animation: winDanceSpinV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-slide { animation: winDanceSlideV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-pose  { animation: winDancePoseV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-wave  { animation: winDanceWaveV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+
+/* ===== v7.12: Heil-Effekte am Partner =====
+   Ring + aufsteigende Funken + grüne Zahl. Alle Elemente werden per JS getimert
+   entfernt – keine Dauerklasse auf dem Sprite (siehe Rücksprung-Regel). */
+.bv-partner-heal {
+    position: absolute;
+    z-index: 62;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #86efac;
+    text-shadow: 2px 2px 0 #000, 0 0 14px rgba(134, 239, 172, .8);
+    animation: bvPartnerHealPop 1.15s ease-out both;
+}
+@keyframes bvPartnerHealPop {
+    0%   { opacity: 0; transform: translate(-50%, 10px) scale(.5); }
+    18%  { opacity: 1; transform: translate(-50%, -4px) scale(1.22); }
+    46%  { opacity: 1; transform: translate(-50%, -20px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -46px) scale(.95); }
+}
+.bv-heal-ring {
+    position: absolute;
+    z-index: 58;
+    width: 64px;
+    height: 64px;
+    border: 2px solid #4ade80;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 18px rgba(74, 222, 128, .65), inset 0 0 14px rgba(74, 222, 128, .35);
+    animation: bvHealRing .85s ease-out both;
+}
+@keyframes bvHealRing {
+    0%   { opacity: 0; transform: scale(.35); }
+    25%  { opacity: .95; }
+    100% { opacity: 0; transform: scale(1.35); }
+}
+.bv-heal-spark {
+    position: absolute;
+    z-index: 59;
+    pointer-events: none;
+    font-size: 1rem;
+    line-height: 1;
+    color: #86efac;
+    text-shadow: 0 0 10px rgba(74, 255, 136, .85);
+    animation: bvHealSpark .95s ease-out both;
+}
+@keyframes bvHealSpark {
+    0%   { opacity: 0; transform: translate(0, 0) scale(.5); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--hx, 0), var(--hy, -60px)) scale(1.15); }
+}
+.bv-partner-card.bv-p-card-heal { animation: bvPartnerCardHeal .72s ease-out both; }
+@keyframes bvPartnerCardHeal {
+    0%   { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+    35%  { box-shadow: 0 0 0 2px rgba(74, 222, 128, .75), 0 10px 26px rgba(0, 0, 0, .4); }
+    100% { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+}
+
 #rpg-battle-screen .bv-combo-meter.bump { animation: bvComboBump .22s ease-out; }
 #rpg-battle-screen .bv-combo-meter.toppling { animation: bvComboTopple .42s ease-in; }
 
@@ -44966,9 +44901,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 };
                 let bvBattleParty = [];
                 let bvPartnerActionBusy = false;
-                // Zählt Kämpfe mit: verhindert, dass die Siegesbühne innerhalb desselben
-                // Sieges doppelt aufgebaut wird (sonst starten die Animationen neu).
-                let bvVictoryToken = 0;
                 // Ziel des aktuellen Gegnerangriffs: genau ein Ziel pro Angriff
                 let enemyAttackTarget = "player";
                 let enemyPartnerTarget = null;
@@ -45243,6 +45175,50 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     bvPartnerFloat(p, "Daneben!", "bv-partner-miss", 950);
                 }
 
+                // ===== v7.12: Heil-Feedback am Partner =====
+                // Ring, aufsteigende Funken, grüne Zahl über dem Sprite und ein Puls
+                // auf der HUD-Karte. Alles per setTimeout aufgeräumt, keine Dauerklassen.
+                function bvPartnerHealFeedback(p, healed) {
+                    const el = bvPartnerSpriteEl(p);
+                    const box = document.getElementById("bv-party-sprites");
+                    if (!el || !box || el.offsetWidth === 0) return;
+
+                    const cx = el.offsetLeft + el.offsetWidth / 2;
+                    const centerBottom = -(el.offsetTop + el.offsetHeight / 2);
+
+                    if (healed > 0) bvPartnerFloat(p, "+" + healed, "bv-partner-heal", 1150);
+
+                    const ring = document.createElement("div");
+                    ring.className = "bv-heal-ring";
+                    ring.style.left = (cx - 32) + "px";
+                    ring.style.bottom = (centerBottom - 32) + "px";
+                    box.appendChild(ring);
+                    setTimeout(() => ring.remove(), 900);
+
+                    const icons = ["✚", "✨", "💚", "✚", "✨", "💚", "✚", "✨"];
+                    for (let i = 0; i < 10; i++) {
+                        const s = document.createElement("span");
+                        s.className = "bv-heal-spark";
+                        s.textContent = icons[i % icons.length];
+                        s.style.left = (cx + (Math.random() * 46 - 23)).toFixed(0) + "px";
+                        s.style.bottom = (18 + Math.random() * 26).toFixed(0) + "px";
+                        s.style.setProperty("--hx", (Math.random() * 34 - 17).toFixed(0) + "px");
+                        s.style.setProperty("--hy", (-(40 + Math.random() * 55)).toFixed(0) + "px");
+                        s.style.animationDelay = (i * 0.045).toFixed(2) + "s";
+                        box.appendChild(s);
+                        setTimeout(() => s.remove(), 1200);
+                    }
+                    if (typeof window.parseEmojis === "function") window.parseEmojis(box);
+
+                    const card = document.querySelector('#bv-partner-hud .bv-partner-card[data-pid="' + p.id + '"]');
+                    if (card) {
+                        card.classList.remove("bv-p-card-heal");
+                        void card.offsetWidth;
+                        card.classList.add("bv-p-card-heal");
+                        setTimeout(() => card.classList.remove("bv-p-card-heal"), 760);
+                    }
+                }
+
                 // Gültiges Partnerziel des laufenden Gegnerzugs (oder null).
                 function bvEnemyPartnerTargetActive() {
                     return (enemyAttackTarget === "partner" && enemyPartnerTarget && enemyPartnerTarget.active && enemyPartnerTarget.hp > 0)
@@ -45427,7 +45403,18 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         if (partner.heal && player.hp > 0) {
                             healing = Math.min(partner.heal, player.maxHp - player.hp);
                             player.hp += healing;
-                            if (healing > 0) { updateHUD(); updateBattleUI(); }
+                            if (healing > 0) {
+                                // v7.12: Heilung durch den Partner sichtbar machen
+                                triggerItemHealAnimation("💚");
+                                spawnBattleEffect("player", "💚");
+                                const healEl = document.getElementById("battle-dmg-player");
+                                if (healEl) {
+                                    healEl.innerText = "+" + healing;
+                                    healEl.style.color = "#86efac";
+                                    healEl.className = "dmg-show dmg-heal";
+                                }
+                                updateHUD(); updateBattleUI();
+                            }
                         }
                         if (partner.mpGift && partner.mp >= partner.mpGift && player.mp < player.maxMp) {
                             partner.mp -= partner.mpGift;
@@ -45457,9 +45444,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 function startBattle(npc) {
                     if (isBattleStarting) return;
-                    // Neuer Kampf = neuer Token: die Partner-Siegesbühne darf beim
-                    // nächsten Sieg wieder frisch aufgebaut und animiert werden.
-                    bvVictoryToken++;
                     const battleUi = document.getElementById("battle-ui");
                     if (battleUi) battleUi.classList.remove("bv-ui-visible", "bv-ui-leaving");
                     interruptNPCSocialConversation(true);
@@ -47562,10 +47546,12 @@ function performSkill(skillId) {
                     const before = Math.max(0, p.hp);
                     p.hp = Math.min(p.maxHp, before + gain);
                     if (p.hp > 0) p.active = true;
+                    const healed = Math.max(0, p.hp - before);
                     bvSavePartnerProgress(p);
                     bvUpdatePartnerHud();
                     bvPlayPartnerAnim("bv-p-cheer", 660, p.id);
-                    battleLog("🩹 " + p.name + (wasDown ? " kommt zurück ins Gefecht! " : " wird versorgt! ") + "+" + (p.hp - (wasDown ? 0 : p.hp - gain)) + (p.hp - before) + " HP");
+                    bvPartnerHealFeedback(p, healed);
+                    battleLog("🩹 " + p.name + (wasDown ? " kommt zurück ins Gefecht! " : " wird versorgt! ") + "+" + healed + " HP");
                     updateBattleUI();
                     setTimeout(enemyTurn, 800);
                 }
@@ -48258,6 +48244,9 @@ function performSkill(skillId) {
 
                         battleLog(currentEnemy.name + " wurde besiegt! 🎉");
 
+                        // Partner jubeln sofort am eigenen Sprite – sichtbar, bevor der Sieg-Screen greift.
+                        bvPartnerVictoryDance();
+
                         // Kleine, lagarme Abschluss-Pops statt großer Effekt-Spam
                         const particles = ["✨", "💥", "💰"];
                         particles.forEach((p, i) => setTimeout(() => spawnBattleEffect("enemy", p), i * 120));
@@ -48725,6 +48714,26 @@ function performSkill(skillId) {
                     setTimeout(() => sprite.classList.remove(selected), 1450);
                 }
 
+                // v7.12: Partner feiern ihren Sieg direkt am Partner-Emoji im Kampf –
+                // dieselben Tänze wie der Spieler, gestaffelt und pro Partner verschieden.
+                function bvPartnerVictoryDance() {
+                    const dances = ["bv-p-win-hop", "bv-p-win-spin", "bv-p-win-slide", "bv-p-win-pose", "bv-p-win-wave"];
+                    (bvBattleParty || []).forEach((p, i) => {
+                        if (!p || !p.active || p.hp <= 0) return;
+                        const el = bvPartnerSpriteEl(p);
+                        if (!el) return;
+                        el.classList.remove(...dances);
+                        void el.offsetWidth;
+                        const cls = dances[(i + Math.floor(Math.random() * dances.length)) % dances.length];
+                        setTimeout(() => {
+                            if (!el.isConnected) return;
+                            el.classList.add(cls);
+                            clearTimeout(el._bvWinTimer);
+                            el._bvWinTimer = setTimeout(() => el.classList.remove(cls), 1450);
+                        }, i * 120);
+                    });
+                }
+
                 // Balken erst nach dem Einblenden des Sieg-Bildschirms auf den Zielwert setzen,
                 // sonst startet die CSS-Übergangsanimation unsichtbar.
                 function bvFillVictoryPartnerBars() {
@@ -48734,78 +48743,14 @@ function performSkill(skillId) {
                     setTimeout(() => bars.forEach(s => { s.style.width = s.dataset.target + "%"; }), 350);
                 }
 
-                // v7.11: Partner-Siegesbühne im Sieg-Screen aufbauen.
-                // Die Kampf-Sprites liegen hinter dem deckenden Victory-Overlay (z-index 300,
-                // solider .victory-bg) – ein Tanz dort wäre unsichtbar. Deshalb feiern die
-                // Partner hier sichtbar mit: gestaffelt, mit Ring, Farb-Glow und drei Tänzen.
-                function bvRenderPartnerVictory() {
-                    const screen = document.getElementById("victory-screen");
-                    const host = document.getElementById("bv-partner-victory");
-                    if (!screen || !host) return;
-
-                    const party = (bvBattleParty || []).filter(p => p && p.active && p.hp > 0);
-
-                    // Idempotent: ein zweiter Aufruf für denselben Sieg darf die Bühne NICHT
-                    // neu aufbauen – sonst starten Einflug/Tänze erneut (sichtbarer Reset).
-                    // Der Token wechselt pro Kampf, damit der nächste Sieg wieder frisch startet.
-                    // Nur Token + Zusammensetzung: Level-Ups innerhalb des Sieges dürfen
-                    // keinen Neuaufbau (und damit keinen Animations-Neustart) auslösen.
-                    const sig = bvVictoryToken + "#" + party.map(p => p.id).join("|");
-                    if (party.length && host.dataset.sig === sig && host.childElementCount) return;
-                    host.dataset.sig = sig;
-                    host.replaceChildren();
-
-                    const subtitle = screen.querySelector(".victory-subtitle");
-                    if (subtitle) {
-                        subtitle.textContent = party.length
-                            ? "Team-Sieg! " + party.length + (party.length === 1 ? " Partner feiert mit." : " Partner feiern mit.")
-                            : "Kampf gewonnen!";
-                    }
-
-                    screen.classList.toggle("bv-has-partners", party.length > 0);
-                    if (!party.length) {
-                        host.removeAttribute("aria-label");
-                        return;
-                    }
-
-                    const dances = ["bv-pv-hop", "bv-pv-spin", "bv-pv-pose"];
-                    party.forEach((p, i) => {
-                        const card = document.createElement("div");
-                        card.className = "bv-pv-card " + dances[i % dances.length];
-                        card.style.setProperty("--i", i);
-                        card.style.setProperty("--pc", p.color || "#7dd3fc");
-                        card.title = (p.name || "Partner") + " · LV " + (p.level || 1);
-
-                        const ring = document.createElement("span");
-                        ring.className = "bv-pv-ring";
-
-                        const portrait = document.createElement("span");
-                        portrait.className = "bv-pv-portrait";
-                        portrait.textContent = p.sprite || "🤝";
-
-                        const name = document.createElement("span");
-                        name.className = "bv-pv-name";
-                        name.textContent = p.name || "Partner";
-
-                        const tag = document.createElement("span");
-                        tag.className = "bv-pv-tag";
-                        tag.textContent = "LV " + (p.level || 1);
-
-                        card.append(ring, portrait, name, tag);
-                        host.appendChild(card);
-                    });
-
-                    host.setAttribute("aria-label", "Partner feiern den Sieg: " + party.map(p => p.name || "Partner").join(", "));
-                    if (typeof window.parseEmojis === "function") window.parseEmojis(host);
-                }
-
                 function showVictory() {
                     // Besiegte Partner kehren nach dem Kampf mit 1 HP zurück
                     bvBattleParty.forEach(p => {
                         if (p.hp <= 0) { p.hp = 1; p.active = true; bvSavePartnerProgress(p); }
                     });
-                    // v7.11: Partner feiern jetzt sichtbar im Sieg-Screen (vorher hinter dem Overlay)
-                    bvRenderPartnerVictory();
+                    // Nur noch die Partner-EP-Zeilen erscheinen gestaffelt (Klasse steuert das Layout).
+                    document.getElementById("victory-screen")
+                        ?.classList.toggle("bv-has-partners", (bvBattleParty || []).some(p => p && p.active && p.hp > 0));
                     // Reset sprites for victory display
                     const enemySprite = document.getElementById("battle-enemy-sprite");
                     if (enemySprite) {
