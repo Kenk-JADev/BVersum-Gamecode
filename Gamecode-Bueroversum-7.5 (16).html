@@ -19273,7 +19273,8 @@
             z-index: 6;
             animation: enemySkillWaveV448 .72s ease-out forwards;
         }
-        @keyframes enemySkillBeamV448 { 0% { opacity:0; transform: translate(0,-50%) scaleX(.05); } 35% { opacity:1; } 100% { opacity:0; transform: translate(-280px,-50%) scaleX(1); } }
+        /* v7.11: --bx/--by erlauben es, den Beam auf ein konkretes Ziel (z. B. Partner) zu richten. */
+        @keyframes enemySkillBeamV448 { 0% { opacity:0; transform: translate(0,-50%) scaleX(.05); } 35% { opacity:1; } 100% { opacity:0; transform: translate(var(--bx,-280px), calc(-50% + var(--by,0px))) scaleX(1); } }
         @keyframes enemySkillRuneV448 { 0% { opacity:0; transform: translate(-50%,-50%) scale(.3) rotate(-16deg); } 35% { opacity:1; transform: translate(-50%,-50%) scale(1.1) rotate(6deg); } 100% { opacity:0; transform: translate(-50%,-115%) scale(.85) rotate(18deg); } }
         @keyframes enemySkillWaveV448 { to { opacity:0; transform: translate(-50%,-50%) scale(3.8); } }
 
@@ -47756,6 +47757,14 @@ function performSkill(skillId) {
                         const beam = document.createElement("div");
                         beam.className = "enemy-skill-beam-v448 " + profile.type;
                         beam.style.setProperty("--fx-color", color);
+                        // v7.11: Bei Partnerziel zeigt der Beam auf das Partner-Sprite.
+                        if (partnerSprite) {
+                            const enemyRect = enemyArea.getBoundingClientRect();
+                            const dx = (spriteRect.left + spriteRect.width / 2) - (enemyRect.left + enemyRect.width / 2);
+                            const dy = (spriteRect.top + spriteRect.height / 2) - (enemyRect.top + enemyRect.height / 2);
+                            beam.style.setProperty("--bx", dx + "px");
+                            beam.style.setProperty("--by", dy + "px");
+                        }
                         enemyArea.appendChild(beam);
                         setTimeout(() => beam.remove(), 650);
                     }
