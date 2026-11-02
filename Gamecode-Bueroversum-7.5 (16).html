@@ -19997,8 +19997,11 @@
         #rpg-camera.map-engine-v6 .map-door.door-closing .door-3d-panel { animation:meDoorCloseV6 .65s ease-in-out both !important; }
         @keyframes meDoorOpenV6 { 0%{transform:rotateY(0deg)} 55%{transform:rotateY(-76deg) skewY(-3deg);filter:brightness(1.28)} 100%{transform:rotateY(-44deg);filter:brightness(1.08)} }
         @keyframes meDoorCloseV6 { 0%{transform:rotateY(-76deg);filter:brightness(1.28)} 100%{transform:rotateY(0deg);filter:brightness(1)} }
-        #rpg-camera.map-engine-v6 .map-deco-v6 { width:34px; height:28px; pointer-events:none; }
-        .map-deco-v6 .deco-base { position:absolute; inset:8px 3px 3px 3px; clip-path:polygon(50% 0%,100% 28%,100% 75%,50% 100%,0% 75%,0% 28%); background:linear-gradient(180deg,#7b8da2,#42546b); box-shadow:0 7px 9px rgba(0,0,0,.25); }
+        #rpg-camera.map-engine-v6 .map-deco-v6 { width:22px; height:20px; pointer-events:none; }
+        /* v7.16: Die graue Hexagon-Platte unter jedem Emoji war der Hauptgrund für die
+           "grauen Klötze" über der Map – Deko zeigt jetzt nur noch das Objekt selbst. */
+        .map-deco-v6 .deco-base { display:none !important; }
+        .map-deco-v6 .bv-25d-shadow { display:none !important; }
         .map-deco-v6.coffee .deco-base { background:linear-gradient(180deg,#e8dfd2,#8a5a35); }
         .map-deco-v6.lamp .deco-base { background:linear-gradient(180deg,#ffd66b,#8f6420); box-shadow:0 0 18px rgba(255,215,100,.45); }
         .map-deco-v6.poster .deco-base { background:linear-gradient(180deg,#9fc3ff,#385b8c); }
@@ -20006,7 +20009,7 @@
         .map-deco-v6.vending .deco-base { background:linear-gradient(180deg,#ff8a65,#8b2f1d); }
         .map-deco-v6.clock .deco-base { border-radius:50%; background:radial-gradient(circle,#e7eef5,#607d8b); }
         .map-deco-v6.chair .deco-base { background:linear-gradient(180deg,#b77d44,#5e3821); }
-        .map-deco-v6 .deco-sprite { font-size: 28px;  position:absolute; inset:0; display:flex; justify-content:center; align-items:center; z-index:2; transform:translateY(-8px); filter:drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+        .map-deco-v6 .deco-sprite { font-size: 15px; position:absolute; inset:0; display:flex; justify-content:center; align-items:center; z-index:2; transform:translateY(-6px); filter:drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
         .me-v6-occluder { position:absolute; pointer-events:none; transform-origin:50% 100%; filter:drop-shadow(6px 8px 6px rgba(0,0,0,.24)); }
         .me-v6-occluder.front-wall { width:52px; height:26px; background:linear-gradient(180deg,rgb(76,98,123),rgb(28,42,60)); clip-path:polygon(50% 0%,100% 32%,100% 74%,50% 100%,0% 74%,0% 32%); }
         .me-v6-occluder.object { width:44px; height:26px; background:linear-gradient(180deg,rgb(125,88,54),rgb(58,38,24)); clip-path:polygon(50% 0%,100% 28%,100% 74%,50% 100%,0% 74%,0% 28%); }
@@ -36639,31 +36642,31 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         name: "Hauptbüro - Einkauf",
                         cols: 35, rows: 22,
                         tiles: [
-                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                            [1, 3, 12, 12, 12, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 3, 4, 4, 3, 0, 0, 0, 0, 16, 12, 12, 12, 12, 16, 16, 16, 16, 16, 3, 1],
-                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 2, 2, 16, 8, 8, 8, 8, 8, 16, 19, 16, 20, 16, 1],
-                            [1, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 1],
-                            [1, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 4, 4, 0, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 1],
-                            [1, 0, 0, 11, 11, 0, 0, 0, 0, 11, 11, 0, 0, 0, 0, 0, 4, 4, 0, 8, 8, 0, 0, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 1],
-                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 16, 15, 15, 16, 16, 16, 16, 16, 16, 16, 16, 1],
-                            [1, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16, 16, 3, 16, 16, 1],
-                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 3, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 1],
-                            [1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
-                            [1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 6],
-                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                            [1, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 4, 4, 0, 0, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 1],
-                            [1, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 4, 4, 0, 0, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 17, 18, 18, 18, 1],
-                            [1, 3, 0, 11, 11, 0, 0, 0, 0, 11, 11, 0, 0, 0, 0, 3, 4, 4, 0, 0, 18, 18, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 18, 1],
-                            [1, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 4, 4, 0, 0, 18, 18, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 18, 1],
-                            [1, 14, 14, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 4, 4, 0, 0, 18, 18, 15, 15, 15, 5, 5, 5, 5, 5, 5, 5, 18, 8, 1],
-                            [1, 13, 13, 9, 9, 13, 13, 8, 13, 13, 10, 10, 13, 8, 13, 13, 4, 4, 0, 0, 18, 18, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 18, 1],
-                            [1, 13, 13, 10, 10, 10, 13, 8, 13, 13, 10, 10, 13, 8, 13, 13, 4, 4, 0, 0, 18, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 18, 18, 1],
-                            [1, 13, 13, 13, 13, 13, 13, 13, 13, 13, 15, 15, 13, 13, 13, 13, 4, 4, 0, 0, 18, 18, 18, 18, 18, 18, 2, 2, 18, 18, 18, 18, 18, 18, 1],
-                            [1, 3, 13, 13, 13, 13, 12, 12, 13, 13, 13, 13, 13, 13, 13, 13, 4, 4, 0, 0, 18, 12, 18, 18, 18, 18, 18, 18, 12, 12, 12, 18, 18, 3, 1],
-                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                            [1, 1, 12, 12, 12, 1, 1, 1, 1, 12, 12, 1, 1, 1, 1, 12, 12, 1, 1, 1, 1, 12, 12, 1, 1, 1, 1, 12, 12, 1, 1, 12, 12, 1, 1],
+                            [1, 3, 0, 0, 0, 0, 8, 8, 0, 0, 0, 8, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0, 0, 0, 0, 0, 0, 3, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [12, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 0, 12],
+                            [12, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 0, 12],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 3, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6],
+                            [1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
+                            [12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 12],
+                            [12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 5, 5, 2, 2, 2, 5, 5, 5, 0, 0, 12],
+                            [1, 14, 14, 0, 0, 0, 0, 0, 0, 0, 0, 9, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 5, 5, 2, 2, 2, 5, 5, 5, 0, 0, 1],
+                            [1, 14, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 3, 0, 0, 0, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 8, 8, 0, 3, 1],
+                            [1, 1, 1, 1, 1, 12, 12, 1, 1, 1, 1, 1, 12, 12, 1, 1, 1, 1, 1, 1, 1, 1, 12, 12, 1, 1, 1, 1, 1, 12, 12, 1, 1, 1, 1]
                         ],
-                        decos: [{ x: 11, y: 8, type: "coffee" }, { x: 13, y: 8, type: "coffee" }, { x: 6, y: 1, type: "clock" }, { x: 18, y: 1, type: "poster" }, { x: 26, y: 7, type: "coffee" }, { x: 26, y: 2, type: "microwave" }, { x: 28, y: 2, type: "fridge" }, { x: 3, y: 17, type: "printer" }, { x: 4, y: 17, type: "copier" }, { x: 24, y: 12, type: "whiteboard" }, { x: 30, y: 2, type: "water_cooler" }, { x: 23, y: 16, type: "couch" }, { x: 11, y: 17, type: "papers" }, { x: 23, y: 6, type: "lamp" }, { x: 31, y: 6, type: "plant" }, { x: 26, y: 18, type: "football" }],
-                        chests: [{ x: 30, y: 3, type: "normal" }, { x: 5, y: 17, type: "normal" }, { x: 28, y: 15, type: "rare" }],
+                        decos: [{ x: 5, y: 1, type: "water_cooler" }, { x: 1, y: 2, type: "fridge" }, { x: 2, y: 2, type: "microwave" }, { x: 18, y: 5, type: "lamp" }, { x: 8, y: 11, type: "coffee" }, { x: 24, y: 11, type: "coffee" }, { x: 13, y: 17, type: "copier" }, { x: 10, y: 19, type: "papers" }, { x: 26, y: 19, type: "football" }, { x: 28, y: 15, type: "whiteboard" }, { x: 25, y: 15, type: "clock" }, { x: 30, y: 1, type: "poster" }, { x: 3, y: 5, type: "chair" }, { x: 19, y: 5, type: "chair" }],
+                        chests: [{ x: 30, y: 3, type: "normal" }, { x: 5, y: 17, type: "normal" }, { x: 24, y: 19, type: "rare" }],
                         npcs: [
                             {
                                 x: 3, y: 2, type: "talk", sprite: "👨‍💻", name: "Justin", role: "Azubi & Entwickler",
@@ -36689,7 +36692,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 wander: true
                             },
                             {
-                                x: 8, y: 4, type: "quiz", sprite: "🧠", name: "Quiz-Kai", role: "Wissens-Coach",
+                                x: 7, y: 6, type: "quiz", sprite: "🧠", name: "Quiz-Kai", role: "Wissens-Coach",
                                 dialog: ["Hey! Ich bin Quiz-Kai.", "Lust auf ein schnelles Büro-Quiz mit Zeitlimit?"],
                                 choicePrompt: "Willst du das Quiz starten?"
                             },
@@ -36698,7 +36701,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 dialog: ["Ich habe alles was du brauchst!", "Kaffee? Donuts? Alles da!"]
                             },
                             {
-                                x: 14, y: 8, type: "skillshop", sprite: "📚", name: "Meister Markus", role: "Skill-Trainer",
+                                x: 16, y: 9, type: "skillshop", sprite: "📚", name: "Meister Markus", role: "Skill-Trainer",
                                 dialog: ["Willkommen zum Skill-Training!", "Lerne neue mächtige Fähigkeiten!"]
                             },
                             {
@@ -36722,7 +36725,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 dialog: ["Karl, Haustechnik. Der Kopierer und ich – eine lange Geschichte.", "Papierstau ist im Grunde auch nur ein Gegner mit sehr harter Verteidigung. 😄"]
                             },
                             {
-                                x: 31, y: 19, type: "talk", sprite: "🧑‍🌾", name: "Horst", role: "Hausmeister",
+                                x: 32, y: 19, type: "talk", sprite: "🧑‍🌾", name: "Horst", role: "Hausmeister",
                                 dialog: ["Na, alles frisch? Horst, Hausmeister.", "Über den Flur geht's auf die Dachterrasse – frische Luft hilft gegen Büro-Koller."],
                                 wander: true
                             },
@@ -42096,7 +42099,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const mapCols2 = currentMap[0]?.length || VIEW_COLS;
                     const mapRows2 = currentMap.length;
                     const boundary = (x === 0 || y === 0 || x === mapCols2 - 1 || y === mapRows2 - 1);
-                    const h = (type === 'wall') ? (boundary ? 1.5 : 1.15)
+                    // v7.16: Höhe identisch zu MapEngineV6.meta() – der Occluder legt sich
+                    // deckungsgleich auf die gezeichnete Wand statt sie zu überragen.
+                    const h = (type === 'wall') ? (boundary ? 1.02 : 0.74)
                             : (type === 'desk') ? 0.42 : (type === 'server') ? 0.78 : 0.62;
                     // 8 Eckpunkte des Tile-Quaders (Boden p, Deckel t)
                     const p00 = raw(x, y, 0),     p10 = raw(x + 1, y, 0);
@@ -42130,11 +42135,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             const tile = currentMap[y]?.[x] || 0;
                             const meta = BV3D.tileMeta(tile);
                             if (!meta || meta.h < 0.5) continue;
-                            const type = meta.name.includes('wall') ? 'wall'
-                                : meta.name.includes('desk') ? 'desk'
-                                : meta.name.includes('cabinet') ? 'cabinet'
-                                : meta.name.includes('server') ? 'server'
-                                : '';
+                            // v7.16: Möbel werden von MapEngineV6 selbst als 3D-Körper gezeichnet.
+                            // Die zusätzlichen Occluder-Sprites für Tische/Schränke/Server lagen
+                            // doppelt über der Map – nur noch Wände brauchen einen Occluder,
+                            // damit Figuren dahinter korrekt verdeckt werden.
+                            const type = meta.name.includes('wall') ? 'wall' : '';
                             if (!type) continue;
                             // Wände/Ecken dürfen Figuren verdecken, aber nur dort, wo sie wirklich vorne/seitlich liegen.
                             if (type === 'wall') {
@@ -42177,7 +42182,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             // Schatten für Deko-Objekte
                             el.innerHTML = `<div class="bv-25d-shadow"></div><div class="deco-base"></div><div class="deco-sprite">${deco.emoji}</div>`;
                             placeMapElement(el, x, y, "deco");
-                            el.style.fontSize = "26px"; // Etwas größer für bessere Sichtbarkeit
                             el.style.pointerEvents = "none";
                             el.style.display = "block"; // Sicherstellen, dass sichtbar
                             el.style.opacity = "1";
@@ -42188,13 +42192,17 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         frag.appendChild(el);
                     };
                     
-                    // FIXED: Immer Tiles nach Deko scannen, nicht nur im 2D Modus
+                    // v7.16: Möbel-Tiles (Tisch, Pflanze, Schrank, Regal, Drucker, Server)
+                    // werden jetzt als echte 3D-Körper gerendert. Ein zusätzliches Emoji
+                    // obendrauf ließ die Map vollgestellt und "komisch" wirken – deshalb
+                    // werden automatisch nur noch echte Kleinteile als Deko gesetzt.
+                    const AUTO_DECO = new Set(["coffee","clock","poster","lamp","football","papers","noticeboard","fire_extinguisher"]);
                     for (let y = 0; y < mapRows; y++) {
                         const row = currentMap[y];
                         if (!row) continue;
                         for (let x = 0; x < mapCols; x++) {
                             const tileData = TILES[row[x] || 0];
-                            if (tileData && DECORATIONS[tileData.name]) addDeco(x, y, tileData.name);
+                            if (tileData && AUTO_DECO.has(tileData.name)) addDeco(x, y, tileData.name);
                         }
                     }
                     
@@ -42294,7 +42302,22 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         meta(tile){
                             const data=TILES[tile]||TILES[0], name=data.name||'floor';
                             let h=.02;
-                            if(name.includes('wall')) h=.86; else if(name.includes('desk')) h=.42; else if(name.includes('plant')) h=.38; else if(name.includes('cabinet')) h=.62; else if(name.includes('server')) h=.78; else if(name.includes('door')) h=.04; else if(data.block) h=.45;
+                            // v7.16: Möbel bekommen eigene, flachere Höhen – vorher waren
+                            // Stühle/Sofas/Drucker alle gleich hohe graue Klötze.
+                            if(name.includes('wall')) h=.86;
+                            else if(name.includes('desk')) h=.42;
+                            else if(name.includes('plant')) h=.38;
+                            else if(name.includes('server')) h=.78;
+                            else if(name.includes('cabinet')) h=.62;
+                            else if(name.includes('door')) h=.04;
+                            else if(name.includes('window')) h=.55;
+                            else if(name.includes('shelf')) h=.5;
+                            else if(name.includes('pillar')) h=.95;
+                            else if(name.includes('water')||name.includes('vending')) h=.55;
+                            else if(name.includes('printer')) h=.34;
+                            else if(name.includes('couch')) h=.26;
+                            else if(name.includes('chair')) h=.2;
+                            else if(data.block) h=.4;
                             return {name,h,block:!!data.block,bg:data.bg||'#8fa3b7'};
                         },
                         poly(parent,pts,fill,opacity=1){ const el=document.createElementNS('http://www.w3.org/2000/svg','polygon'); el.setAttribute('points',pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')); el.setAttribute('fill',fill); if(opacity<1)el.setAttribute('opacity',opacity); parent.appendChild(el); return el; },
@@ -42308,21 +42331,41 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             const key='v6:'+currentMapId+':'+map.length+'x'+(map[0]?.length||0)+':'+map.flat().join(''); if(this.cache.has(key)){svg.innerHTML=this.cache.get(key); return true;}
                             const pal=this.palettes[currentMapId]||this.palettes.buero; svg.innerHTML=''; const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
                             defs.innerHTML=`<linearGradient id="clFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal[0]}"/><stop offset="1" stop-color="${pal[1]}"/></linearGradient><linearGradient id="clFloor2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal[1]}"/><stop offset="1" stop-color="${pal[0]}"/></linearGradient><linearGradient id="clWallTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal[2]}"/><stop offset="1" stop-color="${pal[3]}"/></linearGradient><linearGradient id="clWallSide" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${pal[3]}"/><stop offset="1" stop-color="${pal[4]}"/></linearGradient><linearGradient id="clDesk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal[5]}"/><stop offset="1" stop-color="#5e3820"/></linearGradient><linearGradient id="clCab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal[6]}"/><stop offset="1" stop-color="#343b78"/></linearGradient><linearGradient id="clPlant" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal[7]}"/><stop offset="1" stop-color="#126b38"/></linearGradient>`; svg.appendChild(defs);
-                            const rows=map.length, cols=map[0]?.length||1, g=document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(g); const isWall=(x,y)=>(TILES[map[y]?.[x]]?.name||'').includes('wall');                             const fill=(m,face,x,y)=>m.name.includes('wall')?(face==='top'?'url(#clWallTop)':'url(#clWallSide)'):m.name.includes('desk')?'url(#clDesk)':(m.name.includes('cabinet')||m.name.includes('server'))?'url(#clCab)':m.name.includes('plant')?'url(#clPlant)':(m.name.includes('water')||m.name.includes('vending'))?'#4ca6a8':m.name.includes('door')?'#b68035':(m.name.includes('carpet')||m.name.includes('rug'))?'#6f7f98':(((x+y)&1)?'url(#clFloor)':'url(#clFloor2)');
+                            const rows=map.length, cols=map[0]?.length||1, g=document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(g); const isWall=(x,y)=>(TILES[map[y]?.[x]]?.name||'').includes('wall');                             const fill=(m,face,x,y)=>{
+                                // v7.16: eigene Farben für Möbel, die vorher als graue
+                                // Schachbrett-Klötze gerendert wurden (Stuhl, Sofa, Drucker, Regal …).
+                                const n=m.name;
+                                if(n.includes('wall')) return face==='top'?'url(#clWallTop)':'url(#clWallSide)';
+                                if(n.includes('desk')) return 'url(#clDesk)';
+                                if(n.includes('cabinet')||n.includes('server')) return 'url(#clCab)';
+                                if(n.includes('plant')) return 'url(#clPlant)';
+                                if(n.includes('door')) return '#b68035';
+                                if(n.includes('window')) return '#a9d7f0';
+                                if(n.includes('chair')) return '#7d8ca3';
+                                if(n.includes('couch')) return '#4f7f8a';
+                                if(n.includes('printer')) return '#8f98ab';
+                                if(n.includes('shelf')) return '#7a5c3f';
+                                if(n.includes('pillar')) return '#aab8c6';
+                                if(n.includes('water')||n.includes('vending')) return '#4ca6a8';
+                                if(n.includes('carpet')||n.includes('rug')) return '#8593a8';
+                                return ((x+y)&1)?'url(#clFloor)':'url(#clFloor2)';
+                            };
                             const items=[]; for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)items.push({x,y,tile:map[y]?.[x]||0,d:x+y}); items.sort((a,b)=>a.d-b.d||a.y-b.y||a.x-b.x);
                             for(const item of items){ 
-                                const {x,y,tile}=item, m=this.meta(tile), wall=m.name.includes('wall'), boundary=wall&&(x===0||y===0||x===cols-1||y===rows-1), h=wall?(boundary?1.5:1.15):m.h; 
+                                const {x,y,tile}=item, m=this.meta(tile), wall=m.name.includes('wall'), boundary=wall&&(x===0||y===0||x===cols-1||y===rows-1), h=wall?(boundary?1.02:.74):m.h; 
                                 const p00=this.project(x,y,0), p10=this.project(x+1,y,0), p11=this.project(x+1,y+1,0), p01=this.project(x,y+1,0), 
                                       t00=this.project(x,y,h), t10=this.project(x+1,y,h), t11=this.project(x+1,y+1,h), t01=this.project(x,y+1,h); 
-                                if(h>.12 && (!wall || !isWall(x+1,y) || !isWall(x,y+1))) this.ellipse(g,(p00.x+p11.x)/2+8,(p00.y+p11.y)/2+10,wall?16:22,wall?5:8,'rgba(0,0,0,.22)',.45); 
+                                // v7.16: Schatten nur noch für Wände und hohe Möbel – vorher lag
+                                // unter jeder Kachel ein dunkler Fleck.
+                                if((wall || h>=.4) && (!wall || !isWall(x+1,y) || !isWall(x,y+1))) this.ellipse(g,(p00.x+p11.x)/2+8,(p00.y+p11.y)/2+10,wall?16:18,wall?5:6,'rgba(0,0,0,.2)',.4); 
                                 if(h>.09){ 
                                     if(!wall || !isWall(x,y+1)) {
                                         this.poly(g,[t01,t11,p11,p01],fill(m,'side',x,y),1);
-                                        if(!wall) this.poly(g,[t01,t11,p11,p01],'rgba(0,0,0,0.15)',1);
+                                        if(!wall) this.poly(g,[t01,t11,p11,p01],'rgba(0,0,0,0.12)',1);
                                     }
                                     if(!wall || !isWall(x+1,y)) {
                                         this.poly(g,[t10,t11,p11,p10],fill(m,'side',x,y),1);
-                                        if(!wall) this.poly(g,[t10,t11,p11,p10],'rgba(0,0,0,0.25)',1);
+                                        if(!wall) this.poly(g,[t10,t11,p11,p10],'rgba(0,0,0,0.2)',1);
                                     }
                                     this.poly(g,[t00,t10,t11,t01],fill(m,'top',x,y),1);
                                 } else {
