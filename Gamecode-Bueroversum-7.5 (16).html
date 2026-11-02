@@ -873,6 +873,8 @@
                     <div id="rpg-fx-particles"></div>
                     <!-- v7.14: Atmosphaeren-/Licht-Ebene (viewport-fix, ueber Map, unter HUD) -->
                     <div id="bv-lighting-layer" aria-hidden="true"></div>
+                    <!-- v7.15: Nacht-/Dunkelheits-Canvas (stanzt Licht-Loecher fuer Lampen & Taschenlampe) -->
+                    <canvas id="bv-night-layer" aria-hidden="true"></canvas>
                     <div id="interaction-hint">
                         <span class="hint-key">ENTER</span>
                         <span class="hint-action-icon" id="interaction-icon">💬</span>
@@ -35064,6 +35066,21 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 #rpg-game-window.bv-scene-fx-off #rpg-parallax-layer::after {
     animation-play-state: paused !important;
 }
+
+/* ===== v7.15 BV NIGHT: Tag/Nacht-Zyklus, Dunkelheit & Lampen ===== */
+#bv-night-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10; /* ueber Licht-Ebene (9), UNTER HUD (60) */
+    opacity: 0;
+    transition: opacity .9s ease;
+}
+#rpg-game-window.bv-night-active #bv-night-layer { opacity: 1; }
+#rpg-game-window.bv-scene-fx-off #bv-night-layer { opacity: 0 !important; }
+@media (max-width: 920px) { #bv-night-layer { transition-duration: .5s; } }
 </style>
 
     <script>
@@ -38503,6 +38520,195 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     apply: function (id) { window.BVApplyMapFx(id); return BV_LIGHT_THEME[id] || null; },
                     sceneFxOn: function () { return bvSceneFxWasOff === false; }
                 };
+
+                // ============================================================
+                // v7.15 – BV NIGHT: TAG/NACHT-ZYKLUS & DUNKELHEITS-SYSTEM
+                // ------------------------------------------------------------
+                // Eine komplette Schicht dauert ca. 7 Minuten Echtzeit:
+                //   Tag (0.00-0.45) -> Abenddaemmerung (0.45-0.55)
+                //   -> Nacht (0.55-0.92) -> Morgengrauen (0.92-1.00)
+                // Jede Map hat eine eigene Maximal-Dunkelheit (Lager/Archiv =
+                // fast stockfinster, Dach = mondbeschienen). Lampen entstehen
+                // automatisch aus den Map-Dekos (lamp/vending/server/...) und
+                // stanzen warme Licht-Loecher in die Dunkelheits-Ebene (Canvas);
+                // der Spieler traegt eine Taschenlampe (warmer Halo).
+                // Aktiv nur in Map-Szenen; respektiert Low-Spec/reducedMotion:
+                // tier "low" -> weniger Lampen, kleinere Taschenlampe, kein Glow.
+                // Konsole: BVNight.setTime(0.7) | BVNight.phase()
+                // ============================================================
+                const BV_NIGHT_CYCLE_SEC = 420; // ~7 Minuten pro Tag/Nacht-Runde
+                let bvNightTime = 0.12;         // Start am Vormittag
+                let bvNightLevel = 0;           // geglaettete Dunkelheit 0..1
+                let bvNightSawNight = false;    // fuer das "Nachteule"-Achievement
+                let bvNightCache = { mapId: "__none__", max: 0, lights: [] };
+                let bvNightLastDraw = "";
+
+                const BV_NIGHT_PROFILE = {
+                    buero:       { max: 0.62 },
+                    flur:        { max: 0.66, extra: [[5, 4, 90, "#ffd28a"], [14, 4, 90, "#ffd28a"], [5, 15, 90, "#ffd28a"], [14, 15, 90, "#ffd28a"]] },
+                    zentrale:    { max: 0.58 },
+                    serverraum:  { max: 0.84 },
+                    kantine:     { max: 0.52, extra: [[5, 4, 85, "#ffd9a0"], [14, 4, 85, "#ffd9a0"], [23, 4, 85, "#ffd9a0"]] },
+                    lager:       { max: 0.86, extra: [[13, 8, 95, "#ffca7a"]] },
+                    konferenz:   { max: 0.60, extra: [[10, 7, 100, "#dfe8ff"]] },
+                    boss_office: { max: 0.74, extra: [[12, 4, 95, "#ffb066"]] },
+                    archiv:      { max: 0.88, extra: [[12, 6, 75, "#e6d3a8"]] },
+                    dach:        { max: 0.56, extra: [[2, 2, 65, "#9ad4ff"]] },
+                    pausenraum:  { max: 0.50 }
+                };
+                // Deko-Typ -> Lichtquelle (wird automatisch aus currentDecos erzeugt)
+                const BV_NIGHT_LAMP_GLOW = {
+                    lamp:         { r: 95, col: "#ffd28a" },
+                    vending:      { r: 80, col: "#7ee3ff" },
+                    server:       { r: 60, col: "#7dffc8" },
+                    water_cooler: { r: 70, col: "#9ad4ff" },
+                    printer:      { r: 55, col: "#cfe3ff" },
+                    coffee:       { r: 50, col: "#ffcf9a" }
+                };
+
+                function bvNightLevelAt(t) {
+                    if (t < 0.45) return 0;
+                    if (t < 0.55) { const k = (t - 0.45) / 0.10; return k * k * (3 - 2 * k); }
+                    if (t < 0.92) return 1;
+                    const k = (t - 0.92) / 0.08; return 1 - k * k * (3 - 2 * k);
+                }
+
+                function bvNightPoint(tx, ty) {
+                    return (typeof BV3D.project === "function" && BV3D.canvas)
+                        ? BV3D.project(tx + 0.5, ty + 0.5, 0)
+                        : { x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2 };
+                }
+
+                function bvNightRefreshCache() {
+                    const prof = BV_NIGHT_PROFILE[currentMapId] || { max: 0.62 };
+                    const lights = [];
+                    (currentDecos || []).forEach(d => {
+                        const g = BV_NIGHT_LAMP_GLOW[d && d.type];
+                        if (!g) return;
+                        const p = bvNightPoint(d.x, d.y);
+                        lights.push({ x: p.x, y: p.y, r: g.r, col: g.col });
+                    });
+                    (prof.extra || []).forEach(e => {
+                        const p = bvNightPoint(e[0], e[1]);
+                        lights.push({ x: p.x, y: p.y, r: e[2], col: e[3] });
+                    });
+                    bvNightCache = { mapId: currentMapId, max: prof.max, lights: lights };
+                }
+
+                function bvHexRgba(hex, a) {
+                    const h = hex.replace("#", "");
+                    const r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
+                    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+                }
+
+                function bvNightAdvance(dtSec) {
+                    const prev = bvNightTime;
+                    bvNightTime = (bvNightTime + dtSec / BV_NIGHT_CYCLE_SEC) % 1;
+                    const target = bvNightLevelAt(bvNightTime);
+                    if (target >= 0.99) bvNightSawNight = true;
+                    if (bvNightTime < prev && bvNightSawNight) {
+                        bvNightSawNight = false;
+                        player.achNightCycles = (player.achNightCycles || 0) + 1; // "Nachteule"
+                    }
+                    bvNightLevel += (target - bvNightLevel) * Math.min(1, dtSec * 2.2);
+                }
+
+                function bvNightDrawFrame() {
+                    const gw = document.getElementById("rpg-game-window");
+                    const cvs = document.getElementById("bv-night-layer");
+                    if (!gw || !cvs) return;
+                    const overlay = document.getElementById("rpg-overlay");
+                    const overlayOpen = !!(overlay && overlay.classList.contains("active"));
+                    const sceneActive = overlayOpen && bvSceneFxWasOff === false;
+                    if (sceneActive) bvNightAdvance(1 / 60);
+                    const dark = Math.min(0.92, bvNightLevel * (bvNightCache.max || 0.6));
+                    const on = sceneActive && dark > 0.02;
+                    gw.classList.toggle("bv-night-active", on);
+                    if (!on) { bvNightLastDraw = ""; return; }
+                    if (currentMapId && bvNightCache.mapId !== currentMapId) bvNightRefreshCache();
+
+                    const vp = document.getElementById("rpg-viewport");
+                    if (!vp) return;
+                    const w = vp.clientWidth || 864, h = vp.clientHeight || 544;
+                    if (cvs.width !== w || cvs.height !== h) { cvs.width = w; cvs.height = h; }
+
+                    const pr = playerEl ? playerEl.getBoundingClientRect() : null;
+                    const vr = vp.getBoundingClientRect();
+                    const pxx = pr ? (pr.left - vr.left + pr.width / 2) : w / 2;
+                    const pyy = pr ? (pr.top - vr.top + pr.height * 0.45) : h / 2;
+
+                    const tier = bvFxTier();
+                    const lampRadius = tier === "low" ? 110 : 150;
+                    const lights = tier === "low" ? bvNightCache.lights.slice(0, 5) : bvNightCache.lights;
+
+                    // Nur neuzeichnen, wenn Position/Kamera/Dunkelheit sich wirklich veraendert haben
+                    const sig = [w, h, dark.toFixed(3), Math.round(pxx), Math.round(pyy), Math.round(cameraX), Math.round(cameraY), currentMapId, tier].join("|");
+                    if (sig === bvNightLastDraw) return;
+                    bvNightLastDraw = sig;
+
+                    const nctx = cvs.getContext("2d");
+                    nctx.clearRect(0, 0, w, h);
+                    nctx.fillStyle = "rgba(5,8,18," + dark.toFixed(3) + ")";
+                    nctx.fillRect(0, 0, w, h);
+
+                    const hole = (x, y, r) => {
+                        const g = nctx.createRadialGradient(x, y, Math.max(2, r * 0.28), x, y, r);
+                        g.addColorStop(0, "rgba(0,0,0,0.92)");
+                        g.addColorStop(0.7, "rgba(0,0,0,0.55)");
+                        g.addColorStop(1, "rgba(0,0,0,0)");
+                        nctx.fillStyle = g;
+                        nctx.beginPath(); nctx.arc(x, y, r, 0, Math.PI * 2); nctx.fill();
+                    };
+
+                    // Dunkelheit ausschneiden: Lampen + Spieler-Taschenlampe
+                    nctx.globalCompositeOperation = "destination-out";
+                    lights.forEach(L => {
+                        const sx = L.x - cameraX, sy = L.y - cameraY;
+                        if (sx < -L.r || sy < -L.r || sx > w + L.r || sy > h + L.r) return;
+                        hole(sx, sy, L.r);
+                    });
+                    hole(pxx, pyy, lampRadius);
+                    nctx.globalCompositeOperation = "source-over";
+
+                    if (tier !== "low") {
+                        // Warmer Farb-Schein der Lampen
+                        lights.forEach(L => {
+                            const sx = L.x - cameraX, sy = L.y - cameraY;
+                            if (sx < -L.r || sy < -L.r || sx > w + L.r || sy > h + L.r) return;
+                            const g = nctx.createRadialGradient(sx, sy, 2, sx, sy, L.r * 0.8);
+                            g.addColorStop(0, bvHexRgba(L.col, 0.16 * dark));
+                            g.addColorStop(1, bvHexRgba(L.col, 0));
+                            nctx.fillStyle = g;
+                            nctx.beginPath(); nctx.arc(sx, sy, L.r * 0.8, 0, Math.PI * 2); nctx.fill();
+                        });
+                        // Warmer Halo der Taschenlampe
+                        const gp = nctx.createRadialGradient(pxx, pyy, 6, pxx, pyy, lampRadius);
+                        gp.addColorStop(0, "rgba(255,214,140," + (0.14 * dark).toFixed(3) + ")");
+                        gp.addColorStop(1, "rgba(255,214,140,0)");
+                        nctx.fillStyle = gp;
+                        nctx.beginPath(); nctx.arc(pxx, pyy, lampRadius, 0, Math.PI * 2); nctx.fill();
+                    }
+                }
+
+                function bvNightLoop() {
+                    bvNightDrawFrame();
+                    requestAnimationFrame(bvNightLoop);
+                }
+                requestAnimationFrame(bvNightLoop);
+
+                window.BVNight = {
+                    time: function () { return bvNightTime; },
+                    level: function () { return bvNightLevel; },
+                    setTime: function (t) { bvNightTime = Math.max(0, Math.min(0.9999, Number(t) || 0)); return bvNightTime; },
+                    phase: function () {
+                        if (bvNightTime < 0.45) return "Tag";
+                        if (bvNightTime < 0.55) return "Abenddämmerung";
+                        if (bvNightTime < 0.92) return "Nachtschicht";
+                        return "Morgengrauen";
+                    },
+                    cycleSeconds: BV_NIGHT_CYCLE_SEC
+                };
+                window.BVAtmos.night = window.BVNight;
 
                 function spawnDoors() {
                     if (!doorLayer) return;
@@ -61446,6 +61652,8 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
           check: function (ctx, p) { return p.questState && p.questState.serverKrakeReward; } },
         { id: 'klima_mediator', icon: '🌡️', title: 'Klima-Mediator', desc: 'Beende den Klima-Streit auf der Dachterrasse.',
           check: function (ctx, p) { return p.questState && p.questState.klimaReward; } },
+        { id: 'nachteule', icon: '🦉', title: 'Nachteule', desc: 'Überstehe eine komplette Nachtschicht im BüroVersum.',
+          check: function (ctx, p) { return (p.achNightCycles || 0) >= 1; } },
         { id: 'explorer', icon: '🗺️', title: 'Büro-Veteran', desc: 'Besuche alle 12 Map-Bereiche.',
           check: function (ctx, p, def, chests, visited) { return (visited || 0) >= 12; } },
         { id: 'rich', icon: '💰', title: 'Reich', desc: 'Sammle 1000 Gold.',
