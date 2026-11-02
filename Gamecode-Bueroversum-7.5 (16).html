@@ -47518,6 +47518,43 @@ function performAttack() {
                     });
                 }
 
+function bvShakeSkillRow(el) {
+    // v7.20: Schüttel-Feedback eines nicht bezahlbaren Skills.
+    // Läuft über die Web-Animations-API, damit schnelles Mehrfachklicken die
+    // Animation sauber neu startet. Vorher liefen mehrere setTimeout-Aufräumer
+    // parallel und die CSS-Transition der Zeile ließ sie mitten im Lauf abbrechen
+    // bzw. sichtbar zurückspringen.
+    if (!el) return;
+    if (el._bvShakeTimer) { clearTimeout(el._bvShakeTimer); el._bvShakeTimer = null; }
+    // Transition kurz abschalten, damit das Abbrechen der alten Animation nicht
+    // als Rück-Gleiten sichtbar wird.
+    el.style.setProperty("transition", "none", "important");
+    if (typeof el.getAnimations === "function") {
+        el.getAnimations().forEach(a => { try { a.cancel(); } catch (_) {} });
+    }
+    el.classList.remove("no-mp-shake");
+    void el.offsetWidth;
+    el.style.removeProperty("transition");
+    if (typeof el.animate === "function") {
+        el.animate([
+            { transform: "translateX(0)", boxShadow: "0 0 0 rgba(248,113,113,0)" },
+            { transform: "translateX(-7px)", boxShadow: "0 0 14px rgba(248,113,113,.55)", offset: 0.15 },
+            { transform: "translateX(6px)",  boxShadow: "0 0 12px rgba(248,113,113,.40)", offset: 0.35 },
+            { transform: "translateX(-5px)", offset: 0.55 },
+            { transform: "translateX(3px)",  offset: 0.75 },
+            { transform: "translateX(-2px)", offset: 0.90 },
+            { transform: "translateX(0)", boxShadow: "0 0 0 rgba(248,113,113,0)" }
+        ], { duration: 460, easing: "ease" });
+        return;
+    }
+    // Fallback ohne Web-Animations-API
+    el.classList.add("no-mp-shake");
+    el._bvShakeTimer = setTimeout(() => {
+        el.classList.remove("no-mp-shake");
+        el._bvShakeTimer = null;
+    }, 470);
+}
+
 function performSkill(skillId) {
     // v7.18: Das Skill-Fenster wird erst geschlossen, wenn der Skill wirklich
     // ausgeführt wird. Vorher lief beim Klick auf einen nicht bezahlbaren Skill
@@ -47552,13 +47589,7 @@ function performSkill(skillId) {
     if (player.mp < skill.cost) {
         // v7.18: Fenster bleibt ruhig offen – nur Log + kurzes Schütteln der Zeile.
         battleLog(`Nicht genug MP! (${skill.cost} benötigt)`);
-        const rowEl = document.querySelector(`#battle-skill-list .skill-row[data-skill="${skillId}"]`);
-        if (rowEl) {
-            rowEl.classList.remove("no-mp-shake");
-            void rowEl.offsetWidth;
-            rowEl.classList.add("no-mp-shake");
-            setTimeout(() => rowEl.classList.remove("no-mp-shake"), 460);
-        }
+        bvShakeSkillRow(document.querySelector(`#battle-skill-list .skill-row[data-skill="${skillId}"]`));
         return;
     }
 
