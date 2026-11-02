@@ -36799,16 +36799,31 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         t[4][16] = 6; t[5][16] = 6;    // Küche <-> Flur
                         t[14][10] = 6; t[15][10] = 6;  // Zimmer <-> Flur
                         t[14][16] = 6; t[15][16] = 6;  // Bad <-> Flur
+                        // v7.23 NEU: Abstellkammer links (zwischen Wohnzimmer und Zimmer)
+                        // mit eigener Tür zum Flur - hier lag vorher nur tote Wandfläche.
+                        for (let y = 9; y <= 11; y++) for (let x = 1; x <= 9; x++) t[y][x] = 16;
+                        t[10][10] = 6;                  // Tür Flur <-> Abstellkammer
+                        t[9][1] = 10; t[9][2] = 10;     // Regale
+                        t[11][8] = 8;                   // Aktenschrank
+                        t[11][1] = 3;                   // Pflanze
+                        t[10][4] = 2;                   // Kistentisch
                         // Fenster in den Außenwänden
                         t[0][3] = 12; t[0][6] = 12; t[0][20] = 12; t[0][23] = 12;
                         t[20][3] = 12; t[20][6] = 12; t[20][20] = 12; t[20][23] = 12;
                         t[2][0] = 12; t[16][0] = 12; t[2][26] = 12; t[16][26] = 12;
-                        // Wohnzimmer: Sofa, Couchtisch, Stuhl, Regal, Pflanzen
-                        t[2][3] = 15; t[2][4] = 15; t[2][5] = 15;
-                        t[4][4] = 2; t[4][5] = 2;
-                        t[5][6] = 11;
-                        t[7][1] = 10; t[7][2] = 10;
-                        t[1][1] = 3; t[1][9] = 3;
+                        // Wohnzimmer (v7.23 neu gestaltet): Sofa an der Nordwand,
+                        // Couchtisch in der Mitte, TV-Lowboard gegenüber, Lesesessel
+                        // in der Ecke, Regal an der Westwand, Pflanzen an den Rändern.
+                        // Wichtig: der Laufweg vom Durchgang (10/4 und 10/5) in den
+                        // Raum und um den Couchtisch herum bleibt komplett frei.
+                        t[2][2] = 15; t[2][3] = 15; t[2][4] = 15;   // 3er-Sofa
+                        t[2][7] = 11;                               // Lesesessel
+                        t[3][2] = 15;                               // Sofa-Lehne links
+                        t[4][3] = 2;  t[4][4] = 2;                  // Couchtisch
+                        t[6][2] = 8;  t[6][3] = 8;                  // TV-Lowboard
+                        t[1][1] = 10; t[2][1] = 10;                 // Regal (Westwand)
+                        t[1][8] = 3;  t[7][9] = 3;                  // Pflanzen
+                        t[8][6] = 2;  t[8][7] = 2;                  // Sideboard (Südwand)
                         // Küche: Küchenzeile, Tisch, Stuhl, Pflanze
                         t[1][18] = 2; t[1][19] = 2; t[1][20] = 2; t[1][21] = 2;
                         t[5][20] = 2; t[5][21] = 2;
@@ -36827,14 +36842,19 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         return t;
                     })(),
                     decos: [
-                        // Wohnzimmer
-                        { x: 1, y: 3, type: "lamp" },
-                        { x: 8, y: 7, type: "lamp" },
-                        { x: 3, y: 1, type: "poster" },
+                        // Wohnzimmer (v7.23)
+                        { x: 8, y: 6, type: "lamp" },
+                        { x: 5, y: 7, type: "rug" },
+                        { x: 5, y: 0, type: "poster" },
+                        { x: 0, y: 5, type: "clock" },
+                        { x: 1, y: 8, type: "plant" },
                         // Küche
                         { x: 18, y: 2, type: "fridge" },
                         { x: 24, y: 1, type: "stove" },
                         { x: 19, y: 7, type: "lamp" },
+                        // Abstellkammer (v7.23)
+                        { x: 3, y: 9, type: "lamp" },
+                        { x: 6, y: 11, type: "plant" },
                         // Zimmer
                         { x: 1, y: 12, type: "lamp" },
                         { x: 5, y: 12, type: "wardrobe" },
@@ -36868,7 +36888,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             choiceId: "kuehlschrank_snack", choicePrompt: "Kleinen Snack nehmen?"
                         },
                         {
-                            x: 4, y: 6, type: "talk", sprite: "📺", name: "Fernseher", role: "Wohnzimmer",
+                            x: 2, y: 5, type: "talk", sprite: "📺", name: "Fernseher", role: "Wohnzimmer",
                             dialog: ["Im Fernsehen läuft eine Doku über Büro-Stress.", "Du schaltest lieber um. Der Flur war schon genug Drama."],
                             choiceId: "fernseher_entspannen", choicePrompt: "Kurz abschalten?"
                         },
@@ -36876,6 +36896,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             x: 22, y: 2, type: "talk", sprite: "☕", name: "Kaffeemaschine", role: "Küche",
                             dialog: ["Die Kaffeemaschine blubbert vor sich hin."],
                             choiceId: "kaffeemaschine", choicePrompt: "Einen Kaffee kochen?"
+                        },
+                        {
+                            x: 5, y: 10, type: "talk", sprite: "📦", name: "Kisten", role: "Abstellkammer",
+                            dialog: ["Kisten über Kisten. Manche hat hier offenbar niemand mehr geöffnet."],
+                            choiceId: "kisten_durchsuchen", choicePrompt: "Kisten durchsuchen?"
                         }
                     ],
                     start: { x: 13, y: 18 }
@@ -37168,9 +37193,13 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     }
 
                     // Door check (FIXED - durch Berührung)
+                    // v7.23: handleDoor() meldet jetzt zurück, ob die Kachel wirklich
+                    // eine Tür-Aktion ausgelöst hat. Türen OHNE DOORS-Eintrag
+                    // (z. B. die Zimmertüren der Wohnung) sind normale Durchgänge
+                    // und dürfen den Spieler nicht mehr blockieren.
                     if (tileData.name === "door_normal" || tileData.name === "door_boss") {
-                        handleDoor(nx, ny, tileData);
-                        return false;
+                        const handled = handleDoor(nx, ny, tileData);
+                        if (handled) return false;
                     }
 
                     isMoving = true;
@@ -37849,7 +37878,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     boss_office: { max: 0.74, extra: [[12, 4, 95, "#ffb066"]] },
                     dach:        { max: 0.56, extra: [[2, 2, 65, "#9ad4ff"]] },
                     // v7.21: Wohnung – gemütliches Abendlicht, nie stockfinster
-                    zuhause:     { max: 0.38, extra: [[4, 6, 90, "#ffd9a0"], [19, 5, 85, "#ffd9a0"], [4, 15, 80, "#ffc48a"], [13, 10, 75, "#ffd9a0"], [22, 15, 75, "#cfe9ff"]] }
+                    zuhause:     { max: 0.38, extra: [[4, 4, 95, "#ffd9a0"], [20, 5, 85, "#ffd9a0"], [4, 15, 80, "#ffc48a"], [13, 10, 75, "#ffd9a0"], [22, 15, 75, "#cfe9ff"], [4, 10, 60, "#ffdfae"]] }
                 };
                 // Deko-Typ -> Lichtquelle (wird automatisch aus currentDecos erzeugt)
                 const BV_NIGHT_LAMP_GLOW = {
@@ -38223,7 +38252,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 }
 
                 function handleDoor(x, y, tileData) {
-                    if (isTransitioning) return;
+                    if (isTransitioning) return true;
 
                     for (const [doorId, door] of Object.entries(DOORS)) {
                         const hitsExtra = Array.isArray(door.extraTiles) && door.extraTiles.some(t => t[0] === x && t[1] === y);
@@ -38235,17 +38264,17 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 if (typeof window.BVFeierabendActive === "function" && window.BVFeierabendActive()
                                     && typeof window.BVStartFeierabend === "function") {
                                     window.BVStartFeierabend(doorId);
-                                    return;
+                                    return true;
                                 }
                                 openBadEndingWarning(doorId);
-                                return;
+                                return true;
                             }
                             // v7.21: Die Wohnungstür führt nur ins Büro, wenn geschlafen wurde.
                             if (door.from === "zuhause") {
                                 const dayReady = !!(window.BVHome && typeof window.BVHome.isDayReady === "function" && window.BVHome.isDayReady());
                                 if (!dayReady) {
                                     showMessage("Noch nicht — erst schlafen. Morgen geht es zurück ins Büro. 🛏️", "Wohnungstür", "🚪");
-                                    return;
+                                    return true;
                                 }
                                 // Tag ist gestartet -> für den nächsten Feierabend wieder zurücksetzen
                                 if (window.BVHome && typeof window.BVHome.setDayReady === "function") window.BVHome.setDayReady(false);
@@ -38255,7 +38284,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 // damit die Meldung nicht "0 Gegner" sagt, waehrend die Tuer zu bleibt.
                                 const remaining = bvBossDoorProgress().remaining;
                                 showMessage(`Die Tür ist verschlossen! Besiege noch ${remaining} Gegner.`, "🚪 Tür", "🚪");
-                                return;
+                                return true;
                             }
 
                             // 2.5D Door animation + safer teleport position.
@@ -38284,9 +38313,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                     }
                                 }, 620);
                             }, doorEl ? 260 : 0);
-                            return;
+                            return true;
                         }
                     }
+                    // v7.23: kein DOORS-Eintrag an dieser Kachel (z. B. Zimmertuer in der
+                    // Wohnung) -> Durchgang ist frei, der Spieler darf weiterlaufen.
+                    return false;
                 }
 
                 function checkLevelUp() {
@@ -42352,6 +42384,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         queueMessage(npc.choicePrompt || "Kurz abschalten?", npc.name, npc.sprite, () => window.openTvChoice(npc));
                     } else if (npc.choiceId === "kaffeemaschine") {
                         queueMessage(npc.choicePrompt || "Einen Kaffee kochen?", npc.name, npc.sprite, () => window.openCoffeeChoice(npc));
+                    } else if (npc.choiceId === "kisten_durchsuchen") {
+                        queueMessage(npc.choicePrompt || "Kisten durchsuchen?", npc.name, npc.sprite, () => window.openBoxesChoice(npc));
                     } else if (npc.choiceId === "andreas_quest") {
                         queueMessage(npc.choicePrompt || "Ich suche etwas...", npc.name, npc.sprite, () => openAndreasChoice(npc));
                     } else if (npc.choiceId === "archiv_quest") {
@@ -58302,6 +58336,32 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
             if (typeof B.dailyMark === 'function') B.dailyMark('coffee');
             window.updateHUD?.();
             window.showMessage?.('Ein ☕ Kaffee für den nächsten Tag wandert in deine Tasche.', speaker, portrait);
+        });
+    };
+
+    /* v7.23: Abstellkammer – Kisten durchsuchen (+25 Gold, 1x pro Tag) */
+    window.openBoxesChoice = function (npc) {
+        if (typeof window.showChoice !== 'function') return;
+        const speaker = npc?.name || 'Kisten';
+        const portrait = npc?.sprite || '📦';
+        const B = window.BVHome || {};
+        if (typeof B.dailyUsed === 'function' && B.dailyUsed('boxes')) {
+            window.showMessage?.('Für heute hast du alle Kisten durchgewühlt. Staub genug. 📦', speaker, portrait);
+            return;
+        }
+        window.showChoice('Die Kisten durchsuchen? Vielleicht liegt noch etwas Brauchbares drin.', [
+            { label: 'Durchsuchen', value: 'search', hint: '🔍' },
+            { label: 'Lieber lassen', value: 'no', hint: '✖' }
+        ], speaker, portrait, (val) => {
+            if (val !== 'search') {
+                window.showMessage?.('Der Staub bleibt, wo er ist.', speaker, portrait);
+                return;
+            }
+            const p = getPlayer();
+            p.gold = (p.gold || 0) + 25;
+            if (typeof B.dailyMark === 'function') B.dailyMark('boxes');
+            window.updateHUD?.();
+            window.showMessage?.('In einer Kiste: alte Rechnungen, ein Kabel und +25 Gold in Münzen. 📦', speaker, portrait);
         });
     };
 
