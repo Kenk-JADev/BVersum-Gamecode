@@ -36608,39 +36608,39 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         chests: [{ x: 30, y: 3, type: "normal" }, { x: 5, y: 17, type: "normal" }, { x: 28, y: 15, type: "rare" }],
                         npcs: [
                             {
-                                x: 3, y: 2, type: "talk", sprite: "👨‍💻", name: "Justin", role: "Azubi & Entwickler",
+                                x: 3, y: 2, type: "talk", sprite: "👨‍💻", name: "Justin", role: "Azubi & Entwickler", hours: [7, 18],
                                 dialog: ["Hey! Ich bin Justin. Willkommen im BüroVersum!", "Tipp: Drücke [C] für die Cheat-Konsole. 😉", "Vergiss nicht: Der Flur ist gefährlicher als er aussieht…"],
                                 choiceId: "justin_help", choicePrompt: "Kann ich dir helfen?"
                             },
                             {
-                                x: 10, y: 2, type: "talk", sprite: "👨‍🦱", name: "Jannik", role: "Azubi Einkauf",
+                                x: 10, y: 2, type: "talk", sprite: "👨‍🦱", name: "Jannik", role: "Azubi Einkauf", hours: [7, 18],
                                 dialog: ["Moin! Ich bin Jannik.", "Im Einkauf geht's oft um Timing.", "Wenn du schnell genug bist, bleibt dir Stress erspart.", "Hol dir was für Angriff oder Max-HP – das hilft unterwegs!"],
                                 choiceId: "jannik_tip", choicePrompt: "Brauchst du einen Tipp aus dem Einkauf?",
                                 wander: true
                             },
                             {
-                                x: 17, y: 2, type: "talk", sprite: "👨‍🦱", name: "Hamda", role: "Azubi Einkauf",
+                                x: 17, y: 2, type: "talk", sprite: "👨‍🦱", name: "Hamda", role: "Azubi Einkauf", hours: [7, 18],
                                 dialog: ["Hi! Hamda hier.", "Ich halte heute das Chaos zusammen.", "Orientier dich an den Türen (🚪) und den Teppichen.", "Du schaffst das! 💪"],
                                 choiceId: "hamda_chat", choicePrompt: "Kurz Zeit für einen Hinweis?",
                                 wander: true
                             },
                             {
-                                x: 3, y: 9, type: "talk", sprite: "👩", name: "Deborha", role: "Azubi Einkauf",
+                                x: 3, y: 9, type: "talk", sprite: "👩", name: "Deborha", role: "Azubi Einkauf", hours: [7, 18],
                                 dialog: ["Hey! Deborha hier.", "Kaffee ist quasi eine Superkraft. ☕", "Wenn du müde wirst, gönn dir eine Pause."],
                                 choiceId: "deborha_coffee", choicePrompt: "Kaffee-Frage gefällig?",
                                 wander: true
                             },
                             {
-                                x: 8, y: 4, type: "quiz", sprite: "🧠", name: "Quiz-Kai", role: "Wissens-Coach",
+                                x: 8, y: 4, type: "quiz", sprite: "🧠", name: "Quiz-Kai", role: "Wissens-Coach", hours: [9, 16],
                                 dialog: ["Hey! Ich bin Quiz-Kai.", "Lust auf ein schnelles Büro-Quiz mit Zeitlimit?"],
                                 choicePrompt: "Willst du das Quiz starten?"
                             },
                             {
-                                x: 12, y: 8, type: "shop", sprite: "🛒", name: "Händler Hans", role: "Verkäufer",
+                                x: 12, y: 8, type: "shop", sprite: "🛒", name: "Händler Hans", role: "Verkäufer", hours: [7, 18],
                                 dialog: ["Ich habe alles was du brauchst!", "Kaffee? Donuts? Alles da!"]
                             },
                             {
-                                x: 14, y: 8, type: "skillshop", sprite: "📚", name: "Meister Markus", role: "Skill-Trainer",
+                                x: 14, y: 8, type: "skillshop", sprite: "📚", name: "Meister Markus", role: "Skill-Trainer", hours: [8, 17],
                                 dialog: ["Willkommen zum Skill-Training!", "Lerne neue mächtige Fähigkeiten!"]
                             },
                             {
@@ -36648,10 +36648,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 dialog: ["Ein moderner Büro-Computer mit BüroVersum OS."]
                             },
                             {
-                                x: 24, y: 5, type: "talk", sprite: "👨‍🏫", name: "Patrick", role: "Ausbilder",
+                                x: 24, y: 5, type: "talk", sprite: "👨‍🏫", name: "Patrick", role: "Ausbilder", hours: [8, 18],
                                 dialog: ["Hallo! Ich bin Patrick, dein Ausbilder.", "Ich kümmere mich um deine Ausbildung.", "Es gibt viel zu lernen im Büro!"],
                                 choiceId: "patrick_easter", choicePrompt: "Hast du eine Aufgabe für mich?"
                             },
+                            // v7.17: Abend-Belegschaft – erscheint erst zum Feierabend
+                            { x: 13, y: 9, type: "talk", sprite: "🧹", name: "Putzkraft Petra", role: "Reinigungsdienst", hours: [17, 22], dialog: ["Pssst — jetzt stolpert endlich keiner mehr über die Kabel.", "Gleich glitzert das Büro wieder wie neu.", "Feierabend gilt leider nicht für alle von uns…"], wander: true },
 
 
                             { x: 20, y: 9, type: "enemy", sprite: "📞", name: "Telefonterror", enemyId: "telefon" },
@@ -36732,15 +36734,17 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         ],
                         chests: [{ x: 2, y: 16, type: "normal" }, { x: 17, y: 3, type: "rare" }],
                         npcs: [
-                            { x: 16, y: 10, type: "talk", sprite: "👨‍💼", name: "Andreas", role: "Verkauf", dialog: ["Guten Tag!"], choiceId: "andreas_quest", choicePrompt: "Ich suche etwas...", wander: true },
-                            { x: 8, y: 12, type: "talk", sprite: "👩‍💼", name: "Emmely", role: "Verwaltung", dialog: ["Hallo! Ich bin Emmely.", "Der Hauptflur ist heute richtig lebendig."], wander: true },
-                            { x: 11, y: 12, type: "talk", sprite: "👨‍💼", name: "Alexander", role: "IT", dialog: ["Hi, Alexander hier.", "Ich checke nur kurz die Leitungen."], wander: true },
+                            { x: 16, y: 10, type: "talk", sprite: "👨‍💼", name: "Andreas", role: "Verkauf", hours: [7, 18], dialog: ["Guten Tag!"], choiceId: "andreas_quest", choicePrompt: "Ich suche etwas...", wander: true },
+                            { x: 8, y: 12, type: "talk", sprite: "👩‍💼", name: "Emmely", role: "Verwaltung", hours: [7, 18], dialog: ["Hallo! Ich bin Emmely.", "Der Hauptflur ist heute richtig lebendig."], wander: true },
+                            { x: 11, y: 12, type: "talk", sprite: "👨‍💼", name: "Alexander", role: "IT", hours: [7, 18], dialog: ["Hi, Alexander hier.", "Ich checke nur kurz die Leitungen."], wander: true },
                             { x: 5, y: 5, type: "enemy", sprite: "📞", name: "Telefonterror", enemyId: "telefon", wander: true },
                             { x: 15, y: 15, type: "enemy", sprite: "📧", name: "Spam-Mail", enemyId: "spam" },
                             { x: 15, y: 5, type: "enemy", sprite: "📉", name: "Excel-Fehler", enemyId: "excel" },
                             { x: 5, y: 15, type: "enemy", sprite: "🤷", name: "Praktikant", enemyId: "praktikant", wander: true },
                             { x: 8, y: 16, type: "enemy", sprite: "🪑", name: "Bürostuhl-Berserker", enemyId: "stuhl_berserker", wander: true },
-                            { x: 14, y: 3, type: "talk", sprite: "🧓", name: "Rentner Rudi", role: "Flur-Legende", dialog: ["Na, junger Hüpfer! Rudi hier – 40 Jahre Flur-Erfahrung. 🧓", "Früher war hier alles voller Papierberge. Dann kam die Digitalisierung... Die Berge wurden kleiner. Die Probleme nicht. 😄", "Pass vor den Drehstühlen auf dem Flur auf. Manche fahren noch immer ihre Runden. Bürostuhlrennen nennt man das.", "Und falls du ins Archiv kommst: Grüß das alte Faxgerät von mir. Es grüßt manchmal zurück. 📠"], wander: true }
+                            { x: 14, y: 3, type: "talk", sprite: "🧓", name: "Rentner Rudi", role: "Flur-Legende", hours: [9, 21], dialog: ["Na, junger Hüpfer! Rudi hier – 40 Jahre Flur-Erfahrung. 🧓", "Früher war hier alles voller Papierberge. Dann kam die Digitalisierung... Die Berge wurden kleiner. Die Probleme nicht. 😄", "Pass vor den Drehstühlen auf dem Flur auf. Manche fahren noch immer ihre Runden. Bürostuhlrennen nennt man das.", "Und falls du ins Archiv kommst: Grüß das alte Faxgerät von mir. Es grüßt manchmal zurück. 📠"], wander: true },
+                            // v7.17: Nachtschicht – erscheint nur, wenn die Schicht-Uhr zwischen 18:00 und 07:00 steht
+                            { x: 10, y: 14, type: "talk", sprite: "🌙", name: "Nachtwächter Günther", role: "Sicherheitsdienst", hours: [18, 7], dialog: ["Feierabend, Kollege — ab jetzt gehört der Flur mir.", "Nachts spukt's hier leise vor sich hin. Vor allem drüben im Lager.", "Keine Angst vor der Dunkelheit — die Lampen bleiben an. Meistens…"], wander: true }
                         ],
                         start: { x: 5, y: 9 }
                     },
@@ -36789,13 +36793,13 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             { x: 2, y: 2, type: "normal" }
                         ],
                         npcs: [
-                            { x: 5, y: 5, type: "talk", sprite: "☕", name: "Mira", role: "Pausencoach", dialog: ["Willkommen im Pausenraum.", "Hier sammelt man Energie, bevor das Büro zurückschlägt.", "Tipp: Mittags fühlen sich Pausen besonders gut an."], wander: true },
-                            { x: 12, y: 5, type: "talk", sprite: "🧘", name: "Ruhiger Ralf", role: "Entspannung", dialog: ["Atme ein... und ignorier die ungelesenen Mails.", "Eine kurze Pause kann stärker sein als ein Skill."], wander: true },
-                            { x: 9, y: 9, type: "shop", sprite: "🍪", name: "Snack-Sandra", role: "Snack-Bar", dialog: ["Kekse, Kaffee, Nervennahrung!", "Pausenraum-Snacks sind offiziell motivierend."] },
+                            { x: 5, y: 5, type: "talk", sprite: "☕", name: "Mira", role: "Pausencoach", hours: [7, 18], dialog: ["Willkommen im Pausenraum.", "Hier sammelt man Energie, bevor das Büro zurückschlägt.", "Tipp: Mittags fühlen sich Pausen besonders gut an."], wander: true },
+                            { x: 12, y: 5, type: "talk", sprite: "🧘", name: "Ruhiger Ralf", role: "Entspannung", hours: [7, 18], dialog: ["Atme ein... und ignorier die ungelesenen Mails.", "Eine kurze Pause kann stärker sein als ein Skill."], wander: true },
+                            { x: 9, y: 9, type: "shop", sprite: "🍪", name: "Snack-Sandra", role: "Snack-Bar", hours: [6, 16], dialog: ["Kekse, Kaffee, Nervennahrung!", "Pausenraum-Snacks sind offiziell motivierend."] },
                             { x: 14, y: 8, type: "enemy", sprite: "🥱", name: "Mittagstief", enemyId: "deadline", wander: true },
                             { x: 2, y: 8, type: "enemy", sprite: "🖊️", name: "Stifte-Dieb", enemyId: "stiftedieb", wander: true },
                             { x: 16, y: 8, type: "enemy", sprite: "🕰️", name: "Stechuhr-Zombie", enemyId: "stechuhr" },
-                            { x: 7, y: 2, type: "talk", sprite: "🧔", name: "Philosoph Otto", role: "Büro-Philosoph", dialog: ["Ah, ein Wanderer zwischen den Welten... den Kaffee-Welten. 🧔", "Ich bin Otto. Seit 12 Jahren erforsche ich die Frage: Ist die Pause heilig? Spoiler: Ja.", "Wer den Kaffee ehrt, ehrt auch sich selbst.", "Und gratis dazu: Der wahre Endgegner ist nie der Chef. Es ist immer. Der. Drucker."], wander: true }
+                            { x: 7, y: 2, type: "talk", sprite: "🧔", name: "Philosoph Otto", role: "Büro-Philosoph", hours: [8, 20], dialog: ["Ah, ein Wanderer zwischen den Welten... den Kaffee-Welten. 🧔", "Ich bin Otto. Seit 12 Jahren erforsche ich die Frage: Ist die Pause heilig? Spoiler: Ja.", "Wer den Kaffee ehrt, ehrt auch sich selbst.", "Und gratis dazu: Der wahre Endgegner ist nie der Chef. Es ist immer. Der. Drucker."], wander: true }
                         ],
                         start: { x: 9, y: 12 }
                     },
@@ -36858,21 +36862,21 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         ],
                         npcs: [
                             {
-                                x: 12, y: 6, type: "talk", sprite: "👨‍💻", name: "Sertac", role: "Zentrale / IT Lead",
+                                x: 12, y: 6, type: "talk", sprite: "👨‍💻", name: "Sertac", role: "Zentrale / IT Lead", hours: [7, 18],
                                 dialog: ["Selamün aleyküm! 👋", "Willkommen im neuen IT-Hub.", "Kürzere Wege, weniger Chaos – theoretisch.", "Wenn du schon da bist… check bitte die Serveranzeigen."],
                                 choiceId: "sertac_coffee", choicePrompt: "Holst du mir Kaffee?"
                             },
                             {
-                                x: 6, y: 4, type: "talk", sprite: "👨‍🏫", name: "Herr Abend", role: "Ausbilder",
+                                x: 6, y: 4, type: "talk", sprite: "👨‍🏫", name: "Herr Abend", role: "Ausbilder", hours: [7, 18],
                                 dialog: ["Guten Tag! Patrick Abend.", "Die neue Zentrale ist kompakter – aber pass auf die Bugs auf.", "Berichtsheft nicht vergessen. 😄"]
                             },
                             {
-                                x: 18, y: 10, type: "talk", sprite: "👩‍💻", name: "Lea", role: "IT-Support",
+                                x: 18, y: 10, type: "talk", sprite: "👩‍💻", name: "Lea", role: "IT-Support", hours: [7, 18],
                                 dialog: ["Hey, ich bin Lea vom IT-Support.", "Wenn etwas blinkt, erst tief atmen – dann Ticket schreiben.", "Die Server-Tür rechts führt zum Serverraum."],
                                 wander: true
                             },
                             {
-                                x: 9, y: 9, type: "talk", sprite: "🧑‍🔧", name: "Robin", role: "Technik",
+                                x: 9, y: 9, type: "talk", sprite: "🧑‍🔧", name: "Robin", role: "Technik", hours: [7, 18],
                                 dialog: ["Ich halte die Kabel am Leben.", "Bitte nicht über die roten Leitungen stolpern.", "Die haben Launen."],
                                 wander: true
                             },
@@ -36911,7 +36915,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         chests: [{ x: 27, y: 2, type: "rare" }, { x: 2, y: 17, type: "normal" }],
                         npcs: [
 
-                            { x: 15, y: 8, type: "talk", sprite: "👨‍🍳", name: "Koch Werner", role: "Chefkoch", dialog: ["Mahlzeit! Werner hier.", "Heute gibt's Überraschungseintopf!"] },
+                            { x: 15, y: 8, type: "talk", sprite: "👨‍🍳", name: "Koch Werner", role: "Chefkoch", hours: [6, 15], dialog: ["Mahlzeit! Werner hier.", "Heute gibt's Überraschungseintopf!"] },
                             { x: 8, y: 4, type: "enemy", sprite: "🍲", name: "Kantinen-Essen", enemyId: "kantine" },
                             { x: 22, y: 11, type: "enemy", sprite: "🍲", name: "Kantinen-Essen", enemyId: "kantine" },
                             { x: 14, y: 14, type: "enemy", sprite: "😤", name: "Hungriger Kunde", enemyId: "kunde", wander: true }
@@ -36947,7 +36951,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             { x: 17, y: 12, type: "rare" }, { x: 21, y: 12, type: "normal" }, { x: 25, y: 12, type: "rare" }
                         ],
                         npcs: [
-                            { x: 14, y: 10, type: "talk", sprite: "👷", name: "Lagerarbeiter Tim", role: "Lager", dialog: ["Hey! Tim hier.", "Im Lager gibt's viele Schätze."] },
+                            { x: 14, y: 10, type: "talk", sprite: "👷", name: "Lagerarbeiter Tim", role: "Lager", hours: [6, 19], dialog: ["Hey! Tim hier.", "Im Lager gibt's viele Schätze."] },
                             { x: 6, y: 6, type: "enemy", sprite: "📦", name: "Fallende Kiste", enemyId: "fallende_kiste" },
                             { x: 18, y: 6, type: "enemy", sprite: "🔄", name: "Windows-Update", enemyId: "update" },
                             { x: 12, y: 14, type: "enemy", sprite: "📶", name: "WLAN-Ausfall", enemyId: "wifi" }
@@ -36974,7 +36978,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         decos: [],
                         chests: [{ x: 22, y: 2, type: "rare" }, { x: 22, y: 13, type: "rare" }, { x: 6, y: 7, type: "normal" }],
                         npcs: [
-                            { x: 10, y: 7, type: "talk", sprite: "🤖", name: "Server-Admin", role: "IT", dialog: ["*BEEP BOOP* 🤖", "Server-Status: Online. Kabel-Status: ... KRAKE.", "Die Kabelsalat-Krake hat sich in Gang 4 eingenistet. Meine so schön sortierten Kabel... 😢"], choiceId: "server_quest", choicePrompt: "Soll ich die Krake vertreiben?" },
+                            { x: 10, y: 7, type: "talk", sprite: "🤖", name: "Server-Admin", role: "IT", hours: [8, 18], dialog: ["*BEEP BOOP* 🤖", "Server-Status: Online. Kabel-Status: ... KRAKE.", "Die Kabelsalat-Krake hat sich in Gang 4 eingenistet. Meine so schön sortierten Kabel... 😢"], choiceId: "server_quest", choicePrompt: "Soll ich die Krake vertreiben?" },
                             { x: 6, y: 4, type: "enemy", sprite: "🐛", name: "Kritischer Bug", enemyId: "bug" },
                             { x: 14, y: 10, type: "enemy", sprite: "🔄", name: "Updates", enemyId: "update" },
                             { x: 18, y: 7, type: "enemy", sprite: "🚨", name: "Fehlalarm", enemyId: "feueralarm" },
@@ -37004,7 +37008,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         decos: [{ x: 10, y: 6, type: "coffee" }, { x: 11, y: 6, type: "coffee" }, { x: 3, y: 2, type: "poster" }, { x: 18, y: 2, type: "poster" }],
                         chests: [{ x: 19, y: 2, type: "normal" }, { x: 2, y: 11, type: "normal" }],
                         npcs: [
-                            { x: 10, y: 5, type: "talk", sprite: "👔", name: "Manager Stefan", role: "Management", dialog: ["Ah, ein Teilnehmer!", "Wir besprechen hier KPIs."] },
+                            { x: 10, y: 5, type: "talk", sprite: "👔", name: "Manager Stefan", role: "Management", hours: [8, 18], dialog: ["Ah, ein Teilnehmer!", "Wir besprechen hier KPIs."] },
                             { x: 8, y: 7, type: "enemy", sprite: "📊", name: "Endlos-Meeting", enemyId: "endlos_meeting" },
                             { x: 13, y: 7, type: "enemy", sprite: "📑", name: "PowerPoint-Terror", enemyId: "powerpoint_terror" },
                             { x: 17, y: 8, type: "enemy", sprite: "🧾", name: "Mahnungs-Moloch", enemyId: "mahnung" }
@@ -37032,11 +37036,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         decos: [{ x: 3, y: 2, type: "poster" }, { x: 12, y: 6, type: "clock" }, { x: 18, y: 11, type: "coffee" }],
                         chests: [{ x: 21, y: 2, type: "rare" }, { x: 2, y: 11, type: "normal" }],
                         npcs: [
-                            { x: 3, y: 6, type: "talk", sprite: "👩‍💼", name: "Archiv-Anna", role: "Archiv", dialog: ["Pssst… Willkommen im Archiv.", "Hier hat sich eine Akten-Motte eingenistet."], choiceId: "archiv_quest", choicePrompt: "Hilfst du im Archiv?" },
+                            { x: 3, y: 6, type: "talk", sprite: "👩‍💼", name: "Archiv-Anna", role: "Archiv", hours: [8, 18], dialog: ["Pssst… Willkommen im Archiv.", "Hier hat sich eine Akten-Motte eingenistet."], choiceId: "archiv_quest", choicePrompt: "Hilfst du im Archiv?" },
                             { x: 18, y: 6, type: "enemy", sprite: "🦋", name: "Akten-Motte", enemyId: "akten_motte" },
                             { x: 12, y: 10, type: "enemy", sprite: "📄", name: "Papierstapel", enemyId: "papierstapel" },
                             { x: 7, y: 3, type: "enemy", sprite: "📠", name: "Fax-Phantom", enemyId: "fax_phantom" },
-                            { x: 12, y: 3, type: "talk", sprite: "👩‍🏫", name: "Chronik-Lisa", role: "Firmenchronik", dialog: ["Willkommen im Archiv. Ich bin Lisa, Hüterin der Firmenchronik. 📚", "Wusstest du, dass die Kabelsalat-Krake seit 1998 im Serverraum lebt? Damals nannte jemand das Kabelgewirr \"schön\". Ein Fehler.", "Die Akten-Motte kam übrigens mit Lieferung 47-B. Chronik, Band 12, Seite 3.", "Und das alte Faxgerät dort drüben? Es wacht manchmal auf. Rudi hat dich gewarnt, oder? 📠", "Alles hier hat eine Geschichte. Manche beißen. 🦋"] }
+                            { x: 12, y: 3, type: "talk", sprite: "👩‍🏫", name: "Chronik-Lisa", role: "Firmenchronik", hours: [8, 16], dialog: ["Willkommen im Archiv. Ich bin Lisa, Hüterin der Firmenchronik. 📚", "Wusstest du, dass die Kabelsalat-Krake seit 1998 im Serverraum lebt? Damals nannte jemand das Kabelgewirr \"schön\". Ein Fehler.", "Die Akten-Motte kam übrigens mit Lieferung 47-B. Chronik, Band 12, Seite 3.", "Und das alte Faxgerät dort drüben? Es wacht manchmal auf. Rudi hat dich gewarnt, oder? 📠", "Alles hier hat eine Geschichte. Manche beißen. 🦋"] }
                         ],
                         start: { x: 1, y: 6 }
                     },
@@ -37061,11 +37065,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         decos: [{ x: 9, y: 3, type: "lamp" }, { x: 10, y: 3, type: "poster" }, { x: 6, y: 8, type: "coffee" }],
                         chests: [{ x: 2, y: 2, type: "normal" }, { x: 17, y: 10, type: "rare" }],
                         npcs: [
-                            { x: 15, y: 6, type: "talk", sprite: "👷", name: "Hausmeister Uwe", role: "Facility", dialog: ["Die Antenne spinnt schon wieder.", "Auf dem Dach tauchen manchmal Störsignale auf."], choiceId: "dach_quest", choicePrompt: "Kann ich helfen?" },
+                            { x: 15, y: 6, type: "talk", sprite: "👷", name: "Hausmeister Uwe", role: "Facility", hours: [6, 18], dialog: ["Die Antenne spinnt schon wieder.", "Auf dem Dach tauchen manchmal Störsignale auf."], choiceId: "dach_quest", choicePrompt: "Kann ich helfen?" },
                             { x: 7, y: 6, type: "enemy", sprite: "📡", name: "Störsignal", enemyId: "stoersignal" },
                             { x: 11, y: 9, type: "enemy", sprite: "💨", name: "Windstoß", enemyId: "windstoss" },
                             { x: 13, y: 3, type: "enemy", sprite: "🌡️", name: "Klima-Krieger", enemyId: "klima_kaempfer" },
-                            { x: 17, y: 8, type: "talk", sprite: "👷‍♀️", name: "Technikerin Jule", role: "Haustechnik", dialog: ["Puh... Ich bin Jule, Haustechnik. 👷‍♀️", "Der Klima-Krieger da vorne eskaliert komplett. Eiskalt oder Sauna – nichts dazwischen!", "Keiner traut sich mehr raus auf die Terrasse. Selbst Hausmeister Uwe zittert. Naja... vor Kälte."], choiceId: "klima_quest", choicePrompt: "Hilfst du mir mit dem Klima-Krieger?" }
+                            { x: 17, y: 8, type: "talk", sprite: "👷‍♀️", name: "Technikerin Jule", role: "Haustechnik", hours: [7, 18], dialog: ["Puh... Ich bin Jule, Haustechnik. 👷‍♀️", "Der Klima-Krieger da vorne eskaliert komplett. Eiskalt oder Sauna – nichts dazwischen!", "Keiner traut sich mehr raus auf die Terrasse. Selbst Hausmeister Uwe zittert. Naja... vor Kälte."], choiceId: "klima_quest", choicePrompt: "Hilfst du mir mit dem Klima-Krieger?" }
                         ],
                         start: { x: 18, y: 6 }
                     },
@@ -38344,6 +38348,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 // Aktiv nur in Map-Szenen; respektiert Low-Spec/reducedMotion:
                 // tier "low" -> weniger Lampen, kleinere Taschenlampe, kein Glow.
                 // Konsole: BVNight.setTime(18) | BVNight.phase() | BVNight.time()
+                // v7.17 DIENSTPLAN: NPCs mit hours:[von,bis] erscheinen nur zu
+                // ihrer Arbeitszeit – geprueft beim Map-Wechsel (npcHoursActive).
                 // ============================================================
                 const BV_NIGHT_HOUR_SEC = 30;   // 30 echte Sekunden = 1 Spiel-Stunde
                                                 // (Schicht 09:00-18:00 ~ 4,5 Min; ganzer Tag 12 Min)
@@ -38573,7 +38579,18 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         if (bvNightClock >= 5.5 && bvNightClock < 7) return "Morgengrauen";
                         return "Nachtschicht";
                     },
-                    hourSeconds: BV_NIGHT_HOUR_SEC
+                    hourSeconds: BV_NIGHT_HOUR_SEC,
+                    // v7.17 DIENSTPLAN: liegt die Schicht-Uhr im Fenster [von, bis)?
+                    // Unterstuetzt Nachtfenster ueber Mitternacht, z. B. [18, 7].
+                    npcHoursActive: function (hours) {
+                        if (!hours || hours.length < 2) return true;
+                        const now = ((bvNightClock % 24) + 24) % 24;
+                        const from = ((hours[0] % 24) + 24) % 24;
+                        const to = ((hours[1] % 24) + 24) % 24;
+                        if (from === to) return true;
+                        if (from < to) return now >= from && now < to;
+                        return now >= from || now < to;
+                    }
                 };
                 window.BVAtmos.night = window.BVNight;
 
@@ -42251,6 +42268,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         if (npc.type === "enemy") {
                             return !defeatedEnemies.has(`${mapId}_${npc.x}_${npc.y}_${npc.enemyId}`);
                         }
+                        // v7.17 DIENSTPLAN: NPC mit Arbeitszeiten (hours: [von, bis])
+                        // nur spawnen, wenn die Schicht-Uhr im Fenster liegt.
+                        // Die Pruefung passiert bewusst NUR beim Map-Wechsel/Laden —
+                        // niemand verschwindet mitten im Gespraech oder Kampf.
+                        if (npc.hours && window.BVNight && typeof window.BVNight.npcHoursActive === "function"
+                            && !window.BVNight.npcHoursActive(npc.hours)) return false;
                         return true;
                     });
 
