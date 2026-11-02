@@ -42101,7 +42101,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const boundary = (x === 0 || y === 0 || x === mapCols2 - 1 || y === mapRows2 - 1);
                     // v7.16: Höhe identisch zu MapEngineV6.meta() – der Occluder legt sich
                     // deckungsgleich auf die gezeichnete Wand statt sie zu überragen.
-                    const h = (type === 'wall') ? (boundary ? 1.02 : 0.74)
+                    const h = (type === 'wall') ? (boundary ? 0.95 : 0.74)
                             : (type === 'desk') ? 0.42 : (type === 'server') ? 0.78 : 0.62;
                     // 8 Eckpunkte des Tile-Quaders (Boden p, Deckel t)
                     const p00 = raw(x, y, 0),     p10 = raw(x + 1, y, 0);
@@ -42143,8 +42143,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             if (!type) continue;
                             // Wände/Ecken dürfen Figuren verdecken, aber nur dort, wo sie wirklich vorne/seitlich liegen.
                             if (type === 'wall') {
-                                const isFrontOrSide = (y === mapRows - 1) || (x === 0) || (x === mapCols - 1);
-                                if (!isFrontOrSide) continue;
+                                // v7.17: Die vorderen Außenwände sind nur noch flache Sockel –
+                                // sie verdecken nichts mehr und brauchen keinen Occluder.
+                                if (y === mapRows - 1 || x === mapCols - 1) continue;
                             }
                             // PATCH E: echte Iso-Wand statt flachem CSS-Sechseck
                             const iso = isoWallSvg(x, y, type);
@@ -42352,24 +42353,32 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             };
                             const items=[]; for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)items.push({x,y,tile:map[y]?.[x]||0,d:x+y}); items.sort((a,b)=>a.d-b.d||a.y-b.y||a.x-b.x);
                             for(const item of items){ 
-                                const {x,y,tile}=item, m=this.meta(tile), wall=m.name.includes('wall'), boundary=wall&&(x===0||y===0||x===cols-1||y===rows-1), h=wall?(boundary?1.02:.74):m.h; 
+                                const {x,y,tile}=item, m=this.meta(tile), wall=m.name.includes('wall'),
+                                      boundary=wall&&(x===0||y===0||x===cols-1||y===rows-1),
+                                      // v7.17: Die vorderen Außenwände (rechte Spalte / unterste Zeile)
+                                      // werden als flache Sockelleiste gezeichnet ("cut-away"). Vorher
+                                      // standen dort 1,02 hohe Blöcke und haben den halben Raum verdeckt.
+                                      frontEdge=(x===cols-1||y===rows-1),
+                                      sill=frontEdge&&(wall||m.name.includes('window')),
+                                      h=wall?(sill?.14:(boundary?.95:.74)):(sill?.14:m.h); 
                                 const p00=this.project(x,y,0), p10=this.project(x+1,y,0), p11=this.project(x+1,y+1,0), p01=this.project(x,y+1,0), 
                                       t00=this.project(x,y,h), t10=this.project(x+1,y,h), t11=this.project(x+1,y+1,h), t01=this.project(x,y+1,h); 
+                                const col=(face)=>sill?(face==='top'?'#5d7893':'#42596f'):fill(m,face,x,y);
                                 // v7.16: Schatten nur noch für Wände und hohe Möbel – vorher lag
                                 // unter jeder Kachel ein dunkler Fleck.
-                                if((wall || h>=.4) && (!wall || !isWall(x+1,y) || !isWall(x,y+1))) this.ellipse(g,(p00.x+p11.x)/2+8,(p00.y+p11.y)/2+10,wall?16:18,wall?5:6,'rgba(0,0,0,.2)',.4); 
+                                if(h>=.3 && (!wall || !isWall(x+1,y) || !isWall(x,y+1))) this.ellipse(g,(p00.x+p11.x)/2+8,(p00.y+p11.y)/2+10,wall?16:18,wall?5:6,'rgba(0,0,0,.2)',.4); 
                                 if(h>.09){ 
                                     if(!wall || !isWall(x,y+1)) {
-                                        this.poly(g,[t01,t11,p11,p01],fill(m,'side',x,y),1);
+                                        this.poly(g,[t01,t11,p11,p01],col('side'),1);
                                         if(!wall) this.poly(g,[t01,t11,p11,p01],'rgba(0,0,0,0.12)',1);
                                     }
                                     if(!wall || !isWall(x+1,y)) {
-                                        this.poly(g,[t10,t11,p11,p10],fill(m,'side',x,y),1);
+                                        this.poly(g,[t10,t11,p11,p10],col('side'),1);
                                         if(!wall) this.poly(g,[t10,t11,p11,p10],'rgba(0,0,0,0.2)',1);
                                     }
-                                    this.poly(g,[t00,t10,t11,t01],fill(m,'top',x,y),1);
+                                    this.poly(g,[t00,t10,t11,t01],col('top'),1);
                                 } else {
-                                    this.poly(g,[p00,p10,p11,p01],fill(m,'top',x,y),1);
+                                    this.poly(g,[p00,p10,p11,p01],col('top'),1);
                                 } 
                             }
                             this.cache.set(key,svg.innerHTML); if(this.cache.size>6)this.cache.delete(this.cache.keys().next().value); return true;
