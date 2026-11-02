@@ -37939,31 +37939,31 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 }
 
 
-                function canAccessBoss() {
-                    // Count total enemies that need to be defeated across all maps
+                function bvBossDoorProgress() {
+                    // v7.19: nutzt die zentrale Anwesenheits-/Gegner-Zaehlung.
+                    // Unbesiegte Gegner auf ALLEN Maps zaehlen als "noch da",
+                    // besiegte (defeatedEnemies) nicht mehr.
                     let totalEnemies = 0;
-                    let defeatedCount = 0;
-                    
-                    // Check all maps for enemies
-                    const mapsToCheck = ["flur", "buero", "zentrale", "kantine", "lager", "konferenz", "serverraum"];
-                    
-                    mapsToCheck.forEach(mapId => {
-                        const mapData = MAPS[mapId];
-                        if (mapData && mapData.npcs) {
-                            const enemies = mapData.npcs.filter(n => n.type === "enemy" && !n.isBoss);
-                            enemies.forEach(npc => {
-                                totalEnemies++;
-                                const key = `${mapId}_${npc.x}_${npc.y}_${npc.enemyId}`;
-                                if (defeatedEnemies.has(key)) {
-                                    defeatedCount++;
-                                }
-                            });
-                        }
+                    let aliveCount = 0;
+                    bvEnemyMaps().forEach(mapId => {
+                        const all = (MAPS[mapId]?.npcs || []).filter(n => n && n.type === "enemy" && !n.isBoss);
+                        totalEnemies += all.length;
+                        aliveCount += bvAliveEnemies(mapId).length;
                     });
-                    
-                    // Require at least 10 enemies defeated to enter boss room
+                    const defeatedCount = Math.max(0, totalEnemies - aliveCount);
                     const minRequired = Math.min(10, totalEnemies);
-                    return defeatedCount >= minRequired;
+                    return {
+                        total: totalEnemies,
+                        defeated: defeatedCount,
+                        alive: aliveCount,
+                        required: minRequired,
+                        remaining: Math.max(0, minRequired - defeatedCount)
+                    };
+                }
+
+                function canAccessBoss() {
+                    // Mindestens 10 Gegner (ueber alle Maps) besiegen, um ins Chefbüro zu kommen.
+                    return bvBossDoorProgress().remaining === 0;
                 }
 
                 function openBadEndingWarning(doorId) {
@@ -38046,11 +38046,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         if (door.from === currentMapId && ((door.fromX === x && door.fromY === y) || hitsExtra)) {
                             if (door.badEnding) { openBadEndingWarning(doorId); return; }
                             if (door.requiresBossKey && !canAccessBoss()) {
-                                const remaining = (MAPS.flur?.npcs?.filter(n => {
-                                    if (n.type !== "enemy" || n.isBoss) return false;
-                                    const key = `flur_${n.x}_${n.y}_${n.enemyId}`;
-                                    return !defeatedEnemies.has(key);
-                                }) || []).length;
+                                // v7.19: gleiche Rechnung wie canAccessBoss() – ueber ALLE Maps,
+                                // damit die Meldung nicht "0 Gegner" sagt, waehrend die Tuer zu bleibt.
+                                const remaining = bvBossDoorProgress().remaining;
                                 showMessage(`Die Tür ist verschlossen! Besiege noch ${remaining} Gegner.`, "🚪 Tür", "🚪");
                                 return;
                             }
@@ -38414,7 +38412,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 if (mapData.npcs) {
                                     mapData.npcs.forEach(npc => {
                                         if (npc.type === "enemy" && !npc.isBoss) {
-                                            const enemyKey = `${mapId}_${npc.x}_${npc.y}_${npc.enemyId || 'enemy'}`;
+                                            const enemyKey = bvEnemyKey(mapId, npc);
                                             if (!defeatedEnemies.has(enemyKey)) {
                                                 defeatedEnemies.add(enemyKey);
                                                 killedCount++;
@@ -41535,6 +41533,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     overlay.innerHTML = '<div class="debug-title">MAP DEBUG</div>'
                         + `<div class="debug-line"><span>Map</span><b>${currentMapId}</b></div>`
                         + `<div class="debug-line"><span>NPCs</span><b>${npcs.length}</b></div>`
+                        + `<div class="debug-line"><span>Gegner offen</span><b>${npcs.filter(n=>n.type==='enemy').length}</b></div>`
                         + `<div class="debug-line"><span>Kisten</span><b>${currentChests.filter(c=>!c.opened).length}</b></div>`
                         + `<div class="debug-line"><span>Player</span><b>${player.x}/${player.y}</b></div>`
                         + `<div class="debug-line"><span>Cam</span><b>${Math.round(cameraX)}/${Math.round(cameraY)}</b></div>`
@@ -41549,6 +41548,66 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     if (typeof logCheat === 'function') logCheat('Map Low Quality: ' + (MAP_LOW_QUALITY ? 'AN' : 'AUS'), 'info');
                 }
 
+                // ============================================================
+                // v7.19 – NPC-ANWESENHEIT (zentral)
+                // ------------------------------------------------------------
+                // Eine einzige Stelle entscheidet, wer gerade "da ist":
+                //   * GEGNER: unbesiegte Gegner zaehlen IMMER als anwesend –
+                //     auch wenn sie keine Arbeitszeiten haben. Besiegte Gegner
+                //     (defeatedEnemies) sind weg. Der Key wird ausschliesslich
+                //     ueber bvEnemyKey() gebaut, damit Laden/Speichern, Kampf-
+                //     Ende, Cheats und Boss-Tuer dieselben Schluessel nutzen.
+                //   * NPCs: hours:[von,bis] -> nur innerhalb der Schicht.
+                // Geprueft wird beim Map-Wechsel/Laden – niemand verschwindet
+                // mitten im Gespraech oder Kampf.
+                // ============================================================
+                function bvEnemyKey(mapId, npc) {
+                    const mid = mapId || currentMapId;
+                    return `${mid}_${npc.x}_${npc.y}_${npc.enemyId}`;
+                }
+
+                function bvNpcIsPresent(npc, mapId) {
+                    if (!npc) return false;
+                    if (npc.type === "enemy") {
+                        // Besiegt? Dann nicht mehr anwesend.
+                        if (defeatedEnemies.has(bvEnemyKey(mapId, npc))) return false;
+                        // Unbesiegte Gegner sind anwesend – unabhaengig von der Uhrzeit.
+                        return true;
+                    }
+                    if (npc.hours && window.BVNight && typeof window.BVNight.npcHoursActive === "function"
+                        && !window.BVNight.npcHoursActive(npc.hours)) return false;
+                    return true;
+                }
+
+                function bvMapNpcsPresent(mapId) {
+                    const mapData = MAPS[mapId];
+                    if (!mapData || !Array.isArray(mapData.npcs)) return [];
+                    return mapData.npcs.filter(n => bvNpcIsPresent(n, mapId));
+                }
+
+                function bvAliveEnemies(mapId) {
+                    return bvMapNpcsPresent(mapId).filter(n => n.type === "enemy" && !n.isBoss);
+                }
+
+                // Alle Maps mit Gegnern (fuer Boss-Tuer-Rechnung/Anzeige)
+                function bvEnemyMaps() {
+                    return Object.keys(MAPS).filter(id => Array.isArray(MAPS[id]?.npcs)
+                        && MAPS[id].npcs.some(n => n && n.type === "enemy" && !n.isBoss));
+                }
+
+                window.BVNpcPresence = {
+                    isPresent: (npc, mapId) => bvNpcIsPresent(npc, mapId),
+                    enemyKey: (mapId, npc) => bvEnemyKey(mapId, npc),
+                    presentOnMap: (mapId) => bvMapNpcsPresent(mapId),
+                    aliveEnemies: (mapId) => bvAliveEnemies(mapId),
+                    aliveEnemyCount: (mapId) => bvAliveEnemies(mapId).length,
+                    isAvailable: (name, mapId) => {
+                        const defs = MAPS[mapId]?.npcs || [];
+                        const def = defs.find(n => n && n.name === name);
+                        return def ? bvNpcIsPresent(def, mapId) : true;
+                    }
+                };
+
                 function actuallyLoadMap(mapId) {
                     currentMapId = mapId;
                     const mapData = MAPS[mapId];
@@ -41559,18 +41618,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     currentDecos = mapData.decos ? JSON.parse(JSON.stringify(mapData.decos)) : [];
                     currentChests = mapData.chests ? JSON.parse(JSON.stringify(mapData.chests)) : [];
 
-                    npcs = JSON.parse(JSON.stringify(mapData.npcs)).filter(npc => {
-                        if (npc.type === "enemy") {
-                            return !defeatedEnemies.has(`${mapId}_${npc.x}_${npc.y}_${npc.enemyId}`);
-                        }
-                        // v7.17 DIENSTPLAN: NPC mit Arbeitszeiten (hours: [von, bis])
-                        // nur spawnen, wenn die Schicht-Uhr im Fenster liegt.
-                        // Die Pruefung passiert bewusst NUR beim Map-Wechsel/Laden —
-                        // niemand verschwindet mitten im Gespraech oder Kampf.
-                        if (npc.hours && window.BVNight && typeof window.BVNight.npcHoursActive === "function"
-                            && !window.BVNight.npcHoursActive(npc.hours)) return false;
-                        return true;
-                    });
+                    // v7.19: EINE zentrale Anwesenheits-Pruefung (bvNpcIsPresent) –
+                    // Gegner zaehlen mit (unbesiegt = da, besiegt = weg),
+                    // NPCs mit hours nur innerhalb der Schicht.
+                    // Die Pruefung passiert bewusst NUR beim Map-Wechsel/Laden —
+                    // niemand verschwindet mitten im Gespraech oder Kampf.
+                    npcs = JSON.parse(JSON.stringify(mapData.npcs)).filter(npc => bvNpcIsPresent(npc, mapId));
 
                     sanitizeMapRuntimeEntities();
 
@@ -49071,7 +49124,9 @@ function performSkill(skillId) {
 
                     const npc = currentEnemy.npcRef;
                     if (npc && typeof npc.x === "number" && typeof npc.y === "number" && npc.enemyId && !currentEnemy.isEditorTest) {
-                        defeatedEnemies.add(`${currentMapId}_${npc.x}_${npc.y}_${npc.enemyId}`);
+                        // v7.19: Key ueber die zentrale Anwesenheits-Logik (identisches Format,
+                        // aber nur EINE Stelle fuer "wer ist noch da").
+                        defeatedEnemies.add(bvEnemyKey(currentMapId, npc));
 
                         const npcIdx = npcs.findIndex(n => n.x === npc.x && n.y === npc.y && n.enemyId === npc.enemyId);
                         if (npcIdx > -1) npcs.splice(npcIdx, 1);
@@ -58501,9 +58556,79 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         if (t.type === 'entity' && typeof bridge.focusEntity === 'function') bridge.focusEntity(t.name, snap);
     }
 
+    // ============================================================
+    // v7.19 – CUTSCENE-DIENSTPLAN
+    // ------------------------------------------------------------
+    // Cutscenes spielen nur mit Personal, das laut Schicht-Uhr gerade da
+    // ist. Beim Start wird die Anwesenheit EINMAL eingefroren (niemand
+    // verschwindet mitten in der Szene), danach werden Schritte von
+    // abwesenden NPCs automatisch übersprungen.
+    // Reine Sprechrollen (Name kommt in den Map-Daten nicht vor) bleiben
+    // unberührt; ein Step kann mit { alwaysPlay: true } die Prüfung umgehen.
+    // ============================================================
+    let scheduleSnapshot = null;
+
+    function scheduleActorAvailable(name) {
+        if (!name || name === 'player' || name === 'System') return true;
+        if (scheduleSnapshot && scheduleSnapshot.has(name)) return scheduleSnapshot.get(name);
+        const presence = window.BVNpcPresence;
+        const mapId = rt().currentMapId;
+        if (presence && typeof presence.isAvailable === 'function') return presence.isAvailable(name, mapId);
+        return true;
+    }
+
+    function freezeScheduleSnapshot() {
+        scheduleSnapshot = new Map();
+        const presence = window.BVNpcPresence;
+        const mapId = rt().currentMapId;
+        const defs = (window.MAPS && window.MAPS[mapId] && window.MAPS[mapId].npcs) || [];
+        defs.forEach(def => {
+            if (!def || !def.name || scheduleSnapshot.has(def.name)) return;
+            const present = (presence && typeof presence.isPresent === 'function')
+                ? presence.isPresent(def, mapId)
+                : true;
+            scheduleSnapshot.set(def.name, present);
+        });
+    }
+
+    function cutsceneActorNames(step) {
+        const names = [];
+        if (!step) return names;
+        if (step.speaker) names.push(step.speaker);
+        if (step.focus) names.push(step.focus);
+        if (Array.isArray(step.move)) {
+            step.move.forEach(m => {
+                if (!m) return;
+                if (m.entity) names.push(m.entity);
+                if (m.to && m.to.nearNpc) names.push(m.to.nearNpc);
+            });
+        }
+        return Array.from(new Set(names.filter(n => n && n !== 'player' && n !== 'System')));
+    }
+
+    function stepBlockedBySchedule(step) {
+        if (!step || step.alwaysPlay) return false;
+        return cutsceneActorNames(step).some(name => !scheduleActorAvailable(name));
+    }
+
+    function indexAfterSkippedStep(step, from) {
+        if (step && step.nextId) {
+            const ni = steps.findIndex(st => st && st.id === step.nextId);
+            if (ni >= 0) return ni;
+        }
+        return (typeof from === 'number' ? from : index) + 1;
+    }
+
     async function renderStep() {
         const myToken = ++renderToken;
-        const step = steps[index];
+        let step = steps[index];
+        // v7.19 CUTSCENE-DIENSTPLAN: Schritte mit abwesendem Personal überspringen.
+        let skipGuard = 0;
+        while (step && stepBlockedBySchedule(step) && skipGuard++ < (steps.length + 2)) {
+            console.log('[BV Cutscene] Schritt übersprungen (nicht im Dienst): ' + (step.speaker || step.focus || 'Szene'));
+            index = indexAfterSkippedStep(step, index);
+            step = steps[index];
+        }
         if (!step) { renderBusy = false; return end(); }
         renderBusy = true;
         textReady = false;
@@ -58567,7 +58692,19 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         renderToken++;
         const state = rt().gameState || 'MAP';
         previousState = ['TRANSITION','BATTLE_INTRO','MESSAGE','CHOICE','CUTSCENE'].includes(state) ? 'MAP' : state;
-        steps = sceneSteps || []; index = 0; playing = true;
+        steps = sceneSteps || []; index = 0;
+        // v7.19: Anwesenheit zum Szenenstart einfrieren …
+        freezeScheduleSnapshot();
+        // … und wenn kein einziger Schritt mit anwesendem Personal spielbar ist,
+        // startet die Szene gar nicht erst (Game-State bleibt sauber).
+        if (!steps.some(st => !stepBlockedBySchedule(st))) {
+            console.log('[BV Cutscene] Szene komplett ohne anwesendes Personal – nicht gestartet.');
+            scheduleSnapshot = null;
+            steps = []; index = 0;
+            if (rt().gameState === 'CUTSCENE' && typeof window.setBvGameState === 'function') window.setBvGameState('MAP');
+            return false;
+        }
+        playing = true;
         const ov = ensureOverlay();
         ov.classList.remove('closing', 'textbox-visible', 'textbox-moving', 'textbox-fading-out', 'boss-cutscene', 'skipping');
         if (String(id || '').toLowerCase().includes('boss')) ov.classList.add('boss-cutscene');
