@@ -32212,19 +32212,26 @@ body.bv-settings-particles-off .title-canvas-bg {
     background: linear-gradient(110deg, rgba(48, 26, 30, .82), rgba(24, 12, 16, .84)) !important;
 }
 #rpg-battle-screen .skill-row.no-mp:hover {
-    transform: none !important;
+    /* v7.19: transform/box-shadow hier bewusst OHNE !important – CSS-Animationen
+       verlieren gegen !important-Deklarationen, dadurch war das Schütteln
+       unsichtbar, solange die Maus auf der Zeile lag. */
+    transform: none;
     border-color: rgba(248, 113, 113, .42) !important;
     background: linear-gradient(110deg, rgba(56, 30, 34, .88), rgba(28, 14, 18, .9)) !important;
-    box-shadow: none !important;
+    box-shadow: none;
 }
 #rpg-battle-screen .skill-row.no-mp .skill-cost { color: #fca5a5 !important; }
-#rpg-battle-screen .skill-row.no-mp-shake { animation: bvSkillNoMpShake .42s ease both !important; }
+#rpg-battle-screen .skill-row.no-mp-shake {
+    position: relative !important;
+    animation: bvSkillNoMpShake .46s ease both !important;
+}
 @keyframes bvSkillNoMpShake {
-    0%, 100% { transform: translateX(0); }
-    20%      { transform: translateX(-6px); }
-    40%      { transform: translateX(5px); }
-    60%      { transform: translateX(-4px); }
-    80%      { transform: translateX(3px); }
+    0%, 100% { transform: translateX(0); box-shadow: 0 0 0 rgba(248, 113, 113, 0); }
+    15%      { transform: translateX(-7px); box-shadow: 0 0 14px rgba(248, 113, 113, .55); }
+    35%      { transform: translateX(6px); }
+    55%      { transform: translateX(-5px); }
+    75%      { transform: translateX(3px); }
+    90%      { transform: translateX(-2px); }
 }
 #rpg-battle-screen .submenu-back {
     flex: 0 0 auto !important;
