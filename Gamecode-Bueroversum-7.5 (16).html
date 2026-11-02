@@ -36404,6 +36404,61 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         ]
                     },
 
+                    stiftedieb: { 
+                        name: "Stifte-Dieb", sprite: "🖊️", hp: 42, atk: 10, def: 2, gold: 26, exp: 16, level: 2, 
+                        vsMessage: "Oh, coole Stifte hast du da... Waren jedenfalls MAL deine!",
+                        skills: [
+                            { name: "Kuli-Wurf", icon: "🖊️", dmgMult: 1.3, effect: "none", chance: 0.35, desc: "Bewirft dich mit geklauten Stiften!" },
+                            { name: "Taschen-Trick", icon: "🪄", dmgMult: 0.9, effect: "atkDown", chance: 0.25, desc: "Klaut deine Konzentration!" },
+                            { name: "Textmarker-Blender", icon: "🖍️", dmgMult: 1.4, effect: "stun", chance: 0.2, desc: "Neon-Gelb direkt in die Augen!" }
+                        ]
+                    },
+                    stechuhr: { 
+                        name: "Stechuhr-Zombie", sprite: "🕰️", hp: 55, atk: 12, def: 3, gold: 34, exp: 21, level: 3, 
+                        vsMessage: "Stechen... stechen... ALLE müssen stechen! Und du bist ZU SPÄT!",
+                        skills: [
+                            { name: "Zeitstempel", icon: "🕰️", dmgMult: 1.3, effect: "none", chance: 0.35, desc: "Prägt dir die Uhrzeit ein!" },
+                            { name: "Überstunden-Fluch", icon: "🌙", dmgMult: 1.0, effect: "poison", chance: 0.25, desc: "Die Müdigkeit setzt ein!" },
+                            { name: "Pausen-Klau", icon: "⏳", dmgMult: 1.4, effect: "stun", chance: 0.2, desc: "Deine Pause wurde gestrichen!" }
+                        ]
+                    },
+                    fax_phantom: { 
+                        name: "Fax-Phantom", sprite: "📠", hp: 48, atk: 11, def: 3, gold: 30, exp: 19, level: 2, 
+                        vsMessage: "*piep* ... *piep* ... FAX EINGEHEND: DEINE NIEDERLAGE!",
+                        skills: [
+                            { name: "Wählton-Jammer", icon: "📞", dmgMult: 1.2, effect: "stun", chance: 0.3, desc: "Dieses endlos nervige Freizeichen!" },
+                            { name: "Thermopapier-Peitsche", icon: "🧾", dmgMult: 1.4, effect: "none", chance: 0.35, desc: "Eine Peitsche aus Endlos-Papier!" },
+                            { name: "LETZTE SEITE FEHLT", icon: "❓", dmgMult: 1.6, effect: "none", chance: 0.15, desc: "Bitte erneut senden!" }
+                        ]
+                    },
+                    klima_kaempfer: { 
+                        name: "Klima-Krieger", sprite: "🌡️", hp: 58, atk: 13, def: 4, gold: 38, exp: 24, level: 3, 
+                        vsMessage: "HEISS? KALT? FÜR MICH IST NIE IRGENDWAS RICHTIG!",
+                        skills: [
+                            { name: "Eisige Zugluft", icon: "🥶", dmgMult: 1.2, effect: "poison", chance: 0.25, desc: "Du holst dir eine Erkältung!" },
+                            { name: "Hitzewelle", icon: "🔥", dmgMult: 1.5, effect: "none", chance: 0.3, desc: "Sauna-Modus aktiviert!" },
+                            { name: "Thermostat-Hickhack", icon: "🌡️", dmgMult: 0.9, effect: "atkDown", chance: 0.25, desc: "Rauf, runter, rauf, runter... dir wird schwindelig!" }
+                        ]
+                    },
+                    stuhl_berserker: { 
+                        name: "Bürostuhl-Berserker", sprite: "🪑", hp: 70, atk: 15, def: 4, gold: 48, exp: 30, level: 3, 
+                        vsMessage: "WRRROOM! Diese Flure gehören jetzt den Rollen!",
+                        skills: [
+                            { name: "Drehstuhl-Karussell", icon: "🎡", dmgMult: 1.35, effect: "stun", chance: 0.3, desc: "Schleudert dich im Kreis!" },
+                            { name: "Rollen-Ramme", icon: "🪑", dmgMult: 1.55, effect: "none", chance: 0.3, desc: "Volle Fahrt voraus!" },
+                            { name: "Gasdruck-Feder", icon: "💨", dmgMult: 1.15, effect: "defDown", chance: 0.2, desc: "Katapultiert dich aus der Balance!" }
+                        ]
+                    },
+                    mahnung: { 
+                        name: "Mahnungs-Moloch", sprite: "🧾", hp: 85, atk: 17, def: 6, gold: 65, exp: 42, level: 5, 
+                        vsMessage: "Sehr geehrte*r Spieler*in, hiermit mahnen wir höflichst Ihre Niederlage an.",
+                        skills: [
+                            { name: "Erste Mahnung", icon: "✉️", dmgMult: 1.3, effect: "none", chance: 0.35, desc: "Freundliche Zahlungserinnerung!" },
+                            { name: "Zweite Mahnung", icon: "📮", dmgMult: 1.6, effect: "defDown", chance: 0.25, desc: "Jetzt wird es ernster!" },
+                            { name: "Inkasso-Verfahren", icon: "⚖️", dmgMult: 2.1, effect: "stun", chance: 0.15, desc: "Jetzt kommt das Inkasso-Büro!" }
+                        ]
+                    },
+
                     // ===== ARENA: eigene Gegner statt Ersatz-EnemyIds =====
                     stoersignal: {
                         name: "Störsignal", sprite: "📡", hp: 58, atk: 13, def: 3, gold: 38, exp: 24, level: 3,
@@ -36826,6 +36881,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             { x: 15, y: 15, type: "enemy", sprite: "📧", name: "Spam-Mail", enemyId: "spam" },
                             { x: 15, y: 5, type: "enemy", sprite: "📉", name: "Excel-Fehler", enemyId: "excel" },
                             { x: 5, y: 15, type: "enemy", sprite: "🤷", name: "Praktikant", enemyId: "praktikant", wander: true },
+                            { x: 8, y: 16, type: "enemy", sprite: "🪑", name: "Bürostuhl-Berserker", enemyId: "stuhl_berserker", wander: true },
+                            { x: 14, y: 3, type: "talk", sprite: "🧓", name: "Rentner Rudi", role: "Flur-Legende", dialog: ["Na, junger Hüpfer! Rudi hier – 40 Jahre Flur-Erfahrung. 🧓", "Früher war hier alles voller Papierberge. Dann kam die Digitalisierung... Die Berge wurden kleiner. Die Probleme nicht. 😄", "Pass vor den Drehstühlen auf dem Flur auf. Manche fahren noch immer ihre Runden. Bürostuhlrennen nennt man das.", "Und falls du ins Archiv kommst: Grüß das alte Faxgerät von mir. Es grüßt manchmal zurück. 📠"], wander: true }
                         ],
                         start: { x: 5, y: 9 }
                     },
@@ -36877,7 +36934,10 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             { x: 5, y: 5, type: "talk", sprite: "☕", name: "Mira", role: "Pausencoach", dialog: ["Willkommen im Pausenraum.", "Hier sammelt man Energie, bevor das Büro zurückschlägt.", "Tipp: Mittags fühlen sich Pausen besonders gut an."], wander: true },
                             { x: 12, y: 5, type: "talk", sprite: "🧘", name: "Ruhiger Ralf", role: "Entspannung", dialog: ["Atme ein... und ignorier die ungelesenen Mails.", "Eine kurze Pause kann stärker sein als ein Skill."], wander: true },
                             { x: 9, y: 9, type: "shop", sprite: "🍪", name: "Snack-Sandra", role: "Snack-Bar", dialog: ["Kekse, Kaffee, Nervennahrung!", "Pausenraum-Snacks sind offiziell motivierend."] },
-                            { x: 14, y: 8, type: "enemy", sprite: "🥱", name: "Mittagstief", enemyId: "deadline", wander: true }
+                            { x: 14, y: 8, type: "enemy", sprite: "🥱", name: "Mittagstief", enemyId: "deadline", wander: true },
+                            { x: 2, y: 8, type: "enemy", sprite: "🖊️", name: "Stifte-Dieb", enemyId: "stiftedieb", wander: true },
+                            { x: 16, y: 8, type: "enemy", sprite: "🕰️", name: "Stechuhr-Zombie", enemyId: "stechuhr" },
+                            { x: 7, y: 2, type: "talk", sprite: "🧔", name: "Philosoph Otto", role: "Büro-Philosoph", dialog: ["Ah, ein Wanderer zwischen den Welten... den Kaffee-Welten. 🧔", "Ich bin Otto. Seit 12 Jahren erforsche ich die Frage: Ist die Pause heilig? Spoiler: Ja.", "Wer den Kaffee ehrt, ehrt auch sich selbst.", "Und gratis dazu: Der wahre Endgegner ist nie der Chef. Es ist immer. Der. Drucker."], wander: true }
                         ],
                         start: { x: 9, y: 12 }
                     },
@@ -37056,7 +37116,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         decos: [],
                         chests: [{ x: 22, y: 2, type: "rare" }, { x: 22, y: 13, type: "rare" }, { x: 6, y: 7, type: "normal" }],
                         npcs: [
-                            { x: 10, y: 7, type: "talk", sprite: "🤖", name: "Server-Admin", role: "IT", dialog: ["*BEEP BOOP*", "Server-Status: Online."] },
+                            { x: 10, y: 7, type: "talk", sprite: "🤖", name: "Server-Admin", role: "IT", dialog: ["*BEEP BOOP* 🤖", "Server-Status: Online. Kabel-Status: ... KRAKE.", "Die Kabelsalat-Krake hat sich in Gang 4 eingenistet. Meine so schön sortierten Kabel... 😢"], choiceId: "server_quest", choicePrompt: "Soll ich die Krake vertreiben?" },
                             { x: 6, y: 4, type: "enemy", sprite: "🐛", name: "Kritischer Bug", enemyId: "bug" },
                             { x: 14, y: 10, type: "enemy", sprite: "🔄", name: "Updates", enemyId: "update" },
                             { x: 18, y: 7, type: "enemy", sprite: "🚨", name: "Fehlalarm", enemyId: "feueralarm" },
@@ -37088,7 +37148,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         npcs: [
                             { x: 10, y: 5, type: "talk", sprite: "👔", name: "Manager Stefan", role: "Management", dialog: ["Ah, ein Teilnehmer!", "Wir besprechen hier KPIs."] },
                             { x: 8, y: 7, type: "enemy", sprite: "📊", name: "Endlos-Meeting", enemyId: "endlos_meeting" },
-                            { x: 13, y: 7, type: "enemy", sprite: "📑", name: "PowerPoint-Terror", enemyId: "powerpoint_terror" }
+                            { x: 13, y: 7, type: "enemy", sprite: "📑", name: "PowerPoint-Terror", enemyId: "powerpoint_terror" },
+                            { x: 17, y: 8, type: "enemy", sprite: "🧾", name: "Mahnungs-Moloch", enemyId: "mahnung" }
                         ],
                         start: { x: 7, y: 11 }
                     },
@@ -37115,7 +37176,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         npcs: [
                             { x: 3, y: 6, type: "talk", sprite: "👩‍💼", name: "Archiv-Anna", role: "Archiv", dialog: ["Pssst… Willkommen im Archiv.", "Hier hat sich eine Akten-Motte eingenistet."], choiceId: "archiv_quest", choicePrompt: "Hilfst du im Archiv?" },
                             { x: 18, y: 6, type: "enemy", sprite: "🦋", name: "Akten-Motte", enemyId: "akten_motte" },
-                            { x: 12, y: 10, type: "enemy", sprite: "📄", name: "Papierstapel", enemyId: "papierstapel" }
+                            { x: 12, y: 10, type: "enemy", sprite: "📄", name: "Papierstapel", enemyId: "papierstapel" },
+                            { x: 7, y: 3, type: "enemy", sprite: "📠", name: "Fax-Phantom", enemyId: "fax_phantom" },
+                            { x: 12, y: 3, type: "talk", sprite: "👩‍🏫", name: "Chronik-Lisa", role: "Firmenchronik", dialog: ["Willkommen im Archiv. Ich bin Lisa, Hüterin der Firmenchronik. 📚", "Wusstest du, dass die Kabelsalat-Krake seit 1998 im Serverraum lebt? Damals nannte jemand das Kabelgewirr \"schön\". Ein Fehler.", "Die Akten-Motte kam übrigens mit Lieferung 47-B. Chronik, Band 12, Seite 3.", "Und das alte Faxgerät dort drüben? Es wacht manchmal auf. Rudi hat dich gewarnt, oder? 📠", "Alles hier hat eine Geschichte. Manche beißen. 🦋"] }
                         ],
                         start: { x: 1, y: 6 }
                     },
@@ -37142,7 +37205,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         npcs: [
                             { x: 15, y: 6, type: "talk", sprite: "👷", name: "Hausmeister Uwe", role: "Facility", dialog: ["Die Antenne spinnt schon wieder.", "Auf dem Dach tauchen manchmal Störsignale auf."], choiceId: "dach_quest", choicePrompt: "Kann ich helfen?" },
                             { x: 7, y: 6, type: "enemy", sprite: "📡", name: "Störsignal", enemyId: "stoersignal" },
-                            { x: 11, y: 9, type: "enemy", sprite: "💨", name: "Windstoß", enemyId: "windstoss" }
+                            { x: 11, y: 9, type: "enemy", sprite: "💨", name: "Windstoß", enemyId: "windstoss" },
+                            { x: 13, y: 3, type: "enemy", sprite: "🌡️", name: "Klima-Krieger", enemyId: "klima_kaempfer" },
+                            { x: 17, y: 8, type: "talk", sprite: "👷‍♀️", name: "Technikerin Jule", role: "Haustechnik", dialog: ["Puh... Ich bin Jule, Haustechnik. 👷‍♀️", "Der Klima-Krieger da vorne eskaliert komplett. Eiskalt oder Sauna – nichts dazwischen!", "Keiner traut sich mehr raus auf die Terrasse. Selbst Hausmeister Uwe zittert. Naja... vor Kälte."], choiceId: "klima_quest", choicePrompt: "Hilfst du mir mit dem Klima-Krieger?" }
                         ],
                         start: { x: 18, y: 6 }
                     },
@@ -42426,6 +42491,10 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         queueMessage(npc.choicePrompt || "Hilfst du im Archiv?", npc.name, npc.sprite, () => openArchivQuestChoice(npc));
                     } else if (npc.choiceId === "dach_quest") {
                         queueMessage(npc.choicePrompt || "Kann ich helfen?", npc.name, npc.sprite, () => openDachQuestChoice(npc));
+                    } else if (npc.choiceId === "klima_quest") {
+                        queueMessage(npc.choicePrompt || "Hilfst du mir mit dem Klima-Krieger?", npc.name, npc.sprite, () => openKlimaQuestChoice(npc));
+                    } else if (npc.choiceId === "server_quest") {
+                        queueMessage(npc.choicePrompt || "Soll ich die Krake vertreiben?", npc.name, npc.sprite, () => openServerQuestChoice(npc));
                     }
                 }
 
@@ -42536,7 +42605,14 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     { cat: 'Technik', d: 3, q: 'Welches Protokoll verschlüsselt den Besuch einer Webseite?',
                       answer: 'HTTPS', wrong: ['FTP', 'HTTP', 'SMTP'], fact: 'Das S steht für Secure.' },
                     { cat: 'Kopfrechnen', d: 3, q: 'Drei Kollegen zahlen je 8,50 € für Pizza, einer 11 €. Was kostet alles zusammen?',
-                      answer: '36,50 €', wrong: ['34,50 €', '38,00 €', '33,50 €'], fact: '3 × 8,50 € = 25,50 € plus 11 € = 36,50 €.' }
+                      answer: '36,50 €', wrong: ['34,50 €', '38,00 €', '33,50 €'], fact: '3 × 8,50 € = 25,50 € plus 11 € = 36,50 €.' },
+
+                    { cat: 'BüroVersum', d: 2, q: 'Welches Wesen verknotet seit 1998 die Kabel im Serverraum?',
+                      answer: 'Die Kabelsalat-Krake', wrong: ['Das Fax-Phantom', 'Der Papierstapel', 'Die Akten-Motte'], fact: 'Gang 4 war seitdem nie mehr derselbe. Chronik-Lisa weiß alles darüber.' },
+                    { cat: 'BüroVersum', d: 2, q: 'Warum meidet das Team derzeit die Dachterrasse?',
+                      answer: 'Der Klima-Krieger flippt zwischen Eiskalt und Sauna', wrong: ['Dort regnet es immer', 'Das WLAN ist dort zu stark', 'Der Chef blockiert den Grill'], fact: 'Technikerin Jule sucht jemanden, der den Klima-Krieger besiegt.' },
+                    { cat: 'BüroVersum', d: 3, q: 'Wovor warnt Rentner Rudi auf dem Hauptflur?',
+                      answer: 'Vor Drehstühlen, die Rennen fahren', wrong: ['Vor leeren Kaffeemaschinen', 'Vor ständig klingelnden Faxgeräten', 'Vor laufenden Servern'], fact: 'Bürostuhlrennen sind kein Mythos - frag den Bürostuhl-Berserker.' }
                 ];
 
                 function shuffleArray(arr) {
@@ -43607,7 +43683,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         { label: "Später", value: "later", hint: "✖" }
                     ], npc.name, npc.sprite, (val) => {
                         player.questState = player.questState || {};
-                        const done = defeatedEnemies.has("archiv_18_6_spam");
+                        const done = defeatedEnemies.has("archiv_18_6_akten_motte") || defeatedEnemies.has("archiv_18_6_spam");
                         if (val === "info") { showMessage("Suche die Akten-Motte im Archiv und besiege sie. Danach gibt es eine Belohnung.", npc.name, npc.sprite); return; }
                         if (val === "check" && done && !player.questState.archivMotteReward) {
                             player.questState.archivMotteReward = true;
@@ -43631,7 +43707,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         { label: "Später", value: "later", hint: "✖" }
                     ], npc.name, npc.sprite, (val) => {
                         player.questState = player.questState || {};
-                        const done = defeatedEnemies.has("dach_7_6_update");
+                        const done = defeatedEnemies.has("dach_7_6_stoersignal") || defeatedEnemies.has("dach_7_6_update");
                         if (val === "info") { showMessage("Auf der Dachterrasse schwirrt ein Störsignal herum. Besiege es, dann läuft die Verbindung wieder.", npc.name, npc.sprite); return; }
                         if (val === "check" && done && !player.questState.dachSignalReward) {
                             player.questState.dachSignalReward = true;
@@ -43645,6 +43721,55 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         } else if (val === "check") {
                             showMessage("Das Störsignal ist noch aktiv. Es ist irgendwo auf dem Dach.", npc.name, npc.sprite);
                         } else showMessage("Kein Stress. Aber die Antenne knistert weiter.", npc.name, npc.sprite);
+                    });
+                }
+
+                function openKlimaQuestChoice(npc) {
+                    if (typeof window.showChoice !== "function") return;
+                    window.showChoice("Der Klima-Krieger terrorisiert die Dachterrasse. Status prüfen?", [
+                        { label: "Quest prüfen", value: "check", hint: "🌡️" },
+                        { label: "Was tun?", value: "info", hint: "❓" },
+                        { label: "Später", value: "later", hint: "✖" }
+                    ], npc.name, npc.sprite, (val) => {
+                        player.questState = player.questState || {};
+                        const done = defeatedEnemies.has("dach_13_3_klima_kaempfer");
+                        if (val === "info") { showMessage("Der Klima-Krieger hockt oben auf der Dachterrasse, Nähe der Lampen. Besiege ihn, dann wird die Temperatur wieder erträglich.", npc.name, npc.sprite); return; }
+                        if (val === "check" && done && !player.questState.klimaReward) {
+                            player.questState.klimaReward = true;
+                            player.gold += 140;
+                            player.maxMp += 3;
+                            player.mp = player.maxMp;
+                            updateHUD();
+                            showMessage("Endlich! Angenehme 22 Grad. +140 Gold und +3 Max MP! 🌡️", npc.name, npc.sprite);
+                        } else if (val === "check" && done) {
+                            showMessage("Seit deinem Einsatz: perfektes Dach-Wetter. Danke dir!", npc.name, npc.sprite);
+                        } else if (val === "check") {
+                            showMessage("Es ist immer noch eiskalt... äh, zu warm... äh, BEIDES! Er lebt noch!", npc.name, npc.sprite);
+                        } else showMessage("Okay. Dann frieren wir eben weiter. Brrr.", npc.name, npc.sprite);
+                    });
+                }
+
+                function openServerQuestChoice(npc) {
+                    if (typeof window.showChoice !== "function") return;
+                    window.showChoice("Die Kabelsalat-Krake muss aus Gang 4 verschwinden. Status prüfen?", [
+                        { label: "Quest prüfen", value: "check", hint: "🐙" },
+                        { label: "Was tun?", value: "info", hint: "❓" },
+                        { label: "Später", value: "later", hint: "✖" }
+                    ], npc.name, npc.sprite, (val) => {
+                        player.questState = player.questState || {};
+                        const done = defeatedEnemies.has("serverraum_22_7_kabelsalat");
+                        if (val === "info") { showMessage("Die Krake lauert ganz rechts hinter dem letzten Server-Rack in Gang 4. Vorsicht: Sie würgt gern mit Kabeln!", npc.name, npc.sprite); return; }
+                        if (val === "check" && done && !player.questState.serverKrakeReward) {
+                            player.questState.serverKrakeReward = true;
+                            player.gold += 120;
+                            player.exp += 30;
+                            updateHUD();
+                            showMessage("Kabel wieder sortiert! *BEEP* Vielen Dank. +120 Gold, +30 EXP! 🤖", npc.name, npc.sprite);
+                        } else if (val === "check" && done) {
+                            showMessage("Serverraum: kabel-frei. Effizienz: 100 %. Danke!", npc.name, npc.sprite);
+                        } else if (val === "check") {
+                            showMessage("Die Krake lebt noch. Gang 4, ganz rechts!", npc.name, npc.sprite);
+                        } else showMessage("*BEEP BOOP* ... Die Kabel bleiben leider verknotet.", npc.name, npc.sprite);
                     });
                 }
 
@@ -58181,7 +58306,7 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
             status() {
                 const qs = ensureQuestState();
                 if (qs.archivMotteReward) return 'completed';
-                if (hasDefeated('archiv_18_6_spam')) return 'ready';
+                if (hasDefeated('archiv_18_6_akten_motte') || hasDefeated('archiv_18_6_spam')) return 'ready';
                 return 'available';
             },
             objective(status) {
@@ -58203,6 +58328,36 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
                 if (status === 'completed') return 'Signal ist stabil.';
                 if (status === 'ready') return 'Sprich mit Hausmeister Uwe für die Belohnung.';
                 return 'Besiege das Störsignal auf der Dachterrasse.';
+            }
+        },
+        {
+            id: 'server_krake', icon: '🐙', title: 'Krake im Serverraum', giver: 'Server-Admin • Serverraum',
+            desc: 'Eine Kabelsalat-Krake verknotet seit 1998 die Server-Kabel in Gang 4.', reward: '+120 Gold • +30 EXP',
+            status() {
+                const qs = ensureQuestState();
+                if (qs.serverKrakeReward) return 'completed';
+                if (hasDefeated('serverraum_22_7_kabelsalat')) return 'ready';
+                return 'available';
+            },
+            objective(status) {
+                if (status === 'completed') return 'Serverraum ist kabel-frei.';
+                if (status === 'ready') return 'Sprich mit dem Server-Admin für die Belohnung.';
+                return 'Besiege die Kabelsalat-Krake im Serverraum (Gang 4, hinter dem letzten Rack).';
+            }
+        },
+        {
+            id: 'klima_streit', icon: '🌡️', title: 'Klima-Streit auf dem Dach', giver: 'Technikerin Jule • Dachterrasse',
+            desc: 'Der Klima-Krieger macht die Dachterrasse zur Klimakammer – eiskalt oder Sauna.', reward: '+140 Gold • +3 Max MP',
+            status() {
+                const qs = ensureQuestState();
+                if (qs.klimaReward) return 'completed';
+                if (hasDefeated('dach_13_3_klima_kaempfer')) return 'ready';
+                return 'available';
+            },
+            objective(status) {
+                if (status === 'completed') return 'Das Dach hat wieder angenehme Temperaturen.';
+                if (status === 'ready') return 'Sprich mit Technikerin Jule für die Belohnung.';
+                return 'Besiege den Klima-Krieger auf der Dachterrasse.';
             }
         },
         {
@@ -61136,6 +61291,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
           check: function (ctx, p) { return p.questState && p.questState.archivMotteReward; } },
         { id: 'roof_hero', icon: '📡', title: 'Dach-Held', desc: 'Beseitige das Störsignal auf dem Dach.',
           check: function (ctx, p) { return p.questState && p.questState.dachSignalReward; } },
+        { id: 'kraken_baendiger', icon: '🐙', title: 'Kraken-Bändiger', desc: 'Vertreibe die Kabelsalat-Krake aus Gang 4 im Serverraum.',
+          check: function (ctx, p) { return p.questState && p.questState.serverKrakeReward; } },
+        { id: 'klima_mediator', icon: '🌡️', title: 'Klima-Mediator', desc: 'Beende den Klima-Streit auf der Dachterrasse.',
+          check: function (ctx, p) { return p.questState && p.questState.klimaReward; } },
         { id: 'explorer', icon: '🗺️', title: 'Büro-Veteran', desc: 'Besuche alle 12 Map-Bereiche.',
           check: function (ctx, p, def, chests, visited) { return (visited || 0) >= 12; } },
         { id: 'rich', icon: '💰', title: 'Reich', desc: 'Sammle 1000 Gold.',
