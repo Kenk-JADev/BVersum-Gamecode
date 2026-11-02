@@ -27234,234 +27234,6 @@ body.bv-settings-performance .title-light-rays {
 }
 
 /* ============================================================
-   ARENA FEATURE v7.8.2: Tages-/Schicht-System
-   ============================================================ */
-#bv-shift-hud {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(140,205,255,.28);
-    background: linear-gradient(145deg, rgba(10,22,46,.72), rgba(5,12,28,.62));
-    color: #dbeeff;
-    font-family: 'VT323', monospace;
-    font-size: .95rem;
-    box-shadow: 0 8px 20px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.08);
-    pointer-events: auto;
-}
-
-#bv-shift-hud .shift-icon { font-size: 1.05rem; }
-#bv-shift-hud .shift-text { white-space: nowrap; }
-#bv-shift-hud .shift-mini-bar {
-    width: 46px;
-    height: 5px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(0,0,0,.32);
-    border: 1px solid rgba(255,255,255,.08);
-}
-#bv-shift-hud .shift-mini-fill {
-    height: 100%;
-    width: var(--shift-progress, 0%);
-    border-radius: inherit;
-    background: linear-gradient(90deg, #4a9fff, #ffd166);
-    box-shadow: 0 0 10px rgba(255,209,102,.35);
-}
-
-#bv-shift-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 14;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity .8s ease, background .8s ease;
-    mix-blend-mode: soft-light;
-}
-
-#rpg-game-window.shift-morning #bv-shift-overlay {
-    opacity: .20;
-    background: linear-gradient(180deg, rgba(255,226,150,.30), rgba(74,159,255,.10));
-}
-#rpg-game-window.shift-midday #bv-shift-overlay {
-    opacity: .16;
-    background: radial-gradient(circle at 50% 10%, rgba(255,255,210,.45), rgba(255,220,120,.10) 42%, transparent 72%);
-}
-#rpg-game-window.shift-afternoon #bv-shift-overlay {
-    opacity: .22;
-    background: linear-gradient(180deg, rgba(255,170,80,.22), rgba(255,120,80,.12));
-}
-#rpg-game-window.shift-closing #bv-shift-overlay {
-    opacity: .28;
-    background: linear-gradient(180deg, rgba(80,70,180,.20), rgba(20,10,50,.32));
-}
-
-.bv-shift-toast {
-    position: absolute;
-    left: 50%;
-    top: 82px;
-    transform: translateX(-50%) translateY(-12px) scale(.96);
-    z-index: 100090;
-    pointer-events: none;
-    padding: 10px 16px;
-    border-radius: 14px;
-    border: 1px solid rgba(140,205,255,.34);
-    background: linear-gradient(145deg, rgba(5,12,28,.92), rgba(10,22,46,.88));
-    color: #e8f2ff;
-    font-family: 'VT323', monospace;
-    font-size: 1.08rem;
-    box-shadow: 0 14px 34px rgba(0,0,0,.42), 0 0 22px rgba(74,159,255,.16);
-    opacity: 0;
-    animation: bvShiftToastIn 2.25s cubic-bezier(.16,1,.36,1) forwards;
-}
-
-@keyframes bvShiftToastIn {
-    0% { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(.96); filter: blur(3px); }
-    12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); filter: blur(0); }
-    78% { opacity: 1; }
-    100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.98); filter: blur(2px); }
-}
-
-#rpg-menu-screen .shift-panel {
-    display: grid;
-    gap: 12px;
-    padding: 14px;
-}
-
-#rpg-menu-screen .shift-clock-card {
-    display: grid;
-    grid-template-columns: 62px 1fr auto;
-    gap: 12px;
-    align-items: center;
-    padding: 14px;
-    border-radius: 18px;
-    background:
-        radial-gradient(circle at 8% 0%, rgba(255,209,102,.16), transparent 38%),
-        linear-gradient(145deg, rgba(255,255,255,.075), rgba(0,0,0,.18));
-    border: 1px solid rgba(255,209,102,.18);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-}
-
-#rpg-menu-screen .shift-big-icon {
-    width: 58px;
-    height: 58px;
-    display: grid;
-    place-items: center;
-    border-radius: 18px;
-    font-size: 2.35rem;
-    background: rgba(0,0,0,.24);
-    border: 1px solid rgba(255,255,255,.12);
-}
-
-#rpg-menu-screen .shift-title {
-    margin: 0;
-    color: #fff;
-    font-size: 1.2rem;
-}
-
-#rpg-menu-screen .shift-subtitle {
-    margin-top: 3px;
-    color: rgba(210,230,255,.68);
-    font-size: .9rem;
-}
-
-#rpg-menu-screen .shift-day-pill {
-    padding: 7px 11px;
-    border-radius: 999px;
-    color: #ffd166;
-    background: rgba(255,209,102,.10);
-    border: 1px solid rgba(255,209,102,.26);
-    white-space: nowrap;
-}
-
-#rpg-menu-screen .shift-progress-card {
-    padding: 12px;
-    border-radius: 16px;
-    background: rgba(0,0,0,.18);
-    border: 1px solid rgba(255,255,255,.10);
-}
-
-#rpg-menu-screen .shift-progress-top {
-    display: flex;
-    justify-content: space-between;
-    color: rgba(230,240,255,.82);
-    font-size: .9rem;
-    margin-bottom: 7px;
-}
-
-#rpg-menu-screen .shift-progress-bar {
-    height: 12px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(0,0,0,.32);
-    border: 1px solid rgba(255,255,255,.08);
-}
-
-#rpg-menu-screen .shift-progress-fill {
-    height: 100%;
-    width: var(--shift-progress, 0%);
-    background: linear-gradient(90deg, #4a9fff, #a855f7, #ffd166);
-    box-shadow: 0 0 14px rgba(255,209,102,.34);
-    transition: width .45s cubic-bezier(.16,1,.36,1);
-}
-
-#rpg-menu-screen .shift-effect-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-}
-
-#rpg-menu-screen .shift-effect-card {
-    padding: 12px;
-    border-radius: 16px;
-    background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(0,0,0,.18));
-    border: 1px solid rgba(255,255,255,.11);
-}
-
-#rpg-menu-screen .shift-effect-title {
-    color: #fff;
-    font-size: 1rem;
-    margin-bottom: 4px;
-}
-
-#rpg-menu-screen .shift-effect-desc {
-    color: rgba(210,230,255,.68);
-    font-size: .82rem;
-    line-height: 1.25;
-}
-
-#rpg-menu-screen .shift-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-#rpg-menu-screen .shift-btn {
-    flex: 1;
-    min-width: 160px;
-    padding: 10px 14px;
-    border-radius: 14px;
-    border: 1px solid rgba(140,205,255,.28);
-    background: linear-gradient(135deg, rgba(74,159,255,.22), rgba(168,85,247,.16));
-    color: #dbeeff;
-    font-family: 'VT323', monospace;
-    font-size: 1.05rem;
-    cursor: pointer;
-    transition: transform .18s ease, filter .18s ease;
-}
-
-#rpg-menu-screen .shift-btn:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.15);
-}
-
-@media (max-width: 680px) {
-    #rpg-menu-screen .shift-clock-card { grid-template-columns: 50px 1fr; }
-    #rpg-menu-screen .shift-day-pill { grid-column: 2; justify-self: start; }
-    #rpg-menu-screen .shift-effect-grid { grid-template-columns: 1fr; }
-}
-
-/* ============================================================
    ARENA FEATURE v7.8.3: Skill-Upgrades
    ============================================================ */
 .bv-skill-card.bv-skill-upgradable {
@@ -27619,38 +27391,18 @@ body.bv-low-end #rpg-shop-screen .bv-shop-item-card.bv-no-entry-card {
 body.bv-low-end .bv-daily-deal-banner::after { display: none !important; }
 
 /* ============================================================
-   ARENA HOTFIX v7.8.5: Quest/Schicht Tabs + Shift Toast + Cutscene Polish
+   ARENA HOTFIX v7.8.5: Quest Tabs + Cutscene Polish
+   (Schicht-Tab/Toast entfernt – ersetzt durch v7.16 Schicht-Uhr)
    ============================================================ */
-#rpg-menu-screen.menu-quest-mode .menu-window,
-#rpg-menu-screen.menu-shift-mode .menu-window {
+#rpg-menu-screen.menu-quest-mode .menu-window {
     width: min(760px, 94vw) !important;
     height: min(620px, 90vh) !important;
 }
 
-#rpg-menu-screen.menu-quest-mode .menu-body,
-#rpg-menu-screen.menu-shift-mode .menu-body {
+#rpg-menu-screen.menu-quest-mode .menu-body {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     overflow-y: auto !important;
-}
-
-/* Shift-Balken sichtbar robust */
-#bv-shift-hud .shift-mini-fill,
-#rpg-menu-screen .shift-progress-fill {
-    display: block !important;
-    min-width: 3px;
-}
-
-/* Feierabend/Morgen-Toast ohne Blur */
-.bv-shift-toast {
-    filter: none !important;
-    animation: bvShiftToastNoBlurV785 2.8s cubic-bezier(.16,1,.36,1) forwards !important;
-}
-@keyframes bvShiftToastNoBlurV785 {
-    0% { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(.96); }
-    12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    78% { opacity: 1; }
-    100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.98); }
 }
 
 
@@ -27877,7 +27629,6 @@ body.bv-low-end .bv-daily-deal-banner::after { display: none !important; }
     outline-offset: 2px;
 }
 #rpg-menu-screen.menu-settings-mode .menu-window,
-#rpg-menu-screen.menu-shift-mode .menu-window,
 #rpg-menu-screen.menu-quest-mode .menu-window {
     width: min(820px, 96vw) !important;
     height: min(640px, 92vh) !important;
@@ -45080,9 +44831,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const menuScreen = document.getElementById("rpg-menu-screen");
                     const activeTab = document.querySelector(".menu-tab.active")?.dataset.tab || "status";
                     if (!menuScreen) return;
-                    const ALL_MODES = ["menu-status-mode","menu-inventory-mode","menu-team-mode","menu-map-mode","menu-quest-mode","menu-achievement-mode","menu-skills-mode","menu-weapons-mode","menu-shift-mode","menu-settings-mode"];
+                    const ALL_MODES = ["menu-status-mode","menu-inventory-mode","menu-team-mode","menu-map-mode","menu-quest-mode","menu-achievement-mode","menu-skills-mode","menu-weapons-mode","menu-settings-mode"];
                     ALL_MODES.forEach(m => menuScreen.classList.remove(m));
-                    const modeMap = { status:"menu-status-mode", inventory:"menu-inventory-mode", team:"menu-team-mode", map:"menu-map-mode", quests:"menu-quest-mode", achievements:"menu-achievement-mode", skills:"menu-skills-mode", weapons:"menu-weapons-mode", shift:"menu-shift-mode", settings:"menu-settings-mode" };
+                    const modeMap = { status:"menu-status-mode", inventory:"menu-inventory-mode", team:"menu-team-mode", map:"menu-map-mode", quests:"menu-quest-mode", achievements:"menu-achievement-mode", skills:"menu-skills-mode", weapons:"menu-weapons-mode", settings:"menu-settings-mode" };
                     menuScreen.classList.add(modeMap[activeTab] || "menu-status-mode");
                 }
 
@@ -45090,7 +44841,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     if (!instant && typeof isQuitOptionsOpen === "function" && isQuitOptionsOpen()) return;
                     const menuScreen = document.getElementById("rpg-menu-screen");
                     const finishClose = () => {
-                        if (menuScreen) menuScreen.classList.remove("active", "menu-closing", "menu-opening", "menu-switching", "menu-animating", "quit-active", "menu-status-mode", "menu-inventory-mode", "menu-team-mode", "menu-map-mode", "menu-quest-mode", "menu-achievement-mode", "menu-skills-mode", "menu-weapons-mode", "menu-shift-mode", "menu-settings-mode");
+                        if (menuScreen) menuScreen.classList.remove("active", "menu-closing", "menu-opening", "menu-switching", "menu-animating", "quit-active", "menu-status-mode", "menu-inventory-mode", "menu-team-mode", "menu-map-mode", "menu-quest-mode", "menu-achievement-mode", "menu-skills-mode", "menu-weapons-mode", "menu-settings-mode");
                         showScreen("rpg-game-screen");
                         gameState = "MAP";
                         const gameWin = document.getElementById("rpg-game-window");
@@ -59218,260 +58969,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     }
 })();
 
-/* ARENA FEATURE v7.8.2: Tages-/Schicht-System */
-(function () {
-    'use strict';
-
-    const PHASES = [
-        { id: 'morning', cls: 'shift-morning', icon: '🌅', name: 'Morgen', time: '08:00', effect: 'Frischer Start', desc: 'Gute Zeit für Gespräche und neue Aufgaben.' },
-        { id: 'midday', cls: 'shift-midday', icon: '☀️', name: 'Mittag', time: '12:00', effect: 'Pausenzeit', desc: 'Kantine und Kaffee wirken jetzt besonders passend.' },
-        { id: 'afternoon', cls: 'shift-afternoon', icon: '🌇', name: 'Nachmittag', time: '15:00', effect: 'Produktivitätsdruck', desc: 'Gegner und Aufgaben fühlen sich aktiver an.' },
-        { id: 'closing', cls: 'shift-closing', icon: '🌙', name: 'Feierabend', time: '18:00', effect: 'Ruhiger Abschluss', desc: 'Dunklere Stimmung, perfekt für Geheimnisse und Bosswege.' }
-    ];
-
-    const PHASE_DURATION = 120000; // 2 Minuten pro Phase: etwas schneller, aber nicht hektisch
-    let interval = null;
-    let quietSince = 0; // pausiert die Schichtzeit während Battle/Dialog/Cutscene
-
-    function playerObj() {
-        return (typeof window.getBvPlayer === 'function') ? window.getBvPlayer() : (window.player || {});
-    }
-
-    function ensureState() {
-        const p = playerObj();
-        if (!p.shiftState) p.shiftState = { day: 1, phaseIndex: 0, phaseStartedAt: Date.now(), totalPhaseAdvances: 0 };
-        if (typeof p.shiftState.day !== 'number') p.shiftState.day = 1;
-        if (typeof p.shiftState.phaseIndex !== 'number') p.shiftState.phaseIndex = 0;
-        if (!p.shiftState.phaseStartedAt) p.shiftState.phaseStartedAt = Date.now();
-        return p.shiftState;
-    }
-
-    function currentPhase() {
-        const st = ensureState();
-        return PHASES[st.phaseIndex % PHASES.length];
-    }
-
-    function progress() {
-        const st = ensureState();
-        return Math.max(0, Math.min(1, (Date.now() - st.phaseStartedAt) / PHASE_DURATION));
-    }
-
-    function phaseRemainingSeconds() {
-        return Math.max(0, Math.ceil((PHASE_DURATION - (Date.now() - ensureState().phaseStartedAt)) / 1000));
-    }
-
-    function ensureHud() {
-        const center = document.querySelector('#rpg-hud .hud-center');
-        if (!center || document.getElementById('bv-shift-hud')) return;
-        const el = document.createElement('div');
-        el.id = 'bv-shift-hud';
-        el.innerHTML = '<span class="shift-icon">🌅</span><span class="shift-text">Morgen</span><span class="shift-mini-bar"><span class="shift-mini-fill"></span></span>';
-        center.appendChild(el);
-    }
-
-    function ensureOverlay() {
-        const gw = document.getElementById('rpg-game-window');
-        if (!gw || document.getElementById('bv-shift-overlay')) return;
-        const overlay = document.createElement('div');
-        overlay.id = 'bv-shift-overlay';
-        gw.appendChild(overlay);
-    }
-
-    function showShiftToast(text) {
-        const gw = document.getElementById('rpg-game-window');
-        if (!gw) return;
-        const old = gw.querySelector('.bv-shift-toast');
-        if (old) old.remove();
-        const toast = document.createElement('div');
-        toast.className = 'bv-shift-toast';
-        // Kein störendes "Nachmittag beginnt..."-Fenster während Battle, Dialogen oder Cutscenes.
-        const rt = (typeof window.syncBvRuntime === 'function') ? window.syncBvRuntime() : {};
-        const blockedStates = ['BATTLE','BATTLE_INTRO','CUTSCENE','MESSAGE','CHOICE','TRANSITION'];
-        if (blockedStates.includes(rt.gameState)) return;
-        toast.textContent = text;
-        gw.appendChild(toast);
-        if (typeof window.parseEmojis === 'function') window.parseEmojis(toast);
-        setTimeout(() => toast.remove(), 2300);
-    }
-
-    let _lastPhaseCls = '';
-    function applyPhaseClasses() {
-        const gw = document.getElementById('rpg-game-window');
-        if (!gw) return;
-        const cls = currentPhase().cls;
-        if (cls === _lastPhaseCls) return;
-        PHASES.forEach(p => gw.classList.remove(p.cls));
-        gw.classList.add(cls);
-        _lastPhaseCls = cls;
-    }
-
-    function updateUI() {
-        ensureHud();
-        ensureOverlay();
-        applyPhaseClasses();
-        const p = currentPhase();
-        const pct = Math.round(progress() * 100);
-        const hud = document.getElementById('bv-shift-hud');
-        if (hud) {
-            const iconEl = hud.querySelector('.shift-icon');
-            if (iconEl && iconEl.dataset.phaseIcon !== p.icon) {
-                iconEl.dataset.phaseIcon = p.icon;
-                iconEl.textContent = p.icon;
-                // Emoji nicht als simples System-Emoji lassen: vorhandenes Emoji/Twemoji-Script nutzen.
-                if (typeof window.parseEmojis === 'function') window.parseEmojis(iconEl);
-            }
-            hud.querySelector('.shift-text').textContent = `${p.name} ${p.time}`;
-            hud.style.setProperty('--shift-progress', pct + '%');
-            const miniFill = hud.querySelector('.shift-mini-fill');
-            if (miniFill) miniFill.style.width = pct + '%';
-        }
-        renderShiftPanel();
-    }
-
-    function advancePhase(manual = false) {
-        const st = ensureState();
-        st.phaseIndex = (st.phaseIndex + 1) % PHASES.length;
-        st.phaseStartedAt = Date.now();
-        st.totalPhaseAdvances = (st.totalPhaseAdvances || 0) + 1;
-        if (st.phaseIndex === 0) st.day++;
-        const p = currentPhase();
-        updateUI();
-        showShiftToast(`${p.icon} ${p.name} beginnt (${p.time})${manual ? ' • vorgespult' : ''}`);
-    }
-
-    function tick() {
-        const rt = (typeof window.syncBvRuntime === 'function') ? window.syncBvRuntime() : {};
-        const activeStates = ['MAP'];
-        const quietStates = ['BATTLE','BATTLE_INTRO','CUTSCENE','MESSAGE','CHOICE','TRANSITION','NAME','EDITOR','MENU','SHOP','SKILLSHOP'];
-        const goUp = document.getElementById('bv-go-popup')?.classList.contains('visible');
-        const storyUp = !document.getElementById('bv-story-cinematic')?.hidden && document.getElementById('bv-story-cinematic')?.classList.contains('visible');
-        const nameUp = document.getElementById('rpg-name-screen')?.classList.contains('active');
-        if (goUp || storyUp || nameUp || quietStates.includes(rt.gameState)) {
-            if (!quietSince) quietSince = Date.now();
-            updateUI();
-            return;
-        }
-        if (quietSince) {
-            // Battle-/Cutscene-Zeit zählt nicht gegen die Schicht, damit kein Toast direkt in/aus Szenen platzt.
-            ensureState().phaseStartedAt += Date.now() - quietSince;
-            quietSince = 0;
-        }
-        if (!activeStates.includes(rt.gameState)) { updateUI(); return; }
-        if (progress() >= 1) advancePhase(false);
-        else updateUI();
-    }
-
-    function ensureShiftTab() {
-        const tabs = document.querySelector('#rpg-menu-screen .menu-tabs');
-        const body = document.querySelector('#rpg-menu-screen .menu-body');
-        if (!tabs || !body || document.getElementById('tab-shift')) return;
-        const btn = document.createElement('button');
-        btn.className = 'menu-tab';
-        btn.dataset.tab = 'shift';
-        btn.innerHTML = '🕒 Schicht';
-        tabs.appendChild(btn);
-        if (typeof window.parseEmojis === 'function') window.parseEmojis(btn);
-        const content = document.createElement('div');
-        content.className = 'menu-tab-content';
-        content.id = 'tab-shift';
-        content.innerHTML = '<div id="shift-content"></div>';
-        body.appendChild(content);
-        btn.addEventListener('click', () => {
-            const oldContent = document.querySelector('.menu-tab-content.active');
-            const menuScreen = document.getElementById('rpg-menu-screen');
-            document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.menu-tab-content').forEach(c => c.classList.remove('active', 'menu-window-switch-out', 'menu-window-switch-in'));
-            btn.classList.add('active');
-            content.classList.add('active', 'menu-window-switch-in');
-            if (oldContent && oldContent !== content) oldContent.classList.add('menu-window-switch-out');
-            if (menuScreen) {
-                menuScreen.classList.remove('menu-status-mode','menu-inventory-mode','menu-team-mode','menu-map-mode','menu-quest-mode','menu-achievement-mode','menu-skills-mode');
-                menuScreen.classList.add('menu-status-mode');
-            }
-            renderShiftPanel();
-        });
-    }
-
-    var _lastShiftRenderKey = '';
-    function renderShiftPanel() {
-        const host = document.getElementById('shift-content');
-        const tab = document.getElementById('tab-shift');
-        const menuScreen = document.getElementById('rpg-menu-screen');
-        if (!host || !tab || !tab.classList.contains('active') || !menuScreen || !menuScreen.classList.contains('active')) return;
-        const st = ensureState();
-        const p = currentPhase();
-        const pct = Math.round(progress() * 100);
-        const remain = phaseRemainingSeconds();
-        const renderKey = st.day + ':' + st.phaseIndex + ':' + pct + ':' + remain;
-        if (renderKey === _lastShiftRenderKey) return;
-        _lastShiftRenderKey = renderKey;
-        const next = PHASES[(st.phaseIndex + 1) % PHASES.length];
-        host.innerHTML = `
-            <div class="shift-panel">
-                <div class="shift-clock-card">
-                    <div class="shift-big-icon">${p.icon}</div>
-                    <div>
-                        <h3 class="shift-title">${p.name} • ${p.time}</h3>
-                        <div class="shift-subtitle">Nächste Phase: ${next.icon} ${next.name} • in ca. ${remain}s</div>
-                    </div>
-                    <div class="shift-day-pill">Tag ${st.day}</div>
-                </div>
-                <div class="shift-progress-card">
-                    <div class="shift-progress-top"><span>Schichtfortschritt</span><span>${pct}%</span></div>
-                    <div class="shift-progress-bar"><div class="shift-progress-fill" style="--shift-progress:${pct}%;width:${pct}%"></div></div>
-                </div>
-                <div class="shift-effect-grid">
-                    <div class="shift-effect-card"><div class="shift-effect-title">${p.icon} ${p.effect}</div><div class="shift-effect-desc">${p.desc}</div></div>
-                    <div class="shift-effect-card"><div class="shift-effect-title">📋 System-Hinweis</div><div class="shift-effect-desc">Quests, NPC-Routinen und Cutscenes können später an diese Tagesphasen gebunden werden.</div></div>
-                </div>
-                <div class="shift-actions">
-                    <button class="shift-btn" data-shift-next>⏩ Nächste Phase testen</button>
-                    <button class="shift-btn" data-shift-reset>🌅 Neuer Tag</button>
-                </div>
-            </div>
-        `;
-        host.querySelector('[data-shift-next]')?.addEventListener('click', () => advancePhase(true));
-        host.querySelector('[data-shift-reset]')?.addEventListener('click', () => {
-            st.day++;
-            st.phaseIndex = 0;
-            st.phaseStartedAt = Date.now();
-            updateUI();
-            showShiftToast('🌅 Neuer Arbeitstag beginnt!');
-        });
-        if (typeof window.parseEmojis === 'function') window.parseEmojis(host);
-    }
-
-    function wrapOpenMenu() {
-        const original = window.openMenu;
-        if (typeof original !== 'function' || original._shiftWrapped) return;
-        window.openMenu = function() {
-            const result = original.apply(this, arguments);
-            setTimeout(() => { ensureShiftTab(); renderShiftPanel(); updateUI(); }, 45);
-            return result;
-        };
-        window.openMenu._shiftWrapped = true;
-    }
-
-    window.BVShiftSystem = { phases: PHASES, getState: ensureState, currentPhase, advance: () => advancePhase(true), updateUI };
-
-    function initShiftSystem() {
-        ensureState();
-        ensureHud();
-        ensureOverlay();
-        ensureShiftTab();
-        wrapOpenMenu();
-        updateUI();
-        if (interval) clearInterval(interval);
-        interval = setInterval(tick, 500);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initShiftSystem, { once: true });
-    } else {
-        initShiftSystem();
-    }
-})();
-
 /* ARENA UPDATE v7.8.7: echte Map-NPC-Cutscenes mit Tile-Bewegung */
 (function () {
     'use strict';
@@ -60446,7 +59943,7 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     'use strict';
     const MODE_CLASSES = [
         'menu-status-mode','menu-inventory-mode','menu-team-mode','menu-map-mode',
-        'menu-quest-mode','menu-settings-mode','menu-shift-mode','menu-skills-mode','menu-achievement-mode',
+        'menu-quest-mode','menu-settings-mode','menu-skills-mode','menu-achievement-mode',
         'menu-weapons-mode',
         'menu-opening','menu-closing','menu-switching'
     ];
@@ -60465,7 +59962,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         if (tab === 'map') return 'menu-map-mode';
         if (tab === 'quests') return 'menu-quest-mode';
         if (tab === 'settings') return 'menu-settings-mode';
-        if (tab === 'shift') return 'menu-shift-mode';
         if (tab === 'skills') return 'menu-skills-mode';
         if (tab === 'achievements') return 'menu-achievement-mode';
         if (tab === 'weapons') return 'menu-weapons-mode';
@@ -60475,7 +59971,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     function ensureDynamicTabs() {
         try { window.BVQuestLog?.ensureQuestTab?.(); } catch (e) {}
         try { window.BVSettings?.ensureTab?.(); } catch (e) {}
-        try { if (!document.getElementById('tab-shift')) window.BVShiftSystem?.updateUI?.(); } catch (e) {}
     }
 
     function redrawMapTab() {
@@ -60504,7 +59999,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         if (tab === 'map') redrawMapTab();
         if (tab === 'quests') window.BVQuestLog?.render?.();
         if (tab === 'settings') { window.BVSettings?.ensureTab?.(); window.BVSettings?.apply?.(); }
-        if (tab === 'shift') window.BVShiftSystem?.updateUI?.();
         if (tab === 'weapons') window.renderWeaponsTab?.();
     }
 
@@ -60943,7 +60437,7 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     'use strict';
     const MODE_CLASSES = [
         'menu-status-mode','menu-inventory-mode','menu-team-mode','menu-map-mode',
-        'menu-quest-mode','menu-settings-mode','menu-shift-mode','menu-skills-mode','menu-achievement-mode',
+        'menu-quest-mode','menu-settings-mode','menu-skills-mode','menu-achievement-mode',
         'menu-weapons-mode'
     ];
     const TRANSIENT_CLASSES = ['menu-opening','menu-closing','menu-switching','menu-animating'];
@@ -60957,7 +60451,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         if (tab === 'map') return 'menu-map-mode';
         if (tab === 'quests') return 'menu-quest-mode';
         if (tab === 'settings') return 'menu-settings-mode';
-        if (tab === 'shift') return 'menu-shift-mode';
         if (tab === 'skills') return 'menu-skills-mode';
         if (tab === 'achievements') return 'menu-achievement-mode';
         if (tab === 'weapons') return 'menu-weapons-mode';
