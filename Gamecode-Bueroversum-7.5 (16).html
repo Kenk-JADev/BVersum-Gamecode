@@ -840,23 +840,6 @@
                     </div>
                 </div>
 
-                <!-- EASTER EVENT UI -->
-                <div id="easter-event-ui" style="display:none;">
-                    <div class="easter-event-header">
-                        <span class="easter-event-icon">🐇</span>
-                        <span class="easter-event-title">Oster-Event</span>
-                    </div>
-                    <div class="easter-progress-container">
-                        <div class="easter-progress-bar">
-                            <div class="easter-progress-fill" id="easter-progress-fill"></div>
-                        </div>
-                        <div class="easter-progress-text">
-                            <span id="easter-eggs-count">0</span> / <span id="easter-eggs-total">10</span> 🥚
-                        </div>
-                    </div>
-                    <div class="easter-event-hint" id="easter-event-hint">Finde alle Ostereier!</div>
-                </div>
-
                 <!-- VIEWPORT (mit Kamera) -->
                 <div id="rpg-viewport">
                     <div id="rpg-camera">
@@ -864,7 +847,6 @@
                         <div id="rpg-parallax-layer"></div>
                         <div id="rpg-deco-layer"></div>
                         <div id="rpg-chest-layer"></div>
-                        <div id="rpg-easter-egg-layer"></div>
                         <div id="rpg-door-layer"></div>
                         <div id="rpg-occlusion-layer"></div>
                         <div id="rpg-player" class="rpg-sprite">
@@ -7240,8 +7222,7 @@
         #rpg-camera.bv-25d-active #rpg-deco-layer,
         #rpg-camera.bv-25d-active #rpg-chest-layer,
         #rpg-camera.bv-25d-active #rpg-door-layer,
-        #rpg-camera.bv-25d-active #rpg-npc-layer,
-        #rpg-camera.bv-25d-active #rpg-easter-egg-layer {
+        #rpg-camera.bv-25d-active #rpg-npc-layer {
             z-index: auto;
         }
 
@@ -7261,7 +7242,6 @@
         #rpg-camera.bv-25d-active .rpg-npc,
         #rpg-camera.bv-25d-active .map-chest,
         #rpg-camera.bv-25d-active .map-door,
-        #rpg-camera.bv-25d-active .map-easter-egg,
         #rpg-camera.bv-25d-active #rpg-player {
             transform-origin: 50% 100%;
             filter: drop-shadow(0 8px 5px rgba(0,0,0,.32));
@@ -7487,8 +7467,7 @@
         /* ===== v5.0.3 2.5D Map Alignment / Door / Shadow Polish ===== */
         #rpg-camera.bv-25d-active .rpg-npc,
         #rpg-camera.bv-25d-active #rpg-player,
-        #rpg-camera.bv-25d-active .map-chest,
-        #rpg-camera.bv-25d-active .map-easter-egg {
+        #rpg-camera.bv-25d-active .map-chest {
             transition-property: left, top, filter, transform;
             transform: translateY(-2px);
         }
@@ -7658,204 +7637,6 @@
             cursor: pointer;
             font-size: 0.9rem;
             margin-left: 10px;
-        }
-
-        /* ===== EASTER EVENT UI ===== */
-        #easter-event-ui {
-            position: absolute;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            min-width: 200px;
-            background: linear-gradient(135deg, rgba(255, 182, 193, 0.95), rgba(255, 218, 185, 0.95));
-            border: 3px solid #ff69b4;
-            border-radius: 12px;
-            padding: 10px 15px;
-            z-index: 60;
-            box-shadow: 0 5px 20px rgba(255, 105, 180, 0.4);
-            animation: easterUISlide 0.5s ease-out;
-            transition: opacity 0.3s ease;
-        }
-
-        #easter-event-ui.hidden-for-player {
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        @keyframes easterUISlide {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-
-        .easter-event-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .easter-event-icon {
-            font-size: 1.5rem;
-            animation: easterBounce 1s ease-in-out infinite;
-        }
-
-        @keyframes easterBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-
-        .easter-event-title {
-            font-family: 'VT323', monospace;
-            font-size: 1.1rem;
-            color: #d63384;
-            font-weight: bold;
-            text-shadow: 1px 1px 0 #fff;
-        }
-
-        .easter-progress-container {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .easter-progress-bar {
-            width: 100%;
-            height: 16px;
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid #ff69b4;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .easter-progress-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ff69b4, #ff1493, #ff69b4);
-            background-size: 200% 100%;
-            border-radius: 6px;
-            transition: width 0.3s ease-out;
-            animation: easterShimmer 2s linear infinite;
-        }
-
-        @keyframes easterShimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .easter-progress-text {
-            font-family: 'VT323', monospace;
-            font-size: 0.9rem;
-            color: #8b0a50;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .easter-event-hint {
-            font-family: 'VT323', monospace;
-            font-size: 0.75rem;
-            color: #d63384;
-            text-align: center;
-            margin-top: 5px;
-            opacity: 0.8;
-        }
-
-        #easter-event-ui.complete {
-            border-color: #28a745;
-            background: linear-gradient(135deg, rgba(40, 167, 69, 0.2), rgba(255, 255, 255, 0.95));
-        }
-
-        #easter-event-ui.complete .easter-progress-fill {
-            background: linear-gradient(90deg, #28a745, #20c997, #28a745);
-        }
-
-        #easter-event-ui.complete .easter-event-title {
-            color: #28a745;
-        }
-
-        /* Easter Egg on Map */
-        .map-easter-egg {
-            position: absolute;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2rem;
-            cursor: pointer;
-            z-index: 15;
-            transition: transform 0.2s;
-            animation: easterEggFloat 2s ease-in-out infinite;
-        }
-
-        .map-easter-egg:hover {
-            transform: scale(1.2);
-        }
-
-        .map-easter-egg.collected {
-            animation: easterEggCollect 0.5s ease-out forwards;
-            pointer-events: none;
-        }
-
-        @keyframes easterEggFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-
-        @keyframes easterEggCollect {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.5);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(0) translateY(-30px);
-                opacity: 0;
-            }
-        }
-
-        .easter-egg-glow {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            background: radial-gradient(circle, rgba(255, 105, 180, 0.5) 0%, transparent 70%);
-            border-radius: 50%;
-            animation: easterGlowPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes easterGlowPulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.3); opacity: 0.8; }
-        }
-
-        @keyframes easterSparkle {
-            0% {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: translateY(-20px) scale(1.5);
-                opacity: 0.7;
-            }
-            100% {
-                transform: translateY(-40px) scale(0.5);
-                opacity: 0;
-            }
-        }
-
-        /* Interaction hint for Easter Eggs */
-        .interaction-hint.mode-easter-egg {
-            background: linear-gradient(135deg, rgba(255, 105, 180, 0.3), rgba(255, 182, 193, 0.3));
-            border-color: #ff69b4;
         }
 
         /* ===== HUD ===== */
@@ -19587,8 +19368,7 @@
         #rpg-game-screen.active #rpg-hud,
         #rpg-game-screen.active #interaction-hint,
         #rpg-game-screen.active #rpg-msg-box,
-        #rpg-game-screen.active #minimap-container,
-        #rpg-game-screen.active #easter-event-ui { z-index: 60; } /* PATCH M: ueber allen Map-Effekten */
+        #rpg-game-screen.active #minimap-container { z-index: 60; } /* PATCH M: ueber allen Map-Effekten */
 
         #rpg-game-window.bv-25d-mode .map-chest {
             width: 46px !important;
@@ -19700,8 +19480,7 @@
             backface-visibility: hidden;
         }
         #rpg-camera.bv-25d-active .map-door,
-        #rpg-camera.bv-25d-active .map-chest,
-        #rpg-camera.bv-25d-active .map-easter-egg {
+        #rpg-camera.bv-25d-active .map-chest {
             backface-visibility: hidden;
         }
         #rpg-game-window.bv-25d-mode .effect-particles::before,
@@ -19769,7 +19548,6 @@
         /* PATCH D: gemeinsamer Stacking-Context */
         #rpg-camera.clean-25d-active #rpg-deco-layer,
         #rpg-camera.clean-25d-active #rpg-chest-layer,
-        #rpg-camera.clean-25d-active #rpg-easter-egg-layer,
         #rpg-camera.clean-25d-active #rpg-door-layer,
         #rpg-camera.clean-25d-active #rpg-npc-layer,
         #rpg-camera.clean-25d-active #rpg-occlusion-layer {
@@ -19778,7 +19556,6 @@
         #rpg-camera.clean-25d-active .rpg-npc,
         #rpg-camera.clean-25d-active #rpg-player,
         #rpg-camera.clean-25d-active .map-chest,
-        #rpg-camera.clean-25d-active .map-easter-egg,
         #rpg-camera.clean-25d-active .map-door,
         #rpg-camera.clean-25d-active .map-deco-v530 {
             position: absolute;
@@ -19960,7 +19737,6 @@
         /* PATCH D: gemeinsamer Stacking-Context -> per-Tile getMapDepth greift global */
         #rpg-camera.map-engine-v6 #rpg-deco-layer,
         #rpg-camera.map-engine-v6 #rpg-chest-layer,
-        #rpg-camera.map-engine-v6 #rpg-easter-egg-layer,
         #rpg-camera.map-engine-v6 #rpg-door-layer,
         #rpg-camera.map-engine-v6 #rpg-npc-layer,
         #rpg-camera.map-engine-v6 #rpg-occlusion-layer { z-index: auto; }
@@ -19980,7 +19756,6 @@
         #rpg-camera.map-engine-v6 .rpg-npc,
         #rpg-camera.map-engine-v6 #rpg-player,
         #rpg-camera.map-engine-v6 .map-chest,
-        #rpg-camera.map-engine-v6 .map-easter-egg,
         #rpg-camera.map-engine-v6 .map-door,
         #rpg-camera.map-engine-v6 .map-deco-v6 {
             position:absolute;
@@ -22078,171 +21853,6 @@
             0%, 100% { transform: rotate(0deg) scale(1); opacity: .66; }
             50% { transform: rotate(180deg) scale(1.05); opacity: .88; }
         }
-
-
-        /* ============================================================
-           ARENA PATCH CSS: EASTER EVENT UI REDESIGN + ANIMATION
-           Neues UI + stabile Animationen für Patricks Oster-Event.
-           ============================================================ */
-        #easter-event-ui {
-            --easter-pct: 0%;
-            position: absolute !important;
-            top: 78px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            min-width: 265px !important;
-            max-width: min(430px, 82%) !important;
-            padding: 12px 16px 13px !important;
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-            background:
-                radial-gradient(circle at 12% 20%, rgba(255,255,255,.85), transparent 24%),
-                radial-gradient(circle at 86% 14%, rgba(255,222,120,.45), transparent 27%),
-                linear-gradient(145deg, rgba(255, 244, 250, .96), rgba(255, 224, 238, .94) 45%, rgba(226, 252, 226, .94)) !important;
-            border: 2px solid rgba(255, 112, 180, .74) !important;
-            border-radius: 20px !important;
-            z-index: 80 !important;
-            box-shadow:
-                0 16px 40px rgba(120, 20, 80, .30),
-                0 0 0 1px rgba(255,255,255,.72) inset,
-                0 0 28px rgba(255, 128, 190, .26) !important;
-            backdrop-filter: blur(8px) saturate(1.2);
-            -webkit-backdrop-filter: blur(8px) saturate(1.2);
-            overflow: hidden;
-            animation: easterPanelInV2 .55s cubic-bezier(.22, 1, .36, 1) both !important;
-            transition: opacity .25s ease, transform .25s ease, filter .25s ease !important;
-        }
-
-        #easter-event-ui::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background:
-                radial-gradient(circle at 12% 76%, rgba(116, 211, 120, .20), transparent 30%),
-                linear-gradient(110deg, transparent 0 30%, rgba(255,255,255,.55) 42%, transparent 56% 100%);
-            opacity: .8;
-            transform: translateX(-120%);
-            animation: easterPanelShineV2 4.8s ease-in-out infinite;
-        }
-
-        #easter-event-ui.hidden-for-player {
-            opacity: .44 !important;
-            transform: translateX(-50%) translateY(-4px) scale(.96) !important;
-            filter: saturate(.82) blur(.2px);
-            pointer-events: none;
-        }
-
-        #easter-event-ui.easter-pop {
-            animation: easterPanelPopV2 .42s cubic-bezier(.22, 1.35, .36, 1) both !important;
-        }
-
-        .easter-event-header {
-            position: relative;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center;
-            gap: 10px !important;
-            margin-bottom: 0 !important;
-        }
-
-        .easter-event-icon {
-            font-size: 1.65rem !important;
-            filter: drop-shadow(0 0 8px rgba(255, 105, 180, .45));
-            animation: easterRabbitBounceV2 1.65s ease-in-out infinite !important;
-        }
-
-        .easter-event-title {
-            font-family: 'Press Start 2P', 'VT323', monospace !important;
-            font-size: .72rem !important;
-            color: #b91c68 !important;
-            letter-spacing: .5px;
-            text-shadow: 0 1px 0 #fff, 0 0 10px rgba(255, 105, 180, .28) !important;
-        }
-
-        .easter-progress-container { gap: 7px !important; position: relative; z-index: 1; }
-
-        .easter-progress-bar {
-            position: relative;
-            width: 100% !important;
-            height: 18px !important;
-            border-radius: 999px !important;
-            background: rgba(255,255,255,.66) !important;
-            border: 1px solid rgba(255, 112, 180, .58) !important;
-            box-shadow: inset 0 2px 8px rgba(120,20,80,.16), 0 4px 14px rgba(255,105,180,.18) !important;
-            overflow: hidden !important;
-        }
-
-        .easter-progress-fill {
-            width: var(--easter-pct, 0%) !important;
-            height: 100% !important;
-            border-radius: inherit !important;
-            background:
-                linear-gradient(90deg, #ff6bb5 0%, #ffd166 34%, #7bdc83 68%, #ff6bb5 100%) !important;
-            background-size: 220% 100% !important;
-            box-shadow: 0 0 18px rgba(255,105,180,.42), inset 0 1px 0 rgba(255,255,255,.55) !important;
-            transition: width .55s cubic-bezier(.22, 1, .36, 1) !important;
-            animation: easterRainbowFlowV2 2.4s linear infinite !important;
-        }
-
-        .easter-progress-text {
-            font-family: 'VT323', monospace !important;
-            font-size: 1.08rem !important;
-            color: #831843 !important;
-            text-align: center !important;
-            font-weight: 700 !important;
-            text-shadow: 0 1px 0 rgba(255,255,255,.75);
-        }
-
-        .easter-event-hint {
-            position: relative;
-            z-index: 1;
-            margin-top: 0 !important;
-            padding: 4px 8px;
-            border-radius: 999px;
-            background: rgba(255,255,255,.46);
-            font-family: 'VT323', monospace !important;
-            font-size: .95rem !important;
-            color: #9f1239 !important;
-            text-align: center !important;
-            opacity: .96 !important;
-        }
-
-        #easter-event-ui.complete {
-            border-color: rgba(34, 197, 94, .72) !important;
-            background:
-                radial-gradient(circle at 50% 10%, rgba(255,255,255,.88), transparent 27%),
-                linear-gradient(145deg, rgba(236,253,245,.96), rgba(220,252,231,.94), rgba(255,250,205,.94)) !important;
-            box-shadow: 0 18px 48px rgba(22, 163, 74, .25), 0 0 34px rgba(34,197,94,.28) !important;
-        }
-        #easter-event-ui.complete .easter-event-title { color: #15803d !important; }
-        #easter-event-ui.complete .easter-progress-fill { background: linear-gradient(90deg, #22c55e, #bef264, #14b8a6, #22c55e) !important; }
-
-        .map-easter-egg {
-            width: 34px !important;
-            height: 34px !important;
-            z-index: 22 !important;
-            animation: easterEggFloatV2 2.1s ease-in-out infinite !important;
-            filter: drop-shadow(0 0 8px rgba(255, 220, 110, .55));
-        }
-        .map-easter-egg:hover { transform: translateY(-4px) scale(1.22) rotate(-6deg) !important; }
-        .map-easter-egg.collected { animation: easterEggCollectV2 .66s cubic-bezier(.22,1,.36,1) forwards !important; }
-        .easter-egg-glow {
-            width: 48px !important;
-            height: 48px !important;
-            background: radial-gradient(circle, rgba(255, 236, 120, .68), rgba(255,105,180,.30) 48%, transparent 72%) !important;
-            animation: easterGlowPulseV2 1.45s ease-in-out infinite !important;
-        }
-
-        @keyframes easterPanelInV2 { from { opacity: 0; transform: translateX(-50%) translateY(-24px) scale(.94); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
-        @keyframes easterPanelPopV2 { 0% { transform: translateX(-50%) scale(.96); } 55% { transform: translateX(-50%) scale(1.04); } 100% { transform: translateX(-50%) scale(1); } }
-        @keyframes easterPanelShineV2 { 0%, 55% { transform: translateX(-130%); opacity: 0; } 65% { opacity: .8; } 100% { transform: translateX(130%); opacity: 0; } }
-        @keyframes easterRabbitBounceV2 { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-5px) rotate(-5deg); } }
-        @keyframes easterRainbowFlowV2 { to { background-position: -220% 0; } }
-        @keyframes easterEggFloatV2 { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(4deg); } }
-        @keyframes easterEggCollectV2 { 0% { transform: scale(1) rotate(0); opacity: 1; } 45% { transform: scale(1.65) rotate(18deg); opacity: .95; } 100% { transform: translateY(-42px) scale(.25) rotate(80deg); opacity: 0; } }
-        @keyframes easterGlowPulseV2 { 0%,100% { transform: scale(.92); opacity: .45; } 50% { transform: scale(1.28); opacity: .88; } }
 
 
         /* ============================================================
@@ -26426,8 +26036,7 @@
 /* v5.5: kein will-change auf left/top – diese Eigenschaften kann der
    Browser nicht compositen, die Angabe erzeugt nur unnötige Layer. */
 #rpg-player,
-.rpg-npc,
-.map-easter-egg {
+.rpg-npc {
     will-change: auto;
     contain: layout style !important;
 }
@@ -26464,7 +26073,6 @@
 
 #rpg-camera.map-engine-rasterized #rpg-deco-layer,
 #rpg-camera.map-engine-rasterized #rpg-chest-layer,
-#rpg-camera.map-engine-rasterized #rpg-easter-egg-layer,
 #rpg-camera.map-engine-rasterized #rpg-door-layer,
 #rpg-camera.map-engine-rasterized #rpg-occlusion-layer,
 #rpg-camera.map-engine-rasterized #rpg-npc-layer,
@@ -26490,7 +26098,6 @@
    sonst kann ein Occluder mit hohem z-index nicht über NPC/Player liegen. */
 #rpg-camera.map-engine-rasterized #rpg-deco-layer,
 #rpg-camera.map-engine-rasterized #rpg-chest-layer,
-#rpg-camera.map-engine-rasterized #rpg-easter-egg-layer,
 #rpg-camera.map-engine-rasterized #rpg-door-layer,
 #rpg-camera.map-engine-rasterized #rpg-occlusion-layer,
 #rpg-camera.map-engine-rasterized #rpg-npc-layer {
@@ -26521,8 +26128,7 @@
 #rpg-camera.map-engine-rasterized #rpg-player,
 #rpg-camera.map-engine-rasterized .rpg-npc,
 #rpg-camera.map-engine-rasterized .map-chest,
-#rpg-camera.map-engine-rasterized .map-door,
-#rpg-camera.map-engine-rasterized .map-easter-egg {
+#rpg-camera.map-engine-rasterized .map-door {
     position: absolute !important;
     z-index: auto;
 }
@@ -35011,7 +34617,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 const npcLayer = document.getElementById("rpg-npc-layer");
                 const decoLayer = document.getElementById("rpg-deco-layer");
                 const chestLayer = document.getElementById("rpg-chest-layer");
-                const easterEggLayer = document.getElementById("rpg-easter-egg-layer");
                 const doorLayer = document.getElementById("rpg-door-layer");
                 const occlusionLayer = document.getElementById("rpg-occlusion-layer");
                 const cameraEl = document.getElementById("rpg-camera");
@@ -36498,51 +36103,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     { id: "board_meeting", name: "Vorstandssitzung", icon: "🏛️", desc: "Maximaler Ultimate-Schaden", price: 600, dmgMult: 5.0, mpCost: 18 }
                 ];
 
-                // ===== EASTER EVENT =====
-                const EASTER_EGGS = {
-                    // Ostereier auf verschiedenen Maps - jedes Ei hat eine einzigartige Farbe
-                    buero: [
-                        { x: 5, y: 3, color: "🥚", name: "Blaues Osterei", hint: "hinter dem Schreibtisch" },
-                        { x: 25, y: 8, color: "🥚", name: "Rotes Osterei", hint: "in der Kaffeeecke" },
-                        { x: 30, y: 17, color: "🥚", name: "Gelbes Osterei", hint: "am hinteren Regal" }
-                    ],
-                    flur: [
-                        { x: 8, y: 5, color: "🥚", name: "Grünes Osterei", hint: "im Flur gang" },
-                        { x: 12, y: 12, color: "🥚", name: "Lila Osterei", hint: "bei der Bank" },
-                        { x: 3, y: 18, color: "🥚", name: "Oranges Osterei", hint: "am Eingang" }
-                    ],
-                    kantine: [
-                        { x: 4, y: 4, color: "🥚", name: "Pink Osterei", hint: "in der Kantine" },
-                        { x: 12, y: 8, color: "🥚", name: "Türkises Osterei", hint: "am Esstisch" }
-                    ],
-                    zentrale: [
-                        { x: 15, y: 5, color: "🥚", name: "Goldenes Osterei", hint: "im Serverbereich" },
-                        { x: 28, y: 10, color: "🥚", name: "Silbernes Osterei", hint: "im Computerraum" }
-                    ]
-                };
-
-                // Easter Skill - Oster-Flower-Power
-                const EASTER_SKILL = {
-                    id: "oster_power",
-                    name: "Oster-Flower-Power",
-                    icon: "🌸",
-                    desc: "Spezieller Oster-Skill! Heilt 50% HP und schadet dem Gegner.",
-                    dmgMult: 3.5,
-                    mpCost: 10,
-                    healPercent: 50,
-                    special: "easter"
-                };
-
-                // Easter Event State (wird auch gespeichert)
-                let easterEventState = {
-                    active: false,
-                    completed: false,
-                    collectedEggs: [], // Array von "mapId_x_y" strings
-                    totalEggs: 10
-                };
-
-                let currentEasterEggs = [];
-
                 // ===== DOORS =====
                 const DOORS = {
                     buero_to_flur: { from: "buero", fromX: 34, fromY: 10, to: "flur", toX: 1, toY: 8, label: "Flur" },
@@ -36649,8 +36209,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             },
                             {
                                 x: 24, y: 5, type: "talk", sprite: "👨‍🏫", name: "Patrick", role: "Ausbilder", hours: [8, 18],
-                                dialog: ["Hallo! Ich bin Patrick, dein Ausbilder.", "Ich kümmere mich um deine Ausbildung.", "Es gibt viel zu lernen im Büro!"],
-                                choiceId: "patrick_easter", choicePrompt: "Hast du eine Aufgabe für mich?"
+                                dialog: ["Hallo! Ich bin Patrick, dein Ausbilder.", "Ich kümmere mich um deine Ausbildung.", "Es gibt viel zu lernen im Büro!"]
                             },
                             // v7.17: Abend-Belegschaft – erscheint erst zum Feierabend
                             { x: 13, y: 9, type: "talk", sprite: "🧹", name: "Putzkraft Petra", role: "Reinigungsdienst", hours: [17, 22], dialog: ["Pssst — jetzt stolpert endlich keiner mehr über die Kabel.", "Gleich glitzert das Büro wieder wie neu.", "Feierabend gilt leider nicht für alle von uns…"], wander: true },
@@ -37621,34 +37180,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     showMessage(`📦 Truhe geöffnet! ${lootMsg}`, "📦 Loot", "📦");
                 }
 
-                // Hide Easter UI when player is near (so it doesn't block the view)
-                function updateEasterUIVisibility() {
-                    const easterUI = document.getElementById("easter-event-ui");
-                    if (!easterUI || !easterEventState.active) return;
-
-                    // Get viewport center to check if player is in top area
-                    const viewportWidth = 27 * 32; // VIEW_COLS * TILE
-                    const viewportHeight = 17 * 32; // VIEW_ROWS * TILE
-                    
-                    // Calculate player's screen position
-                    const playerScreenX = player.x * 32 - cameraX;
-                    const playerScreenY = player.y * 32 - cameraY;
-
-                    // If player is in the top center area (where the UI is), hide it partially
-                    const isInUIArea = playerScreenY < 150 && playerScreenX > viewportWidth * 0.3 && playerScreenX < viewportWidth * 0.7;
-                    
-                    if (isInUIArea) {
-                        easterUI.classList.add("hidden-for-player");
-                    } else {
-                        easterUI.classList.remove("hidden-for-player");
-                    }
-                }
-
                 function checkNearbyInteractables() {
                     checkNearbyNPC();
                     checkNearbyChest();
-                    checkNearbyEasterEgg();
-                    updateEasterUIVisibility();
                 }
 
                 function checkNearbyChest() {
@@ -37666,231 +37200,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         if (iconEl) iconEl.innerText = "📦";
                         interactionHint.classList.remove("mode-attack", "mode-shop", "mode-talk", "mode-default");
                         interactionHint.classList.add("visible", "mode-chest");
-                    }
-                }
-
-                // ===== EASTER EVENT SYSTEM =====
-                function spawnEasterEggs() {
-                    if (!easterEggLayer) return;
-                    easterEggLayer.innerHTML = "";
-                    currentEasterEggs = [];
-                    if (!easterEventState.active || easterEventState.completed) return;
-                    const mapEggs = EASTER_EGGS[currentMapId];
-                    if (!mapEggs) return;
-                    mapEggs.forEach((egg, i) => {
-                        const eggKey = `${currentMapId}_${egg.x}_${egg.y}`;
-                        if (easterEventState.collectedEggs.includes(eggKey)) return;
-                        currentEasterEggs.push({ ...egg, key: eggKey });
-                        const el = document.createElement("div");
-                        el.className = "map-easter-egg";
-                        el.innerHTML = `<div class="easter-egg-glow"></div><div class="easter-egg-sprite">🥚</div>`;
-                        placeMapElement(el, egg.x, egg.y, "egg");
-                        el.dataset.eggKey = eggKey;
-                        el.dataset.eggIndex = i;
-                        el.addEventListener("click", () => {
-                            const dist = Math.abs(player.x - egg.x) + Math.abs(player.y - egg.y);
-                            if (dist <= 1 && gameState === "MAP") collectEasterEgg(egg, el, eggKey);
-                        });
-                        easterEggLayer.appendChild(el);
-                    });
-                    parseEmojis(easterEggLayer);
-                    updateEasterUI();
-                }
-
-
-                function collectEasterEgg(egg, el, eggKey) {
-                    if (easterEventState.collectedEggs.includes(eggKey)) return;
-
-                    // Add to collected eggs
-                    easterEventState.collectedEggs.push(eggKey);
-                    
-                    // Play collection animation
-                    el.classList.add("collected");
-                    el.querySelector(".easter-egg-sprite").innerText = "✨";
-
-                    // Show message
-                    showMessage(`🥚 Du hast ein ${egg.name} gefunden!`, "🐇 Osterhase", "🐰");
-                    queueMessage(`Hinweis: ${egg.hint}`, "🐇 Osterhase", "🐰");
-
-                    // Update UI
-                    updateEasterUI();
-
-                    // Check if all eggs collected
-                    if (easterEventState.collectedEggs.length >= easterEventState.totalEggs) {
-                        setTimeout(() => {
-                            showMessage("🎉 Du hast ALLE Ostereier gefunden! Kehre zu Patrick zurück!", "🐇 Osterhase", "🐰");
-                            easterEventState.completed = true;
-                            updateEasterUI();
-                        }, 1500);
-                    }
-
-                    // Play sound effect (visual feedback)
-                    const gameWin = document.getElementById("rpg-game-window");
-                    if (gameWin) {
-                        const spark = document.createElement("div");
-                        spark.style.cssText = `
-                            position: absolute;
-                            left: ${egg.x * TILE + 16}px;
-                            top: ${egg.y * TILE}px;
-                            font-size: 2rem;
-                            pointer-events: none;
-                            animation: easterSparkle 1s ease-out forwards;
-                            z-index: 100;
-                        `;
-                        spark.innerText = "✨";
-                        gameWin.appendChild(spark);
-                        setTimeout(() => spark.remove(), 1000);
-                    }
-
-                    // Save progress
-                    saveGame();
-                }
-
-                function updateEasterUI() {
-                    const easterUI = document.getElementById("easter-event-ui");
-                    if (!easterUI) return;
-
-                    // Show/hide UI based on event state
-                    if (!easterEventState.active) {
-                        easterUI.style.display = "none";
-                        return;
-                    }
-
-                    // Hide UI if quest is fully completed (reward claimed)
-                    if (player.questState && player.questState.easterEvent === "completed") {
-                        easterUI.style.display = "none";
-                        easterUI.classList.remove("complete");
-                        return;
-                    }
-
-                    easterUI.style.display = "block";
-
-                    // Update progress
-                    const countEl = document.getElementById("easter-eggs-count");
-                    const totalEl = document.getElementById("easter-eggs-total");
-                    const fillEl = document.getElementById("easter-progress-fill");
-                    const hintEl = document.getElementById("easter-event-hint");
-
-                    const collected = easterEventState.collectedEggs.length;
-                    const total = easterEventState.totalEggs;
-
-                    if (countEl) countEl.innerText = collected;
-                    if (totalEl) totalEl.innerText = total;
-                    if (fillEl) fillEl.style.width = `${(collected / total) * 100}%`;
-
-                    // Update hint
-                    if (hintEl) {
-                        if (easterEventState.completed) {
-                            hintEl.innerText = "✅ Kehre zu Patrick zurück!";
-                            easterUI.classList.add("complete");
-                        } else {
-                            hintEl.innerText = `Noch ${total - collected} Eier versteckt!`;
-                        }
-                    }
-                }
-
-                function startEasterEvent() {
-                    easterEventState.active = true;
-                    easterEventState.collectedEggs = [];
-                    easterEventState.completed = false;
-                    updateEasterUI();
-                    spawnEasterEggs();
-                }
-
-                function checkNearbyEasterEgg() {
-                    if (!easterEventState.active || easterEventState.completed) return;
-
-                    for (const egg of currentEasterEggs) {
-                        if (easterEventState.collectedEggs.includes(egg.key)) continue;
-                        const dist = Math.abs(player.x - egg.x) + Math.abs(player.y - egg.y);
-                        if (dist <= 1) {
-                            // Show interaction hint
-                            const textEl = document.getElementById("interaction-text");
-                            const iconEl = document.getElementById("interaction-icon");
-                            if (textEl) textEl.innerText = "Sammeln";
-                            if (iconEl) iconEl.innerText = "🥚";
-                            interactionHint.classList.remove("mode-attack", "mode-shop", "mode-talk", "mode-chest", "mode-default");
-                            interactionHint.classList.add("visible", "mode-easter-egg");
-                            return egg;
-                        }
-                    }
-                    return null;
-                }
-
-                // Patrick (Ausbilder) Easter Quest Choice Handler
-                function openPatrickEasterChoice(npc) {
-                    if (typeof window.showChoice !== "function") return;
-
-                    if (!player.questState) player.questState = {};
-                    const questState = player.questState.easterEvent || null;
-
-                    // Quest not started yet
-                    if (questState === null || questState === undefined) {
-                        window.showChoice("Hallo! *hust* Ich bin Patrick, dein Ausbilder. Ich habe eine besondere Aufgabe für dich... Es ist Ostern! 🐰 Kannst du mir helfen, die versteckten Ostereier zu finden?", [
-                            { label: "Ja, ich helfe gerne!", value: "accept", hint: "🥚" },
-                            { label: "Was bekomme ich dafür?", value: "reward", hint: "🎁" },
-                            { label: "Nein, keine Zeit.", value: "decline", hint: "❌" }
-                        ], npc.name, npc.sprite, (val) => {
-                            if (val === "accept") {
-                                player.questState.easterEvent = "active";
-                                startEasterEvent();
-                                showMessage("Wunderbar! Es sind 10 Ostereier im gesamten Büro versteckt. Ich habe eine Anzeige für dich erstellt. Viel Glück! 🐰", npc.name, npc.sprite);
-                                queueMessage("Suche in allen Räumen - Büro, Flur, Kantine und Zentrale!", npc.name, npc.sprite);
-                            } else if (val === "reward") {
-                                showMessage("Wenn du alle Eier findest, bringe ich dir einen speziellen Oster-Skill bei: Oster-Flower-Power! 🌸", npc.name, npc.sprite);
-                                queueMessage("Dieser Skill heilt dich und schadet dem Gegner gleichzeitig!", npc.name, npc.sprite);
-                                // Re-open the choice
-                                setTimeout(() => openPatrickEasterChoice(npc), 500);
-                            } else {
-                                showMessage("Oh schade... Falls du es dir anders überlegst, bin ich hier.", npc.name, npc.sprite);
-                            }
-                        });
-                    } else if (questState === "active") {
-                        // Quest in progress
-                        const collected = easterEventState.collectedEggs.length;
-                        const total = easterEventState.totalEggs;
-
-                        if (easterEventState.completed) {
-                            // All eggs collected - complete quest
-                            window.showChoice(`Unglaublich! Du hast alle ${total} Ostereier gefunden! 🎉 Bist du bereit für deine Belohnung?`, [
-                                { label: "Ja, her mit dem Skill!", value: "complete", hint: "🌸" }
-                            ], npc.name, npc.sprite, (val) => {
-                                    if (val === "complete") {
-                                        // Mark quest as completed and deactivate the Easter event so the UI no longer appears
-                                        player.questState.easterEvent = "completed";
-                                        easterEventState.active = false;
-                                        updateEasterUI();
-
-                                        // Add the Easter Skill
-                                        if (!player.unlockedSkills) player.unlockedSkills = ["tacker", "kaffee", "meeting"];
-                                        if (!player.unlockedSkills.includes("oster_power")) {
-                                            player.unlockedSkills.push("oster_power");
-                                            showMessage("Du hast den exklusiven Skill 'Oster-Flower-Power' gelernt! 🌸✨", "📋 System", "🌸");
-                                            queueMessage("Dieser Skill heilt 50% deiner HP und fügt dem Gegner massiven Schaden zu!", "📋 System", "🌸");
-                                            queueMessage("Frohe Ostern! 🐰🥚", npc.name, npc.sprite);
-                                        } else {
-                                            showMessage("Du hast diesen Skill bereits! Hier sind 200 Gold als Bonus! 💰", npc.name, npc.sprite);
-                                            player.gold += 200;
-                                            updateHUD();
-                                        }
-                                    }
-                            });
-                        } else {
-                            // Still searching
-                            window.showChoice(`Du hast bisher ${collected} von ${total} Ostereiern gefunden. ${collected < total ? `Noch ${total - collected} Eier fehlen!` : 'Alle gefunden!'}`, [
-                                { label: "Ich suche weiter!", value: "continue", hint: "🔍" },
-                                { label: "Wo sind die Eier?", value: "hint", hint: "💡" }
-                            ], npc.name, npc.sprite, (val) => {
-                                if (val === "hint") {
-                                    showMessage("Die Eier sind im Büro (3), Flur (3), Kantine (2) und in der Zentrale (2) versteckt.", npc.name, npc.sprite);
-                                    queueMessage("Schau in jeder Ecke - sie leuchten leicht! 🥚✨", npc.name, npc.sprite);
-                                } else {
-                                    showMessage("Viel Erfolg! Die Eier warten auf dich! 🐰", npc.name, npc.sprite);
-                                }
-                            });
-                        }
-                    } else if (questState === "completed") {
-                        showMessage("Danke nochmals für deine Hilfe bei der Ostersuche! Der Oster-Flower-Power Skill wird dir nützlich sein! 🌸🐰", npc.name, npc.sprite);
                     }
                 }
 
@@ -39494,20 +38803,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     // Reset HUD display
                     const rpgHud = document.getElementById("rpg-hud");
                     if (rpgHud) rpgHud.style.display = "";
-
-                    // Reset Easter Event State
-                    easterEventState = {
-                        active: false,
-                        completed: false,
-                        collectedEggs: [],
-                        totalEggs: 10
-                    };
-                    currentEasterEggs = [];
-                    const easterUI = document.getElementById("easter-event-ui");
-                    if (easterUI) {
-                        easterUI.style.display = "none";
-                        easterUI.classList.remove("complete");
-                    }
 
                     showScreen(null);
 
@@ -42338,8 +41633,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     drawMap();
                     drawDecorations();
                     spawnChests();
-                    if (typeof normalizeEasterEventState === "function") normalizeEasterEventState();
-                    spawnEasterEggs();
                     spawnDoors();
                     spawnOccluders();
                     updatePlayerSprite();
@@ -42732,8 +42025,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         queueMessage(npc.choicePrompt || "Was brauchst du?", npc.name, npc.sprite, () => openSebastianoChoice(npc));
                     } else if (npc.choiceId === "andreas_quest") {
                         queueMessage(npc.choicePrompt || "Ich suche etwas...", npc.name, npc.sprite, () => openAndreasChoice(npc));
-                    } else if (npc.choiceId === "patrick_easter") {
-                        queueMessage(npc.choicePrompt || "Hast du eine Aufgabe für mich?", npc.name, npc.sprite, () => openPatrickEasterChoice(npc));
                     } else if (npc.choiceId === "archiv_quest") {
                         queueMessage(npc.choicePrompt || "Hilfst du im Archiv?", npc.name, npc.sprite, () => openArchivQuestChoice(npc));
                     } else if (npc.choiceId === "dach_quest") {
@@ -44330,282 +43621,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 }
 
 
-                /* ============================================================
-                   ARENA PATCH JS: EASTER EVENT ROBUST FIX
-                   - normalisiert Patricks Quest-State
-                   - lädt übrige Eier nach Spielstand laden korrekt wieder auf die Map
-                   - ersetzt fragile Easter-Funktionen durch robuste Varianten
-                   ============================================================ */
-                function getEasterEggTotal() {
-                    return Object.values(EASTER_EGGS || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-                }
-
-                function normalizeEasterEventState() {
-                    if (!player.questState) player.questState = {};
-                    const total = getEasterEggTotal();
-                    const state = easterEventState && typeof easterEventState === 'object' ? easterEventState : {};
-                    const collected = Array.isArray(state.collectedEggs) ? state.collectedEggs : [];
-                    easterEventState = {
-                        active: !!state.active,
-                        completed: !!state.completed,
-                        collectedEggs: Array.from(new Set(collected.filter(Boolean).map(String))),
-                        totalEggs: total
-                    };
-
-                    if (player.questState.easterEvent === "active") {
-                        easterEventState.active = true;
-                    }
-                    if (player.questState.easterEvent === "completed") {
-                        easterEventState.active = false;
-                        easterEventState.completed = true;
-                    }
-                    if (easterEventState.collectedEggs.length >= total && total > 0 && player.questState.easterEvent === "active") {
-                        easterEventState.completed = true;
-                    }
-                    return easterEventState;
-                }
-
-                function refreshEasterEventAfterMapLoad() {
-                    normalizeEasterEventState();
-                    spawnEasterEggs();
-                    updateEasterUI();
-                    checkNearbyInteractables();
-                }
-
-                function spawnEasterEggs() {
-                    if (!easterEggLayer) return;
-                    normalizeEasterEventState();
-                    easterEggLayer.innerHTML = "";
-                    currentEasterEggs = [];
-
-                    if (!easterEventState.active || easterEventState.completed || player.questState?.easterEvent === "completed") {
-                        updateEasterUI();
-                        return;
-                    }
-
-                    const mapEggs = EASTER_EGGS[currentMapId] || [];
-                    mapEggs.forEach((egg, i) => {
-                        const eggKey = `${currentMapId}_${egg.x}_${egg.y}`;
-                        if (easterEventState.collectedEggs.includes(eggKey)) return;
-                        const runtimeEgg = { ...egg, key: eggKey };
-                        currentEasterEggs.push(runtimeEgg);
-                        const el = document.createElement("div");
-                        el.className = "map-easter-egg";
-                        el.innerHTML = `<div class="easter-egg-glow"></div><div class="easter-egg-sprite">${egg.color || "🥚"}</div>`;
-                        placeMapElement(el, egg.x, egg.y, "egg");
-                        el.dataset.eggKey = eggKey;
-                        el.dataset.eggIndex = i;
-                        el.addEventListener("click", () => {
-                            const dist = Math.abs(player.x - egg.x) + Math.abs(player.y - egg.y);
-                            if (dist <= 1 && gameState === "MAP") collectEasterEgg(runtimeEgg, el, eggKey);
-                        });
-                        easterEggLayer.appendChild(el);
-                    });
-                    parseEmojis(easterEggLayer);
-                    updateEasterUI();
-                }
-
-                function collectEasterEgg(egg, el, eggKey) {
-                    normalizeEasterEventState();
-                    eggKey = eggKey || egg?.key || `${currentMapId}_${egg.x}_${egg.y}`;
-                    if (!egg || easterEventState.collectedEggs.includes(eggKey)) return;
-
-                    easterEventState.collectedEggs.push(eggKey);
-                    easterEventState.collectedEggs = Array.from(new Set(easterEventState.collectedEggs));
-
-                    if (el) {
-                        el.classList.add("collected");
-                        const sprite = el.querySelector(".easter-egg-sprite");
-                        if (sprite) sprite.innerText = "✨";
-                        setTimeout(() => el.remove(), 680);
-                    }
-                    currentEasterEggs = currentEasterEggs.filter(e => e.key !== eggKey);
-
-                    showMessage(`🥚 Du hast ${egg.name || "ein Osterei"} gefunden!`, "🐇 Oster-Event", "🐰");
-                    queueMessage(`Hinweis: ${egg.hint || "gut versteckt"}`, "🐇 Oster-Event", "🐰");
-
-                    const total = easterEventState.totalEggs || getEasterEggTotal();
-                    if (easterEventState.collectedEggs.length >= total) {
-                        easterEventState.completed = true;
-                        queueMessage("🎉 Du hast ALLE Ostereier gefunden! Kehre zu Patrick zurück!", "🐇 Oster-Event", "🐰");
-                    }
-
-                    updateEasterUI(true);
-
-                    const gameWin = document.getElementById("rpg-game-window");
-                    if (gameWin) {
-                        const spark = document.createElement("div");
-                        spark.style.cssText = `position:absolute;left:${egg.x * TILE + 16}px;top:${egg.y * TILE}px;font-size:2.1rem;pointer-events:none;animation:easterSparkle 1s ease-out forwards;z-index:100;`;
-                        spark.innerText = "✨";
-                        gameWin.appendChild(spark);
-                        parseEmojis(spark);
-                        setTimeout(() => spark.remove(), 1000);
-                    }
-
-                    saveGame();
-                }
-
-                function updateEasterUI(pop = false) {
-                    const easterUI = document.getElementById("easter-event-ui");
-                    if (!easterUI) return;
-                    normalizeEasterEventState();
-
-                    if (!easterEventState.active || player.questState?.easterEvent === "completed") {
-                        easterUI.style.display = "none";
-                        easterUI.classList.remove("complete", "easter-pop", "hidden-for-player");
-                        return;
-                    }
-
-                    const collected = easterEventState.collectedEggs.length;
-                    const total = easterEventState.totalEggs || getEasterEggTotal();
-                    const remaining = Math.max(0, total - collected);
-                    const pct = total > 0 ? Math.min(100, (collected / total) * 100) : 0;
-
-                    easterUI.style.display = "flex";
-                    easterUI.style.setProperty("--easter-pct", pct + "%");
-                    easterUI.classList.toggle("complete", easterEventState.completed);
-                    if (pop) {
-                        easterUI.classList.remove("easter-pop");
-                        void easterUI.offsetWidth;
-                        easterUI.classList.add("easter-pop");
-                    }
-
-                    const countEl = document.getElementById("easter-eggs-count");
-                    const totalEl = document.getElementById("easter-eggs-total");
-                    const fillEl = document.getElementById("easter-progress-fill");
-                    const hintEl = document.getElementById("easter-event-hint");
-                    if (countEl) countEl.innerText = collected;
-                    if (totalEl) totalEl.innerText = total;
-                    if (fillEl) fillEl.style.width = pct + "%";
-                    if (hintEl) {
-                        hintEl.innerText = easterEventState.completed
-                            ? "✅ Alle Eier gefunden! Kehre zu Patrick zurück."
-                            : `Noch ${remaining} ${remaining === 1 ? "Ei" : "Eier"} versteckt · Raum absuchen!`;
-                    }
-                    parseEmojis(easterUI);
-                }
-
-                function startEasterEvent() {
-                    if (!player.questState) player.questState = {};
-                    player.questState.easterEvent = "active";
-                    easterEventState = {
-                        active: true,
-                        completed: false,
-                        collectedEggs: [],
-                        totalEggs: getEasterEggTotal()
-                    };
-                    spawnEasterEggs();
-                    updateEasterUI(true);
-                    saveGame();
-                }
-
-                function checkNearbyEasterEgg() {
-                    normalizeEasterEventState();
-                    if (!easterEventState.active || easterEventState.completed) return null;
-                    for (const egg of currentEasterEggs) {
-                        if (easterEventState.collectedEggs.includes(egg.key)) continue;
-                        const dist = Math.abs(player.x - egg.x) + Math.abs(player.y - egg.y);
-                        if (dist <= 1) {
-                            const textEl = document.getElementById("interaction-text");
-                            const iconEl = document.getElementById("interaction-icon");
-                            if (textEl) textEl.innerText = "Sammeln";
-                            if (iconEl) iconEl.innerText = egg.color || "🥚";
-                            if (interactionHint) {
-                                interactionHint.classList.remove("mode-attack", "mode-shop", "mode-talk", "mode-chest", "mode-default");
-                                interactionHint.classList.add("visible", "mode-easter-egg");
-                            }
-                            return egg;
-                        }
-                    }
-                    return null;
-                }
-
-                function updateEasterUIVisibility() {
-                    const easterUI = document.getElementById("easter-event-ui");
-                    if (!easterUI) return;
-                    normalizeEasterEventState();
-                    if (!easterEventState.active || player.questState?.easterEvent === "completed") {
-                        easterUI.classList.remove("hidden-for-player");
-                        return;
-                    }
-                    const viewportWidth = 27 * 32;
-                    const playerScreenX = player.x * 32 - cameraX;
-                    const playerScreenY = player.y * 32 - cameraY;
-                    const isInUIArea = playerScreenY < 155 && playerScreenX > viewportWidth * 0.25 && playerScreenX < viewportWidth * 0.75;
-                    easterUI.classList.toggle("hidden-for-player", isInUIArea);
-                }
-
-                function openPatrickEasterChoice(npc) {
-                    if (typeof window.showChoice !== "function") return;
-                    normalizeEasterEventState();
-                    const questState = player.questState.easterEvent || null;
-
-                    if (questState === null || questState === undefined) {
-                        window.showChoice("Hallo! *hust* Ich bin Patrick, dein Ausbilder. Es ist Ostern und im Büro sind 10 Ostereier versteckt. Hilfst du mir bei der Suche?", [
-                            { label: "Ja, ich helfe gerne!", value: "accept", hint: "🥚" },
-                            { label: "Was bekomme ich dafür?", value: "reward", hint: "🎁" },
-                            { label: "Nein, keine Zeit.", value: "decline", hint: "❌" }
-                        ], npc.name, npc.sprite, (val) => {
-                            if (val === "accept") {
-                                startEasterEvent();
-                                showMessage("Wunderbar! Ich habe dir eine neue Oster-Anzeige eingeblendet. Sie zeigt deinen Fortschritt zuverlässig an. 🐰", npc.name, npc.sprite);
-                                queueMessage("Die Eier liegen im Büro (3), Flur (3), Kantine (2) und in der Zentrale (2).", npc.name, npc.sprite);
-                            } else if (val === "reward") {
-                                showMessage("Wenn du alle Eier findest, bringe ich dir den speziellen Skill **Oster-Flower-Power** bei! 🌸", npc.name, npc.sprite);
-                                queueMessage("Sprich mich danach nochmal an, wenn du helfen möchtest.", npc.name, npc.sprite);
-                            } else {
-                                showMessage("Oh schade... Falls du es dir anders überlegst, bin ich hier.", npc.name, npc.sprite);
-                            }
-                        });
-                        return;
-                    }
-
-                    if (questState === "active") {
-                        const collected = easterEventState.collectedEggs.length;
-                        const total = easterEventState.totalEggs;
-                        if (easterEventState.completed) {
-                            window.showChoice(`Unglaublich! Du hast alle ${total} Ostereier gefunden! Bist du bereit für deine Belohnung?`, [
-                                { label: "Ja, her mit dem Skill!", value: "complete", hint: "🌸" }
-                            ], npc.name, npc.sprite, (val) => {
-                                if (val === "complete") {
-                                    player.questState.easterEvent = "completed";
-                                    easterEventState.active = false;
-                                    easterEventState.completed = true;
-                                    updateEasterUI();
-                                    if (!player.unlockedSkills) player.unlockedSkills = ["tacker", "kaffee", "meeting"];
-                                    if (!player.unlockedSkills.includes("oster_power")) {
-                                        player.unlockedSkills.push("oster_power");
-                                        showMessage("Du hast den exklusiven Skill **Oster-Flower-Power** gelernt! 🌸✨", "📋 System", "🌸");
-                                        queueMessage("Dieser Skill heilt 50% deiner HP und fügt dem Gegner massiven Schaden zu!", "📋 System", "🌸");
-                                    } else {
-                                        player.gold += 200;
-                                        updateHUD();
-                                        showMessage("Du hast den Skill bereits! Hier sind 200 Gold als Oster-Bonus. 💰", npc.name, npc.sprite);
-                                    }
-                                    saveGame();
-                                }
-                            });
-                        } else {
-                            window.showChoice(`Du hast bisher ${collected} von ${total} Ostereiern gefunden. Noch ${Math.max(0, total - collected)} fehlen!`, [
-                                { label: "Ich suche weiter!", value: "continue", hint: "🔍" },
-                                { label: "Wo sind die Eier?", value: "hint", hint: "💡" }
-                            ], npc.name, npc.sprite, (val) => {
-                                if (val === "hint") {
-                                    showMessage("Die Eier sind im Büro (3), Flur (3), Kantine (2) und in der Zentrale (2) versteckt.", npc.name, npc.sprite);
-                                    queueMessage("Wenn du einen Spielstand lädst, erscheinen alle noch übrigen Eier wieder korrekt auf der aktuellen Map. 🥚✨", npc.name, npc.sprite);
-                                } else {
-                                    showMessage("Viel Erfolg! Die neue Anzeige sollte dir den Fortschritt sauber zeigen. 🐰", npc.name, npc.sprite);
-                                }
-                            });
-                        }
-                        return;
-                    }
-
-                    if (questState === "completed") {
-                        showMessage("Danke nochmals für deine Hilfe bei der Ostersuche! Der Oster-Flower-Power Skill wird dir nützlich sein! 🌸🐰", npc.name, npc.sprite);
-                    }
-                }
-
                 function hasAndConsumeItem(itemId, amount = 1) {
                     if (!player || !player.inventory) return false;
                     const it = player.inventory.find(i => i.id === itemId && i.count > 0);
@@ -45192,7 +44207,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     player.dept = playerDept;
                     if (!player.unlockedSkills) player.unlockedSkills = [];
                     if (!player.questState) player.questState = {};
-                    if (typeof normalizeEasterEventState === "function") normalizeEasterEventState();
 
                     const saveData = {
                         version: "6.0.0",
@@ -45212,7 +44226,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         chestCount: chestCount,
                         unlockedSkills: player.unlockedSkills,
                         questState: player.questState,
-                        easterEventState: easterEventState,
                         achievements: localStorage.getItem('bv_achievements') || '{}',
                         timestamp: Date.now()
                     };
@@ -45284,15 +44297,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             pendingLoadPos = null;
                         }
 
-                        // Restore Easter Event State
-                        if (data.easterEventState) {
-                            easterEventState = data.easterEventState;
-                        } else if (player.easterEventState) {
-                            easterEventState = player.easterEventState;
-                        }
-                        if (typeof normalizeEasterEventState === "function") normalizeEasterEventState();
-                        updateEasterUI();
-
                         // Update ALL UI elements with correct name and sprite
                         const update = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
                         update("hud-player-name", player.name);
@@ -45334,13 +44338,6 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             _hudGoldCurrent = player.gold;
                             updateHUD();
                             updateMenuStats();
-                            // ARENA PATCH: EASTER RESPAWN AFTER LOAD
-                            // loadMap(true) lädt die Map verzögert; deshalb Easter-Eier danach nochmal sicher spawnen.
-                            setTimeout(() => {
-                                if (typeof refreshEasterEventAfterMapLoad === "function") refreshEasterEventAfterMapLoad();
-                                else { spawnEasterEggs(); updateEasterUI(); }
-                            }, 720);
-                            updateEasterUI();
                             showMenuToast("📂 Spielstand geladen!", "good");
                         }, 550);
 
@@ -51143,13 +50140,6 @@ window.respawnPlayer = function () {
                                 const idx = currentChests.indexOf(nearbyChest);
                                 const chestEl = chestLayer?.querySelector(`[data-index="${idx}"]`);
                                 if (chestEl) openChest(nearbyChest, chestEl);
-                                return;
-                            }
-                            // Easter Egg Interaction
-                            const nearbyEgg = checkNearbyEasterEgg();
-                            if (nearbyEgg) {
-                                const eggEl = easterEggLayer?.querySelector(`[data-egg-key="${nearbyEgg.key}"]`);
-                                if (eggEl) collectEasterEgg(nearbyEgg, eggEl, nearbyEgg.key);
                                 return;
                             }
                         }
@@ -58532,22 +57522,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
             }
         },
         {
-            id: 'easter_eggs', icon: '🥚', title: 'Oster-Event: Eierjagd', giver: 'Patrick • Einkauf',
-            desc: 'Patrick bittet dich, versteckte Ostereier im BüroVersum zu finden.',
-            reward: 'Oster-Flower-Power • Gold/EXP',
-            status() {
-                const qs = ensureQuestState();
-                if (qs.easterEvent === 'completed') return 'completed';
-                if (qs.easterEvent === 'active') return 'active';
-                return 'available';
-            },
-            objective(status) {
-                if (status === 'available') return 'Sprich mit Patrick im Einkauf.';
-                if (status === 'completed') return 'Alle Eier gefunden und Belohnung erhalten.';
-                return 'Finde alle Ostereier auf den Maps.';
-            }
-        },
-        {
             id: 'archiv_motte', icon: '🗄️', title: 'Archiv retten', giver: 'Archiv-Anna • Archiv',
             desc: 'Im Archiv raschelt eine Akten-Motte zwischen den Regalen.', reward: '+120 Gold • +25 EXP',
             status() {
@@ -61274,8 +60248,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
           check: function (ctx, p) { return p.lvl >= 10; } },
         { id: 'boss_slayer', icon: '👔', title: 'Chef-Bezwinger', desc: 'Besiege den Geschäftsführer.',
           check: function (ctx, p, def) { return def.has('boss_office_12_4_boss'); } },
-        { id: 'easter_master', icon: '🥚', title: 'Oster-Fan', desc: 'Schließe die Eierjagd ab.',
-          check: function (ctx, p) { return p.questState && p.questState.easterEvent === 'completed'; } },
         { id: 'archiv_hero', icon: '🗄️', title: 'Archiv-Retter', desc: 'Befreie das Archiv von der Motte.',
           check: function (ctx, p) { return p.questState && p.questState.archivMotteReward; } },
         { id: 'roof_hero', icon: '📡', title: 'Dach-Held', desc: 'Beseitige das Störsignal auf dem Dach.',
