@@ -1373,6 +1373,21 @@
                                 <div class="editor-loadout-title">⚔️ Waffen (Test-Kampf)</div>
                                 <div class="editor-weapon-options" id="editor-player-weapons"></div>
                             </div>
+                            <div class="editor-loadout-card">
+                                <div class="editor-loadout-title">🤝 Partner (Test-Kampf)</div>
+                                <select id="editor-partners" class="editor-partner-select">
+                                    <option value="team" selected>👥 Aktuelles Partner-Team</option>
+                                    <option value="none">🚫 Keine Partner</option>
+                                    <option value="justin">👨‍💻 Justin</option>
+                                    <option value="jannik">👨‍🦱 Jannik</option>
+                                    <option value="hamda">👨‍🦱 Hamda</option>
+                                    <option value="deborha">👩 Deborha</option>
+                                </select>
+                                <div class="editor-partner-hint">
+                                    Partner kämpfen im Testkampf mit (Angriff, Heilung, Treffer, K.O.).
+                                    Ohne eigenes Team springt Justin als Test-Partner ein.
+                                </div>
+                            </div>
                         </div>
                     </div>
                     </details>
@@ -1430,12 +1445,15 @@
                                 <div class="vs-name" id="vs-player-name">HELD</div>
                                 <div class="vs-title">Azubi</div>
                             </div>
+                            <!-- v7.12: Partner, die mit in den Kampf kommen -->
+                            <div class="vs-partners" id="vs-partners" aria-live="polite"></div>
                         </div>
                         <div class="vs-middle">
                             <div class="vs-spark spark-1">⚡</div>
                             <div class="vs-text">VS</div>
                             <div class="vs-spark spark-2">⚡</div>
                             <div class="vs-clash-effect"></div>
+                            <div class="vs-impact"></div>
                         </div>
                         <div class="vs-fighter vs-enemy">
                             <div class="vs-fighter-bg enemy"></div>
@@ -1589,19 +1607,21 @@
                             <div class="reward-item exp"><span class="reward-icon">⭐</span><span
                                     class="reward-text">+<span id="victory-exp">0</span> EXP</span></div>
                         </div>
-                        <div id="xp-bar-container">
-                            <div class="xp-bar-label">Erfahrung</div>
-                            <div class="xp-bar-bg">
-                                <div class="xp-bar-fill" id="xp-bar-fill"></div>
+                        <div class="bv-victory-resultrow">
+                            <div id="xp-bar-container">
+                                <div class="xp-bar-label">Erfahrung</div>
+                                <div class="xp-bar-bg">
+                                    <div class="xp-bar-fill" id="xp-bar-fill"></div>
+                                </div>
+                                <div class="xp-bar-text"><span id="xp-current">0</span> / <span id="xp-max">100</span></div>
                             </div>
-                            <div class="xp-bar-text"><span id="xp-current">0</span> / <span id="xp-max">100</span></div>
-                        </div>
-                        <div id="levelup-display">
-                            <div class="levelup-text">🎉 LEVEL UP!</div>
-                            <div class="levelup-transition">
-                                <span class="old-level">Lvl <span id="old-level">1</span></span>
-                                <span class="level-arrow">→</span>
-                                <span class="new-level">Lvl <span id="new-level">2</span></span>
+                            <div id="levelup-display">
+                                <div class="levelup-text">🎉 LEVEL UP!</div>
+                                <div class="levelup-transition">
+                                    <span class="old-level">Lvl <span id="old-level">1</span></span>
+                                    <span class="level-arrow">→</span>
+                                    <span class="new-level">Lvl <span id="new-level">2</span></span>
+                                </div>
                             </div>
                         </div>
                         <div id="victory-chest" class="chest-container">
@@ -11936,8 +11956,10 @@
         }
 
         @keyframes vsScreenIn {
-            0% { opacity: 0 }
-            100% { opacity: 1 }
+            /* v7.12: leichter Kamera-Punch beim Einblenden */
+            0%   { opacity: 0; transform: scale(1.06); }
+            60%  { opacity: 1; }
+            100% { opacity: 1; transform: scale(1); }
         }
 
         @keyframes vsBgFadeOut {
@@ -12235,7 +12257,9 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.7)) drop-shadow(0 0 25px rgba(255, 136, 0, 0.5)) drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-            animation: vsTextEntrance 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.35) both, vsPulse 0.4s infinite alternate;
+            /* v7.12: Puls animiert nur noch den Glow – vorher überschrieb er den
+               transform der Entrance-Animation (zweite Animation gewinnt). */
+            animation: vsTextEntrance 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.35) both, vsPulse 0.7s ease-in-out .7s infinite alternate;
         }
 
         @keyframes vsTextEntrance {
@@ -12253,8 +12277,12 @@
         }
 
         @keyframes vsPulse {
-            from { transform: scale(0.95); }
-            to { transform: scale(1.05); }
+            from {
+                filter: drop-shadow(0 0 10px rgba(255, 215, 0, .55)) drop-shadow(0 4px 8px rgba(0, 0, 0, .6));
+            }
+            to {
+                filter: drop-shadow(0 0 24px rgba(255, 215, 0, .95)) drop-shadow(0 0 40px rgba(255, 136, 0, .6)) drop-shadow(0 4px 8px rgba(0, 0, 0, .6));
+            }
         }
 
         .vs-spark {
@@ -12307,6 +12335,99 @@
                 transform: translate(-50%, -50%) scale(2.2);
                 opacity: 0;
             }
+        }
+
+        /* ===== v7.12: VS-Splash aufgewertet =====
+           Licht-Sweep beim Einblenden, Impact-Ring hinter dem VS und die
+           Partner-Chips auf der Spieler-Seite. Nur transform/opacity. */
+        #battle-vs-splash::before {
+            content: '';
+            position: absolute;
+            top: -25%;
+            left: 0;
+            width: 45%;
+            height: 150%;
+            z-index: 3;
+            pointer-events: none;
+            background: linear-gradient(100deg,
+                transparent 0%,
+                rgba(255, 255, 255, .10) 42%,
+                rgba(160, 220, 255, .30) 50%,
+                rgba(255, 255, 255, .10) 58%,
+                transparent 100%);
+            transform: skewX(-12deg) translateX(-160%);
+            animation: vsLightSweep 1.15s cubic-bezier(.3, 0, .2, 1) .12s both;
+        }
+        @keyframes vsLightSweep {
+            0%   { opacity: 0; transform: skewX(-12deg) translateX(-160%); }
+            18%  { opacity: 1; }
+            100% { opacity: 0; transform: skewX(-12deg) translateX(320%); }
+        }
+        #battle-vs-splash.vs-fade-out::before { animation: none; opacity: 0; }
+
+        .vs-impact {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            margin: -60px 0 0 -60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 236, 150, .9);
+            box-shadow: 0 0 26px rgba(255, 200, 60, .75), inset 0 0 20px rgba(255, 220, 120, .45);
+            opacity: 0;
+            pointer-events: none;
+            animation: vsImpactRing .85s cubic-bezier(.16, 1, .3, 1) .28s both;
+        }
+        @keyframes vsImpactRing {
+            0%   { opacity: 0; transform: scale(.25); }
+            22%  { opacity: .95; }
+            100% { opacity: 0; transform: scale(2.6); }
+        }
+
+        /* Partner-Chips unter dem Spieler-Namen (nur wenn Partner dabei sind) */
+        .vs-partners {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 14px;
+            min-height: 0;
+        }
+        .vs-partner-chip {
+            display: grid;
+            justify-items: center;
+            gap: 1px;
+            padding: 4px 9px 5px;
+            border-radius: 12px;
+            border: 1px solid var(--pc, #7dd3fc);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(8, 14, 28, .78));
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .35), 0 0 16px -6px var(--pc, #7dd3fc);
+            opacity: 0;
+            animation: vsPartnerChipIn .52s cubic-bezier(.16, 1, .3, 1) calc(.5s + var(--i, 0) * .12s) both;
+        }
+        .vs-partner-emoji {
+            font-size: 1.75rem;
+            line-height: 1;
+            filter: drop-shadow(0 0 10px var(--pc, #7dd3fc));
+        }
+        .vs-partner-lvl {
+            font-family: 'VT323', monospace;
+            font-size: .8rem;
+            letter-spacing: .05em;
+            color: #e6f6ff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+        }
+        @keyframes vsPartnerChipIn {
+            0%   { opacity: 0; transform: translateY(16px) scale(.55) rotate(-8deg); }
+            60%  { opacity: 1; transform: translateY(-4px) scale(1.09) rotate(3deg); }
+            100% { opacity: 1; transform: none; }
+        }
+        #battle-vs-splash.vs-fade-out .vs-partner-chip {
+            animation: vsPartnerChipOut .32s ease-in forwards;
+        }
+        @keyframes vsPartnerChipOut {
+            to { opacity: 0; transform: translateY(14px) scale(.8); }
         }
 
         .vs-message {
@@ -16976,6 +17097,31 @@
             margin-bottom: 12px;
         }
 
+        /* v7.12: Partner-Auswahl im Battle-Editor */
+        select.editor-partner-select {
+            width: 100%;
+            padding: 9px 11px;
+            border-radius: 11px;
+            border: 1px solid rgba(255,214,140,.32);
+            background: rgba(10,16,30,.94);
+            color: #ffe7c2;
+            font-family: 'VT323', monospace;
+            font-size: 1.02rem;
+            cursor: pointer;
+        }
+        select.editor-partner-select:focus {
+            outline: none;
+            border-color: rgba(125,211,252,.7);
+            box-shadow: 0 0 0 2px rgba(125,211,252,.16);
+        }
+        .editor-partner-hint {
+            margin-top: 8px;
+            color: rgba(255,231,194,.58);
+            font-family: 'VT323', monospace;
+            font-size: .88rem;
+            line-height: 1.3;
+        }
+
         .editor-skill-options,
         .editor-item-options {
             display: grid;
@@ -18013,6 +18159,30 @@
         #victory-screen.visible .victory-rewards { margin: 6px 0 8px; }
         #victory-screen.visible #xp-bar-container { margin: 6px 0; padding: 10px 18px; }
         #victory-screen.visible #levelup-display { margin: 6px 0; padding: 10px 20px; }
+
+        /* ===== v7.12: XP-Balken links, Level-Up-Feld rechts daneben =====
+           Beide lagen vorher untereinander und haben den Sieg-Screen in die Höhe
+           getrieben. Die Zeile bricht auf schmalen Screens automatisch um. */
+        #victory-screen.visible .bv-victory-resultrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            width: 100%;
+            max-width: 640px;
+            margin: 6px 0;
+        }
+        #victory-screen.visible .bv-victory-resultrow #xp-bar-container,
+        #victory-screen.visible .bv-victory-resultrow #levelup-display {
+            margin: 0;
+            flex: 0 1 auto;
+            max-width: 100%;
+        }
+        @media (max-width: 560px) {
+            #victory-screen.visible .bv-victory-resultrow { gap: 8px; }
+            #victory-screen.visible .bv-victory-resultrow #levelup-display { padding: 8px 14px; }
+        }
         #victory-screen.visible .chest-container { margin: 6px 0; padding: 10px 18px; }
         #victory-screen.visible .victory-btn { margin-top: 8px; padding: 12px 34px; }
 
@@ -19272,7 +19442,8 @@
             z-index: 6;
             animation: enemySkillWaveV448 .72s ease-out forwards;
         }
-        @keyframes enemySkillBeamV448 { 0% { opacity:0; transform: translate(0,-50%) scaleX(.05); } 35% { opacity:1; } 100% { opacity:0; transform: translate(-280px,-50%) scaleX(1); } }
+        /* v7.11: --bx/--by erlauben es, den Beam auf ein konkretes Ziel (z. B. Partner) zu richten. */
+        @keyframes enemySkillBeamV448 { 0% { opacity:0; transform: translate(0,-50%) scaleX(.05); } 35% { opacity:1; } 100% { opacity:0; transform: translate(var(--bx,-280px), calc(-50% + var(--by,0px))) scaleX(1); } }
         @keyframes enemySkillRuneV448 { 0% { opacity:0; transform: translate(-50%,-50%) scale(.3) rotate(-16deg); } 35% { opacity:1; transform: translate(-50%,-50%) scale(1.1) rotate(6deg); } 100% { opacity:0; transform: translate(-50%,-115%) scale(.85) rotate(18deg); } }
         @keyframes enemySkillWaveV448 { to { opacity:0; transform: translate(-50%,-50%) scale(3.8); } }
 
@@ -32033,6 +32204,35 @@ body.bv-settings-particles-off .title-canvas-bg {
     font-weight: 700;
     white-space: nowrap;
 }
+/* v7.18: Skill, für den das MP nicht reicht – gedimmt, Klick löst keine
+   Fenster-Animation mehr aus, sondern nur Log + kurzes Schütteln. */
+#rpg-battle-screen .skill-row.no-mp {
+    opacity: .5 !important;
+    border-color: rgba(248, 113, 113, .32) !important;
+    background: linear-gradient(110deg, rgba(48, 26, 30, .82), rgba(24, 12, 16, .84)) !important;
+}
+#rpg-battle-screen .skill-row.no-mp:hover {
+    /* v7.19: transform/box-shadow hier bewusst OHNE !important – CSS-Animationen
+       verlieren gegen !important-Deklarationen, dadurch war das Schütteln
+       unsichtbar, solange die Maus auf der Zeile lag. */
+    transform: none;
+    border-color: rgba(248, 113, 113, .42) !important;
+    background: linear-gradient(110deg, rgba(56, 30, 34, .88), rgba(28, 14, 18, .9)) !important;
+    box-shadow: none;
+}
+#rpg-battle-screen .skill-row.no-mp .skill-cost { color: #fca5a5 !important; }
+#rpg-battle-screen .skill-row.no-mp-shake {
+    position: relative !important;
+    animation: bvSkillNoMpShake .46s ease both !important;
+}
+@keyframes bvSkillNoMpShake {
+    0%, 100% { transform: translateX(0); box-shadow: 0 0 0 rgba(248, 113, 113, 0); }
+    15%      { transform: translateX(-7px); box-shadow: 0 0 14px rgba(248, 113, 113, .55); }
+    35%      { transform: translateX(6px); }
+    55%      { transform: translateX(-5px); }
+    75%      { transform: translateX(3px); }
+    90%      { transform: translateX(-2px); }
+}
 #rpg-battle-screen .submenu-back {
     flex: 0 0 auto !important;
     display: block !important;
@@ -33341,7 +33541,10 @@ body.bv-settings-particles-off #rpg-fx-particles {
     pointer-events: none;
 }
 /* The submenu appears to slide out from behind the rising battle dock. */
-#rpg-battle-screen .battle-submenu.bv-submenu-open,
+/* v7.12: Beim Schließen darf es hinter dem Dock verschwinden (99), geöffnet muss es
+   aber ÜBER dem Dock (100) und den Partner-Karten (#bv-partner-hud = 101) liegen –
+   sonst verdecken die Partner-Karten das Skill-/Item-Fenster. */
+#rpg-battle-screen .battle-submenu.bv-submenu-open { z-index: 140 !important; }
 #rpg-battle-screen .battle-submenu.bv-submenu-close { z-index: 99 !important; }
 #battle-ui { z-index: 100 !important; }
 #bv-partner-hud {
@@ -33352,17 +33555,31 @@ body.bv-settings-particles-off #rpg-fx-particles {
     bottom: calc(100% + 8px);
     z-index: 101;
     max-width: calc(100% - 24px);
+    /* v7.13: Eine Spalte – alle Partnerkarten untereinander am rechten Rand,
+       jede Karte gleich breit. Vorher brachen sie in zwei Reihen um und die
+       letzte Karte hing allein rechts. */
+    width: 196px;
+    max-height: 62vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    flex-direction: column;
     flex-wrap: nowrap;
-    justify-content: flex-end;
-    align-items: flex-end;
+    align-items: stretch;
+    /* Reihenfolge bleibt oben→unten; bei knapper Höhe scrollt die Spalte statt oben abzuschneiden */
+    justify-content: flex-start;
     gap: 6px;
+    padding: 2px;
 }
 /* Eine Karte pro Gruppenmitglied */
 .bv-partner-card {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    flex: 0 1 190px;
+    /* v7.13: Breite kommt aus der Spalte (#bv-partner-hud) – so sind alle Karten gleich breit */
+    flex: 0 0 auto;
+    width: 100%;
     min-width: 0;
     gap: 9px;
     padding: 7px 8px;
@@ -33389,9 +33606,47 @@ body.bv-settings-particles-off #rpg-fx-particles {
 .bv-partner-name { overflow: hidden; font-size: .78rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .bv-partner-bar { height: 7px; margin: 5px 0 3px; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
 .bv-partner-bar span { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #34d399, #86efac); transition: width .25s ease; }
-.bv-partner-hp-text { color: #c7ddf2; font-size: .65rem; font-variant-numeric: tabular-nums; text-align: right; }
-.bv-partner-mp { display: flex; justify-content: space-between; color: #b8d7ff; font-size: .62rem; font-variant-numeric: tabular-nums; }
+.bv-partner-namerow { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.bv-partner-statrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.bv-partner-hp-text { color: #c7ddf2; font-size: .65rem; text-align: right; }
+.bv-partner-mp { color: #b8d7ff; font-size: .62rem; font-variant-numeric: tabular-nums; }
+.bv-partner-mp b { font-weight: 800; }
 .bv-partner-level { color: #fde68a; font-size: .62rem; font-weight: 800; }
+
+/* ===== v7.13: Partner-MP, Skill-Anzeige und Partner-Status (Gift/Brand/Blutung/Betäubung) ===== */
+/* Eigener, schmaler MP-Balken direkt unter dem HP-Balken */
+.bv-partner-mpbar { height: 4px; margin: 3px 0 0; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
+.bv-partner-mpbar span { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6366f1, #38bdf8); transition: width .25s ease; }
+/* Skill-Zeile: Name + Kosten; leuchtet, sobald die MP für den Skill reichen */
+.bv-partner-skill { display: flex; align-items: center; gap: 4px; margin-top: 3px; color: #8fa6c0; font-size: .6rem; line-height: 1.3; }
+.bv-partner-skill .bv-ps-icon { flex: 0 0 auto; }
+.bv-partner-skill .bv-ps-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bv-partner-skill .bv-ps-cost { flex: 0 0 auto; margin-left: auto; padding: 0 5px; border: 1px solid rgba(125, 211, 252, .3); border-radius: 99px; font-variant-numeric: tabular-nums; }
+.bv-partner-skill.ready { color: #cbe9ff; }
+.bv-partner-skill.ready .bv-ps-cost { border-color: #38bdf8; background: rgba(56, 189, 248, .2); color: #e0f2fe; box-shadow: 0 0 10px -2px #38bdf8; }
+.bv-partner-skill.ready .bv-ps-name { text-shadow: 0 0 10px rgba(56, 189, 248, .55); }
+/* Status-Chips auf der Karte – nur sichtbar, wenn wirklich etwas anhaftet */
+.bv-partner-status { display: none; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.bv-partner-status.has { display: flex; }
+.bv-partner-status .bv-ps-chip { display: inline-flex; align-items: center; gap: 2px; padding: 0 5px; border: 1px solid currentColor; border-radius: 5px; background: rgba(6, 10, 26, .78); font-variant-numeric: tabular-nums; font-size: .58rem; line-height: 1.35; }
+.bv-partner-status .bv-ps-chip b { font-weight: 800; }
+.bv-partner-status.bump .bv-ps-chip { animation: bvsChipPop .3s cubic-bezier(.2, 1.4, .4, 1) both; }
+/* Karte pulsiert kurz, wenn ein Status dazukommt oder tickt */
+.bv-partner-card.bv-p-card-status { animation: bvPartnerCardStatus .6s ease-out both; }
+@keyframes bvPartnerCardStatus {
+    0%   { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+    30%  { box-shadow: 0 0 0 2px rgba(248, 113, 113, .6), 0 10px 26px rgba(0, 0, 0, .4); }
+    100% { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+}
+/* Dauerhafte (nicht animierte) Färbung des Partner-Sprites, solange der Status läuft */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-gift { filter: hue-rotate(70deg) saturate(1.5) drop-shadow(0 0 9px rgba(163, 230, 53, .75)); }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-brand { filter: sepia(.55) saturate(2) hue-rotate(-18deg) drop-shadow(0 0 9px rgba(251, 146, 60, .8)); }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-blutung { filter: saturate(1.7) hue-rotate(-28deg) drop-shadow(0 0 9px rgba(248, 113, 113, .8)); }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-st-stun { filter: brightness(1.15) saturate(.7) drop-shadow(0 0 9px rgba(250, 204, 21, .8)); }
+@media (prefers-reduced-motion: reduce) {
+    .bv-partner-card.bv-p-card-status,
+    .bv-partner-status.bump .bv-ps-chip { animation: none !important; }
+}
 /* EP-Balken wie der Spieler-XP-Balken, aber schmal, damit die Karte kompakt bleibt */
 .bv-partner-ep { height: 4px; margin-top: 3px; overflow: hidden; border-radius: 99px; background: rgba(3, 10, 19, .8); }
 .bv-partner-ep span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #60a5fa, #a78bfa); transition: width .4s ease; }
@@ -33405,6 +33660,41 @@ body.bv-settings-particles-off #rpg-fx-particles {
 .bv-vp-line .bv-vp-bar { flex: 1; min-width: 0; }
 .bv-vp-levelup { flex: 0 0 auto; padding: 1px 7px; border-radius: 99px; background: linear-gradient(90deg, #fde68a, #fbbf24); color: #3b2300; font-size: .72rem; font-weight: 800; white-space: nowrap; animation: bvVpLevelPop .6s ease-out both; }
 @keyframes bvVpLevelPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* EP-Zeilen der Partner erscheinen gestaffelt statt alle gleichzeitig */
+#victory-screen.bv-has-partners .bv-victory-partner-row {
+    animation: bvVpRowIn .5s cubic-bezier(.16, 1, .3, 1) both;
+}
+#victory-screen.bv-has-partners .bv-victory-partner-row:nth-child(1) { animation-delay: .42s; }
+#victory-screen.bv-has-partners .bv-victory-partner-row:nth-child(2) { animation-delay: .52s; }
+#victory-screen.bv-has-partners .bv-victory-partner-row:nth-child(3) { animation-delay: .62s; }
+@keyframes bvVpRowIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #bv-party-sprites .bv-partner-sprite-battle.visible,
+    #bv-party-sprites .bv-partner-sprite-battle.bv-p-enter,
+    #bv-party-sprites .bv-partner-sprite-battle.bv-p-attack,
+    #bv-party-sprites .bv-partner-sprite-battle.bv-p-hurt,
+    #bv-party-sprites .bv-partner-sprite-battle.bv-p-cheer,
+    #bv-party-sprites .bv-partner-sprite-battle[class*="bv-atk-"],
+    #bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-win-"],
+    #bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-flee-"],
+    .bv-partner-card.bv-p-card-act,
+    .bv-partner-card.bv-p-card-heal,
+    .bv-partner-dmg,
+    .bv-partner-miss,
+    .bv-partner-hitfx,
+    .bv-partner-heal,
+    .bv-heal-ring,
+    .bv-heal-spark,
+    #bv-party-sprites .bv-partner-sprite-battle.bv-p-down,
+    #victory-screen.bv-has-partners .bv-victory-partner-row {
+        animation: none !important;
+    }
+}
 .bv-partner-sprite-battle {
     position: absolute;
     left: 58%;
@@ -33581,12 +33871,15 @@ body.bv-settings-particles-off #rpg-fx-particles {
         padding: 7px !important;
     }
     #battle-player-hud { grid-column: 1; grid-row: 1; min-height: 0; overflow: hidden; }
-    #bv-partner-hud { right: 8px; bottom: calc(100% + 6px); width: auto; max-width: calc(100% - 16px); padding: 0; gap: 4px; }
-    #bv-partner-hud .bv-partner-card { flex: 0 1 142px; padding: 5px 6px; gap: 6px; }
+    #bv-partner-hud { right: 8px; bottom: calc(100% + 6px); width: min(168px, calc(100% - 16px)); max-width: calc(100% - 16px); padding: 1px; gap: 4px; }
+    #bv-partner-hud .bv-partner-card { flex: 0 0 auto; padding: 5px 6px; gap: 6px; }
     #bv-partner-hud .bv-partner-portrait { flex-basis: 31px; width: 31px; height: 31px; font-size: 1rem; }
     #bv-partner-hud .bv-partner-name { font-size: .68rem; }
     #bv-partner-hud .bv-partner-bar { height: 5px; margin: 3px 0 2px; }
     #bv-partner-hud .bv-partner-hp-text, #bv-partner-hud .bv-partner-mp, #bv-partner-hud .bv-partner-level { font-size: .57rem; }
+    #bv-partner-hud .bv-partner-skill { font-size: .54rem; margin-top: 2px; }
+    #bv-partner-hud .bv-partner-mpbar { height: 3px; }
+    #bv-partner-hud .bv-partner-status .bv-ps-chip { font-size: .52rem; padding: 0 4px; }
     #battle-player-hud .player-bars-battle { width: 100%; }
     #battle-player-hud .battle-hud-frame {
         gap: 6px;
@@ -33645,38 +33938,367 @@ body.bv-settings-particles-off #rpg-fx-particles {
 /* Partner-Sprites: jedes Gruppenmitglied hat ein eigenes Element in #bv-party-sprites (im battle-player-area) */
 #bv-party-sprites { position: absolute; left: 0; bottom: 0; width: 0; height: 0; }
 #bv-party-sprites .bv-partner-sprite-battle { left: 68px; bottom: 0; width: 56px; height: 64px; font-size: 2.9rem; }
-#bv-party-sprites .bv-partner-sprite-battle.visible { display: flex; }
-/* Partner-Bewegungen orientieren sich an den Spieler-Animationen (playerAttack, playerHurt, Siegestanz),
-   sind aber etwas kleiner und haben eigene Namen und Zeiten. */
-#bv-party-sprites .bv-partner-sprite-battle.bv-p-attack { animation: bvPartnerLunge .6s ease-out both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-p-hurt { animation: bvPartnerHurt .4s ease-in-out both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-p-cheer { animation: winDanceHopV420 1.35s cubic-bezier(.16,1,.3,1) both; }
-@keyframes bvPartnerLunge {
-    0%   { transform: translateX(0); }
-    30%  { transform: translateX(95px) scale(1.08); }
-    50%  { transform: translateX(95px); }
-    100% { transform: translateX(0); }
+#bv-party-sprites .bv-partner-sprite-battle.visible {
+    display: flex;
+    /* WICHTIG: Hier darf keine Dauer-Animation hängen. Sonst greift nach dem Entfernen
+       einer Angriffs-/Trefferklasse wieder diese Regel und die Einflug-Animation startet
+       erneut – genau der sichtbare Rücksprung nach jeder Aktion. */
+    animation: none;
 }
-/* Partner nutzen dieselben Waffen-Keyframes wie der Spieler (gleiche Bewegung, gleiche Zeit) */
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-slam { animation: bvAtkSlamV6 .62s cubic-bezier(.35, 1.25, .45, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-jab { animation: bvAtkJabV6 .5s ease-out both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-pierce { animation: bvAtkPierceV6 .55s cubic-bezier(.2, .95, .3, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-flurry { animation: bvAtkFlurryV6 .78s ease-in-out both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-scald { animation: bvAtkScaldV6 .62s cubic-bezier(.3, 1.2, .5, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-splash { animation: bvAtkSplashV6 .6s cubic-bezier(.25, 1.15, .4, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-tremor { animation: bvAtkTremorV6 .68s ease-in-out both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-shred { animation: bvAtkShredV6 .58s cubic-bezier(.2, 1.15, .3, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-smash { animation: bvAtkSmashV6 .7s cubic-bezier(.3, 1.2, .4, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-barrage { animation: bvAtkBarrageV6 .9s ease-in-out both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-sonic { animation: bvAtkSonic .56s cubic-bezier(.2, .95, .3, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-spark { animation: bvAtkSpark .64s ease-out both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-serve { animation: bvAtkServe .72s cubic-bezier(.3, 1.2, .4, 1) both; }
-#bv-party-sprites .bv-partner-sprite-battle.bv-atk-stamp { animation: bvAtkStamp .68s cubic-bezier(.25, 1.1, .3, 1) both; }
-@keyframes bvPartnerHurt {
-    0%, 100% { transform: translateX(0); filter: brightness(1); }
-    25%      { transform: translateX(-10px); filter: brightness(2); }
-    75%      { transform: translateX(6px); }
+/* Einflug läuft genau einmal pro (Wieder-)Erscheinen über eine eigene Klasse. */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-enter {
+    animation: bvPartnerEnterV2 .46s cubic-bezier(.2, 1.5, .4, 1) both;
 }
+
+/* ===== v7.11: Partner-Kampfanimationen (eigenständig, nicht mehr Spieler-Keyframes) =====
+   Aufbau jeder Attacke: Antizipation (zurückfedern) → Dash mit Überschwingen →
+   Impact-Stauchung → Zurückfedern. Nur transform/filter = Compositor, kein Layout.
+   Endzustand enthält immer den Basis-Schatten, damit der Sprite danach nicht flach wirkt. */
+@keyframes bvPartnerEnterV2 {
+    0%   { opacity: 0; transform: translate3d(-18px, 14px, 0) scale(.7) rotate(-8deg); }
+    55%  { opacity: 1; transform: translate3d(4px, -6px, 0) scale(1.12) rotate(3deg); }
+    78%  { transform: translate3d(-2px, 2px, 0) scale(.97) rotate(-1deg); }
+    100% { opacity: 1; transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+
+/* Basis-Attacke (greift, wenn der Partner keine Waffenklasse mitbekommt) */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-attack {
+    animation: bvPartnerStrikeV2 .6s cubic-bezier(.3, 1.15, .45, 1) both;
+}
+@keyframes bvPartnerStrikeV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    14%  { transform: translate3d(-11px, 3px, 0) rotate(-7deg) scale(.93, 1.06); filter: brightness(1.2) drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    40%  { transform: translate3d(84px, -14px, 0) rotate(9deg) scale(1.14, .9); filter: brightness(1.7) drop-shadow(0 0 12px #7dd3fc); }
+    52%  { transform: translate3d(88px, -5px, 0) rotate(5deg) scale(1.18, .88); filter: brightness(1.8) drop-shadow(0 0 14px #7dd3fc); }
+    70%  { transform: translate3d(26px, 2px, 0) rotate(-4deg) scale(.98, 1.03); }
+    86%  { transform: translate3d(-5px, 0, 0) rotate(2deg) scale(1.02, .98); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+
+/* Bewegungs-Streifen hinter dem Partner + Impact-Ring am Zielpunkt */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-attack::before,
+#bv-party-sprites .bv-partner-sprite-battle[class*="bv-atk-"]::before {
+    content: "";
+    position: absolute;
+    right: 100%;
+    top: 52%;
+    width: 46px;
+    height: 4px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, rgba(125, 211, 252, 0), rgba(125, 211, 252, .8));
+    opacity: 0;
+    pointer-events: none;
+    animation: bvPartnerTrailV2 .5s ease-out both;
+}
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-attack::after,
+#bv-party-sprites .bv-partner-sprite-battle[class*="bv-atk-"]::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 18px;
+    height: 18px;
+    margin: -9px 0 0 -9px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, rgba(125, 211, 252, .85) 38%, rgba(125, 211, 252, 0) 72%);
+    opacity: 0;
+    transform: scale(.3);
+    pointer-events: none;
+    animation: bvPartnerImpactV2 .42s ease-out .28s both;
+}
+@keyframes bvPartnerTrailV2 {
+    0%   { opacity: 0; transform: scaleX(.2); }
+    35%  { opacity: .85; transform: scaleX(1); }
+    100% { opacity: 0; transform: scaleX(1.25); }
+}
+@keyframes bvPartnerImpactV2 {
+    0%   { opacity: 0; transform: scale(.3); }
+    35%  { opacity: .95; transform: scale(1.5); }
+    100% { opacity: 0; transform: scale(2.1); }
+}
+
+/* Waffen-Archetypen: schwer, Stich, schneller Hieb, Salve, Zauber */
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-slam,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-smash,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-tremor,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-stamp {
+    animation: bvPartnerHeavyV2 .72s cubic-bezier(.32, 1.1, .4, 1) both;
+}
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-jab,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-sonic,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-spark,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-serve {
+    animation: bvPartnerDashV2 .52s cubic-bezier(.25, 1.2, .4, 1) both;
+}
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-pierce,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-shred {
+    animation: bvPartnerThrustV2 .56s cubic-bezier(.2, 1.05, .35, 1) both;
+}
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-flurry,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-barrage {
+    animation: bvPartnerFlurryV2 .86s ease-in-out both;
+}
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-scald,
+#bv-party-sprites .bv-partner-sprite-battle.bv-atk-splash {
+    animation: bvPartnerCastV2 .68s cubic-bezier(.3, 1.1, .45, 1) both;
+}
+
+@keyframes bvPartnerHeavyV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    14%  { transform: translate3d(-10px, 4px, 0) rotate(-10deg) scale(.92, 1.06); filter: brightness(1.25) drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    28%  { transform: translate3d(44px, -26px, 0) rotate(-22deg) scale(1.06, .96); filter: brightness(1.5) drop-shadow(0 0 10px #fbbf24); }
+    /* Einschlag bei 36 % von .72 s = 259 ms – deckt sich mit dem Schadenszeitpunkt (250 ms) */
+    36%  { transform: translate3d(80px, -6px, 0) rotate(14deg) scale(1.18, .82); filter: brightness(1.85) drop-shadow(0 0 16px #fbbf24); }
+    48%  { transform: translate3d(80px, 3px, 0) rotate(9deg) scale(1.1, .9); }
+    68%  { transform: translate3d(20px, 0, 0) rotate(-4deg) scale(.98, 1.02); }
+    86%  { transform: translate3d(-4px, 0, 0) rotate(1deg) scale(1.01, .99); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+@keyframes bvPartnerDashV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    12%  { transform: translate3d(-12px, 2px, 0) rotate(-6deg) scale(.94, 1.05); filter: brightness(1.2) drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    42%  { transform: translate3d(88px, -10px, 0) rotate(7deg) scale(1.16, .9); filter: brightness(1.75) drop-shadow(0 0 12px #7dd3fc); }
+    58%  { transform: translate3d(60px, -4px, 0) rotate(2deg) scale(1.02, .98); }
+    78%  { transform: translate3d(8px, 0, 0) rotate(-2deg); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+@keyframes bvPartnerThrustV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    22%  { transform: translate3d(-14px, 0, 0) rotate(-3deg) scale(1.04, .96); filter: brightness(1.2) drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    44%  { transform: translate3d(104px, -4px, 0) rotate(2deg) scale(.82, 1.14); filter: brightness(1.65) drop-shadow(0 0 12px #a78bfa); }
+    58%  { transform: translate3d(70px, -2px, 0) rotate(0) scale(1.12, .9); }
+    82%  { transform: translate3d(10px, 0, 0) scale(1); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+@keyframes bvPartnerFlurryV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    10%  { transform: translate3d(-9px, 2px, 0) rotate(-5deg); }
+    22%  { transform: translate3d(54px, -8px, 0) rotate(6deg) scale(1.08, .94); filter: brightness(1.5) drop-shadow(0 0 10px #f472b6); }
+    34%  { transform: translate3d(30px, -2px, 0) rotate(-4deg) scale(.98, 1.03); }
+    46%  { transform: translate3d(78px, -12px, 0) rotate(8deg) scale(1.1, .9); filter: brightness(1.8) drop-shadow(0 0 12px #f472b6); }
+    58%  { transform: translate3d(48px, -2px, 0) rotate(-3deg); }
+    70%  { transform: translate3d(88px, -8px, 0) rotate(5deg) scale(1.12, .9); filter: brightness(2) drop-shadow(0 0 14px #f472b6); }
+    84%  { transform: translate3d(24px, 0, 0) rotate(-2deg); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+@keyframes bvPartnerCastV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    20%  { transform: translate3d(-6px, 2px, 0) scale(.9, 1.08) rotate(-3deg); filter: brightness(1.2) drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    40%  { transform: translate3d(6px, -24px, 0) scale(1.06, 1.1) rotate(4deg); filter: brightness(1.8) drop-shadow(0 0 18px #86efac); }
+    62%  { transform: translate3d(24px, -14px, 0) scale(1.1, 1.04) rotate(-3deg); filter: brightness(1.9) drop-shadow(0 0 16px #86efac); }
+    82%  { transform: translate3d(4px, -2px, 0) scale(1.02); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+
+/* Treffer: Recoil mit Rot-Aufblitzen, kurzem Taumeln und Zurückschwingen */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-hurt {
+    animation: bvPartnerHurtV2 .42s cubic-bezier(.3, .7, .4, 1) both;
+}
+@keyframes bvPartnerHurtV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    12%  { transform: translate3d(-11px, 3px, 0) rotate(-9deg) scale(.94, 1.06); filter: brightness(2.2) saturate(1.5) drop-shadow(0 0 12px #fb7185); }
+    34%  { transform: translate3d(7px, -2px, 0) rotate(5deg) scale(1.03, .97); filter: brightness(1.5) drop-shadow(0 0 8px #fb7185); }
+    56%  { transform: translate3d(-5px, 1px, 0) rotate(-3deg); }
+    76%  { transform: translate3d(3px, 0, 0) rotate(1deg); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+
+/* Heilung / Item: Freudensprung mit grünem Glow (Ersatz für den geliehenen Spieler-Tanz) */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-cheer {
+    animation: bvPartnerCheerV2 .62s cubic-bezier(.16, 1, .3, 1) both;
+}
+@keyframes bvPartnerCheerV2 {
+    0%   { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    20%  { transform: translate3d(0, -16px, 0) rotate(-6deg) scale(1.12); filter: brightness(1.5) drop-shadow(0 0 12px #86efac); }
+    42%  { transform: translate3d(0, 0, 0) rotate(4deg) scale(.96, 1.04); }
+    64%  { transform: translate3d(0, -9px, 0) rotate(-3deg) scale(1.06); filter: brightness(1.3) drop-shadow(0 0 10px #86efac); }
+    100% { transform: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+}
+
+/* Die zugehörige HUD-Karte pulsiert mit, wenn der Partner dran ist */
+.bv-partner-card.bv-p-card-act {
+    animation: bvPartnerCardPulse .42s ease-out both;
+}
+@keyframes bvPartnerCardPulse {
+    0%   { transform: scale(1); box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+    38%  { transform: scale(1.045); box-shadow: 0 0 0 2px rgba(125, 211, 252, .55), 0 12px 28px rgba(0, 0, 0, .42); }
+    100% { transform: scale(1); box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+}
+
+/* ===== v7.11: Treffer-Feedback am Partner-Sprite =====
+   Gegnerangriffe auf Partner werden hier verankert (Position wird pro Treffer aus
+   dem Sprite berechnet). Vorher lief die Schadenszahl über #battle-dmg-player und
+   wirkte dadurch wie ein Treffer am Spieler. */
+.bv-partner-dmg,
+.bv-partner-miss {
+    position: absolute;
+    z-index: 61;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #f9a8d4;
+    text-shadow: 2px 2px 0 #000, 0 0 12px rgba(249, 168, 212, .55);
+    animation: bvPartnerDmgPop .92s ease-out both;
+}
+.bv-partner-dmg.crit {
+    color: #ffe066;
+    font-size: 1.18rem;
+    text-shadow: 2px 2px 0 #000, 0 0 16px rgba(255, 224, 102, .7);
+}
+.bv-partner-miss {
+    color: #9dd7ff;
+    font-size: .8rem;
+    text-shadow: 2px 2px 0 #000, 0 0 10px rgba(157, 215, 255, .55);
+}
+@keyframes bvPartnerDmgPop {
+    0%   { opacity: 0; transform: translate(-50%, 8px) scale(.55); }
+    18%  { opacity: 1; transform: translate(-50%, -2px) scale(1.2); }
+    42%  { opacity: 1; transform: translate(-50%, -18px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -42px) scale(.95); }
+}
+.bv-partner-hitfx {
+    position: absolute;
+    z-index: 60;
+    transform: translateX(-50%);
+    pointer-events: none;
+    font-size: 1.45rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 120, 120, .85));
+    animation: bvPartnerHitFx .62s ease-out both;
+}
+@keyframes bvPartnerHitFx {
+    0%   { opacity: 0; transform: translate(-50%, 0) scale(.4) rotate(-18deg); }
+    30%  { opacity: 1; transform: translate(-50%, -8px) scale(1.35) rotate(6deg); }
+    100% { opacity: 0; transform: translate(-50%, -22px) scale(.9) rotate(0); }
+}
+
+/* K.O.: Partner kippt sichtbar um, statt sofort zu verschwinden */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-down {
+    animation: bvPartnerDownV2 .62s cubic-bezier(.4, 0, .6, 1) both;
+}
+@keyframes bvPartnerDownV2 {
+    0%   { transform: none; opacity: 1; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .6)); }
+    18%  { transform: translate3d(-6px, -4px, 0) rotate(-10deg) scale(1.05); opacity: 1; filter: brightness(2.2) saturate(.4) drop-shadow(0 0 12px #fb7185); }
+    55%  { transform: translate3d(10px, 8px, 0) rotate(14deg) scale(.95, .9); opacity: .9; filter: grayscale(1) brightness(.75); }
+    100% { transform: translate3d(14px, 16px, 0) rotate(22deg) scale(.8, .82); opacity: 0; filter: grayscale(1) brightness(.5); }
+}
+/* ===== v7.12: Partner-Siegestanz am Partner-Emoji =====
+   Gleiche fünf Tänze wie beim Spieler (#battle-player-sprite), nur auf die
+   Partner-Sprites gescopet. Wichtig: !important, weil `.visible` animation:none setzt. */
+#bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-win-"] { will-change: transform, filter; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-hop   { animation: winDanceHopV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-spin  { animation: winDanceSpinV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-slide { animation: winDanceSlideV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-pose  { animation: winDancePoseV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-win-wave  { animation: winDanceWaveV420 1.35s cubic-bezier(.16,1,.3,1) both !important; }
+
+/* ===== v7.12: Flucht der Partner =====
+   Vier Richtungen mit Anlauf, Sprüngen und Auslaufen – jede/r rennt anders weg.
+   Nach der Animation setzt das JS zusätzlich .bv-p-fled (display:none), damit
+   kein Sprite kurz vor dem Kampfende wieder auftaucht. */
+#bv-party-sprites .bv-partner-sprite-battle[class*="bv-p-flee-"] { will-change: transform, opacity; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-left  { animation: bvPartnerFleeLeft 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-right { animation: bvPartnerFleeRight 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-up    { animation: bvPartnerFleeUp 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-flee-down  { animation: bvPartnerFleeDown 1.05s cubic-bezier(.36, 0, .66, .3) both !important; }
+/* Endgültig weg: kein Zurückblitzen bis zum nächsten Kampfstart */
+#bv-party-sprites .bv-partner-sprite-battle.bv-p-fled { display: none !important; }
+@keyframes bvPartnerFleeLeft {
+    0%   { opacity: 1; transform: none; }
+    10%  { opacity: 1; transform: translate3d(11px, 6px, 0) rotate(12deg) scale(1.08); }
+    26%  { opacity: 1; transform: translate3d(-32px, -24px, 0) rotate(-13deg) scale(1.04); }
+    44%  { opacity: 1; transform: translate3d(-78px, 0, 0) rotate(7deg) scale(.98); }
+    62%  { opacity: .98; transform: translate3d(-126px, -20px, 0) rotate(-11deg) scale(.93); }
+    80%  { opacity: .8; transform: translate3d(-172px, 2px, 0) rotate(5deg) scale(.85); }
+    100% { opacity: 0; transform: translate3d(-235px, -8px, 0) rotate(-18deg) scale(.7); }
+}
+@keyframes bvPartnerFleeRight {
+    0%   { opacity: 1; transform: none; }
+    10%  { opacity: 1; transform: translate3d(-11px, 6px, 0) rotate(-12deg) scale(1.08); }
+    26%  { opacity: 1; transform: translate3d(32px, -24px, 0) rotate(13deg) scale(1.04); }
+    44%  { opacity: 1; transform: translate3d(78px, 0, 0) rotate(-7deg) scale(.98); }
+    62%  { opacity: .98; transform: translate3d(126px, -20px, 0) rotate(11deg) scale(.93); }
+    80%  { opacity: .8; transform: translate3d(172px, 2px, 0) rotate(-5deg) scale(.85); }
+    100% { opacity: 0; transform: translate3d(235px, -8px, 0) rotate(18deg) scale(.7); }
+}
+@keyframes bvPartnerFleeUp {
+    0%   { opacity: 1; transform: none; }
+    12%  { opacity: 1; transform: translate3d(0, 12px, 0) scale(.88, 1.12); }
+    40%  { opacity: 1; transform: translate3d(18px, -72px, 0) rotate(200deg) scale(1.06); }
+    70%  { opacity: .9; transform: translate3d(-12px, -150px, 0) rotate(400deg) scale(.8); }
+    100% { opacity: 0; transform: translate3d(8px, -240px, 0) rotate(620deg) scale(.35); }
+}
+@keyframes bvPartnerFleeDown {
+    0%   { opacity: 1; transform: none; }
+    14%  { opacity: 1; transform: translate3d(0, -16px, 0) rotate(-5deg) scale(1.05); }
+    45%  { opacity: 1; transform: translate3d(-10px, 34px, 0) rotate(6deg) scale(1.34); }
+    75%  { opacity: .7; transform: translate3d(8px, 82px, 0) rotate(-5deg) scale(1.72); }
+    100% { opacity: 0; transform: translate3d(0, 140px, 0) scale(2.15); }
+}
+
+/* ===== v7.12: Heil-Effekte am Partner =====
+   Ring + aufsteigende Funken + grüne Zahl. Alle Elemente werden per JS getimert
+   entfernt – keine Dauerklasse auf dem Sprite (siehe Rücksprung-Regel). */
+.bv-partner-heal {
+    position: absolute;
+    z-index: 62;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #86efac;
+    text-shadow: 2px 2px 0 #000, 0 0 14px rgba(134, 239, 172, .8);
+    animation: bvPartnerHealPop 1.15s ease-out both;
+}
+@keyframes bvPartnerHealPop {
+    0%   { opacity: 0; transform: translate(-50%, 10px) scale(.5); }
+    18%  { opacity: 1; transform: translate(-50%, -4px) scale(1.22); }
+    46%  { opacity: 1; transform: translate(-50%, -20px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -46px) scale(.95); }
+}
+.bv-heal-ring {
+    position: absolute;
+    z-index: 58;
+    width: 64px;
+    height: 64px;
+    border: 2px solid #4ade80;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 18px rgba(74, 222, 128, .65), inset 0 0 14px rgba(74, 222, 128, .35);
+    animation: bvHealRing .85s ease-out both;
+}
+@keyframes bvHealRing {
+    0%   { opacity: 0; transform: scale(.35); }
+    25%  { opacity: .95; }
+    100% { opacity: 0; transform: scale(1.35); }
+}
+.bv-heal-spark {
+    position: absolute;
+    z-index: 59;
+    pointer-events: none;
+    font-size: 1rem;
+    line-height: 1;
+    color: #86efac;
+    text-shadow: 0 0 10px rgba(74, 255, 136, .85);
+    animation: bvHealSpark .95s ease-out both;
+}
+@keyframes bvHealSpark {
+    0%   { opacity: 0; transform: translate(0, 0) scale(.5); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--hx, 0), var(--hy, -60px)) scale(1.15); }
+}
+.bv-partner-card.bv-p-card-heal { animation: bvPartnerCardHeal .72s ease-out both; }
+@keyframes bvPartnerCardHeal {
+    0%   { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+    35%  { box-shadow: 0 0 0 2px rgba(74, 222, 128, .75), 0 10px 26px rgba(0, 0, 0, .4); }
+    100% { box-shadow: 0 8px 22px rgba(0, 0, 0, .32); }
+}
+
 #rpg-battle-screen .bv-combo-meter.bump { animation: bvComboBump .22s ease-out; }
 #rpg-battle-screen .bv-combo-meter.toppling { animation: bvComboTopple .42s ease-in; }
 
@@ -40243,6 +40865,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         const selectedEnemySkills = getEditorSelectedEnemySkills();
                         
                         window.BVEditorTestBattle = true;
+                        // v7.12: Partner-Auswahl aus dem Battle-Editor übernehmen
+                        window.BVEditorPartnerSelection = document.getElementById("editor-partners")?.value || "team";
                         const editorBoss = {
                             enemyId: "custom_editor_boss",
                             name: bossName,
@@ -44585,7 +45209,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 let enemyAttackTarget = "player";
                 let enemyPartnerTarget = null;
                 let bvRoundQueue = [];
+                // v7.12: Team und Kampfgruppe sind getrennte Grenzen.
+                // v7.14: Beides wieder 3 – die Team-Texte ("1 von 3 Partnern") passen
+                // sonst nicht, und mehr als 3 Partner gleichzeitig ergeben im Kampf
+                // (HUD, Sprites, Rundenlog) keinen Sinn.
                 const BV_PARTNER_TEAM_LIMIT = 3;
+                const BV_PARTNER_PARTY_LIMIT = 3;
 
                 function bvPartnerDefForNpc(npc) {
                     if (!npc || npc.type !== "talk") return null;
@@ -44599,7 +45228,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const id = def.name.toLowerCase();
                     if (!player.bvPartners.includes(id)) {
                         if (player.bvPartners.length >= BV_PARTNER_TEAM_LIMIT) {
-                            showMessage("Dein Team ist schon voll (maximal 3 Partner). Wähle erst einen Partner ab.", "📋 Team", "🤝");
+                            showMessage("Dein Team ist schon voll (maximal " + BV_PARTNER_TEAM_LIMIT + " Partner). Wähle erst einen Partner ab.", "📋 Team", "🤝");
                             return;
                         }
                         player.bvPartners.push(id);
@@ -44616,11 +45245,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     player.bvPartnerHp[id] = player.bvPartnerProgress[id].hp;
                     const previousId = player.bvActivePartner;
                     player.bvActivePartner = id;
-                    bvAddToParty(id);
+                    const joinedFight = bvAddToParty(id);
                     const previousName = BV_PARTNER_DEFS[previousId]?.name;
                     const switchNote = previousId && previousId !== id && previousName ? " " + previousName + " bleibt in deinem Team; " + def.name + " ist jetzt aktiv." : "";
+                    const partyNote = joinedFight ? "" : " Im Kampf sind aber schon " + BV_PARTNER_PARTY_LIMIT + " Partner dabei – " + def.name + " bleibt im Team und kann im Team-Menü nachrücken.";
                     showMessage(def.name + ": ‚Gern! Wir sind jetzt ein Team.‘", "🤝 Partner-Team", def.sprite);
-                    queueMessage("Dein Team hat " + player.bvPartners.length + " von " + BV_PARTNER_TEAM_LIMIT + " Partnern. Im Kampf begleitet dich jetzt " + def.name + "." + switchNote, "📋 Team", def.sprite);
+                    queueMessage("Dein Team hat " + player.bvPartners.length + " von " + BV_PARTNER_TEAM_LIMIT + " Partnern. Im Kampf begleitet dich jetzt " + def.name + "." + switchNote + partyNote, "📋 Team", def.sprite);
                     if (typeof saveGame === "function") saveGame();
                 }
 
@@ -44647,7 +45277,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 queueMessage(def.role + ": „Mein Kampfskill ist „" + def.skill + "“. Ich starte mit LV " + progress.level + ", " + progress.hp + "/" + progress.maxHp + " HP und " + progress.mp + "/" + progress.maxMp + " MP; Angriff " + def.atk + ".“", def.name, def.sprite, () => bvOpenPartnerChoice(npc));
                             } else if (value === "select") {
                                 if (!bvAddToParty(id)) {
-                                    showMessage("Deine Kampfgruppe ist voll (3 Partner). Nimm erst jemanden heraus.", "📋 Team", def.sprite);
+                                    showMessage("Deine Kampfgruppe ist voll (" + BV_PARTNER_PARTY_LIMIT + " Partner). Nimm erst jemanden heraus.", "📋 Team", def.sprite);
                                     return;
                                 }
                                 player.bvPartnerProgress = player.bvPartnerProgress || {};
@@ -44717,6 +45347,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 function bvSavePartnerProgress(partner) {
                     if (!partner || !player) return;
+                    // v7.12: Im Battle-Editor ist der Kampf nur ein Test – der echte
+                    // Spielstand (Partner-HP/EP) bleibt unangetastet.
+                    if (currentEnemy && currentEnemy.isEditorTest) return;
                     player.bvPartnerProgress = player.bvPartnerProgress || {};
                     player.bvPartnerProgress[partner.id] = { level: partner.level, hp: partner.hp, mp: partner.mp, exp: partner.exp || 0, expNext: partner.expNext || 30 };
                     player.bvPartnerHp = player.bvPartnerHp || {};
@@ -44746,17 +45379,22 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 // Kampfgruppe: bis zu 3 aktive Partner (zusätzlich zum Spieler)
                 function bvPartnerParty() {
+                    // v7.14: Alte Spielstände können noch 4 Team-Mitglieder haben –
+                    // hier auf die aktuelle Grenze (3) kürzen, damit alle Texte passen.
+                    if (Array.isArray(player.bvPartners) && player.bvPartners.length > BV_PARTNER_TEAM_LIMIT) {
+                        player.bvPartners = player.bvPartners.slice(0, BV_PARTNER_TEAM_LIMIT);
+                    }
                     if (!Array.isArray(player.bvActiveParty)) player.bvActiveParty = player.bvActivePartner ? [player.bvActivePartner] : [];
                     player.bvActiveParty = [...new Set(player.bvActiveParty)]
                         .filter(pid => BV_PARTNER_DEFS[pid] && (player.bvPartners || []).includes(pid))
-                        .slice(0, BV_PARTNER_TEAM_LIMIT);
+                        .slice(0, BV_PARTNER_PARTY_LIMIT);
                     return player.bvActiveParty;
                 }
 
                 function bvAddToParty(id) {
                     const party = bvPartnerParty();
                     if (party.includes(id)) return true;
-                    if (party.length >= BV_PARTNER_TEAM_LIMIT) return false;
+                    if (party.length >= BV_PARTNER_PARTY_LIMIT) return false;
                     party.push(id);
                     return true;
                 }
@@ -44777,6 +45415,80 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 function bvEnsureBattlePartner() {
                     return bvEnsurePartnerById(bvPartnerParty()[0]) || null;
+                }
+
+                // ===== v7.12: Partner im Battle-Editor =====
+                // Baut einen Test-Partner direkt aus der Definition, ohne den echten
+                // Spielstand zu verändern (kein Eintrag in player.bvPartners/Progress).
+                function bvBuildEditorPartner(id) {
+                    const def = BV_PARTNER_DEFS[id];
+                    if (!def) return null;
+                    const lvlInput = parseInt(document.getElementById("editor-player-lvl")?.value || "", 10);
+                    const st = bvPartnerStats(def, Math.max(1, Math.min(99, lvlInput || 10)));
+                    return {
+                        ...def,
+                        id,
+                        level: st.level,
+                        maxHp: st.maxHp,
+                        hp: st.maxHp,
+                        maxMp: st.maxMp,
+                        mp: st.maxMp,
+                        atk: st.atk,
+                        exp: 0,
+                        expNext: 30,
+                        active: true,
+                        cooldown: 0,
+                        npcRef: null
+                    };
+                }
+
+                // Auswahl aus dem Editor: "team" (echtes Team), "none" oder eine Partner-ID.
+                function bvBuildEditorBattleParty() {
+                    const sel = window.BVEditorPartnerSelection || "team";
+                    if (sel === "none") return [];
+                    if (sel !== "team") return [bvBuildEditorPartner(sel)].filter(Boolean);
+                    const team = bvPartnerParty()
+                        .map(pid => bvEnsurePartnerById(pid))
+                        .filter(Boolean)
+                        // Im Test sind alle Partner kampfbereit (Kopien – der Spielstand
+                        // bleibt unverändert), sonst würde ein K.O.-Partner nicht mitkämpfen.
+                        .map(p => ({ ...p, hp: p.maxHp, mp: p.maxMp, active: true }));
+                    // Ohne eigenes Team trotzdem einen Partner zeigen – sonst bleibt der
+                    // Editor-Test leer und Partner-Animationen sind nicht prüfbar.
+                    return team.length
+                        ? team.slice(0, BV_PARTNER_PARTY_LIMIT)
+                        : [bvBuildEditorPartner("justin")].filter(Boolean);
+                }
+
+                // v7.12: Partner im VS-Splash zeigen – nur wenn wirklich welche mitkämpfen.
+                // Die Chips werden vor dem Einblenden gebaut; ihre CSS-Animation startet
+                // erst, wenn der Splash sichtbar wird (display:none hält sie an).
+                function bvRenderVsPartners() {
+                    const host = document.getElementById("vs-partners");
+                    if (!host) return;
+                    const party = (bvBattleParty || []).filter(p => p && p.active && p.hp > 0);
+                    if (!party.length) {
+                        host.replaceChildren();
+                        host.removeAttribute("aria-label");
+                        return;
+                    }
+                    host.replaceChildren(...party.map((p, i) => {
+                        const chip = document.createElement("div");
+                        chip.className = "vs-partner-chip";
+                        chip.style.setProperty("--i", i);
+                        chip.style.setProperty("--pc", p.color || "#7dd3fc");
+                        chip.title = (p.name || "Partner") + " · LV " + (p.level || 1);
+                        const emoji = document.createElement("span");
+                        emoji.className = "vs-partner-emoji";
+                        emoji.textContent = p.sprite || "🤝";
+                        const lvl = document.createElement("span");
+                        lvl.className = "vs-partner-lvl";
+                        lvl.textContent = "LV " + (p.level || 1);
+                        chip.append(emoji, lvl);
+                        return chip;
+                    }));
+                    if (typeof window.parseEmojis === "function") window.parseEmojis(host);
+                    host.setAttribute("aria-label", "Mit im Kampf: " + party.map(p => p.name || "Partner").join(", "));
                 }
 
                 function bvPartnerLog(text) {
@@ -44800,46 +45512,379 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             el.dataset.pid = p.id;
                             box.appendChild(el);
                         }
-                        el.style.left = (68 + i * 56) + "px";
+                        // Bei 4 Partnern enger staffeln, damit die Reihe im Kampffeld bleibt
+                        el.style.left = (68 + i * (members.length > 3 ? 50 : 56)) + "px";
                         if (el.dataset.sprite !== p.sprite) {
                             el.dataset.sprite = p.sprite;
                             el.textContent = p.sprite;
                             if (typeof window.parseEmojis === "function") window.parseEmojis(el);
                         }
-                        el.classList.toggle("visible", !!(p.active && p.hp > 0));
+                        // Einflug nur beim (Wieder-)Erscheinen, nicht bei jedem HUD-Update
+                        // und vor allem nicht als Fallback nach einer Kampf-Animation.
+                        // Während des K.O.-Umkippens (.bv-p-down) bleibt der Sprite sichtbar.
+                        const isDying = el.classList.contains("bv-p-down");
+                        const shouldShow = isDying || !!(p.active && p.hp > 0);
+                        const wasVisible = el.classList.contains("visible");
+                        el.classList.toggle("visible", shouldShow);
+                        if (shouldShow && !wasVisible && !isDying) {
+                            clearTimeout(el._bvEnterTimer);
+                            el.classList.add("bv-p-enter");
+                            el._bvEnterTimer = setTimeout(() => el.classList.remove("bv-p-enter"), 520);
+                        }
                     });
                     box.querySelectorAll("[data-pid]").forEach(el => {
                         if (!members.some(p => p.id === el.dataset.pid)) el.remove();
                     });
                 }
 
+                // ===== v7.11: Gegner-Angriffe auf Partner =====
+                // Alles Visuelle (Zahl, Treffer-Icon, K.O.) hängt am Partner-Sprite.
+                function bvPartnerSpriteEl(p) {
+                    return p && p.id ? document.querySelector('#bv-party-sprites [data-pid="' + p.id + '"]') : null;
+                }
+
+                // Erzeugt ein kurzes Feedback-Element direkt über dem Partner-Sprite.
+                function bvPartnerFloat(p, text, className, lifetime) {
+                    const el = bvPartnerSpriteEl(p);
+                    const box = document.getElementById("bv-party-sprites");
+                    if (!el || !box || el.offsetWidth === 0) return null;
+                    const node = document.createElement("div");
+                    node.className = className;
+                    node.textContent = text;
+                    node.style.left = (el.offsetLeft + el.offsetWidth / 2) + "px";
+                    node.style.bottom = Math.max(22, el.offsetHeight * 0.9) + "px";
+                    box.appendChild(node);
+                    if (typeof window.parseEmojis === "function") window.parseEmojis(node);
+                    setTimeout(() => node.remove(), lifetime || 950);
+                    return node;
+                }
+
+                function bvPartnerDamageFeedback(p, dmg, isCrit) {
+                    bvPartnerFloat(p, (isCrit ? "💥" : "") + dmg, "bv-partner-dmg" + (isCrit ? " crit" : ""), 950);
+                    bvPartnerFloat(p, isCrit ? "💥" : "💢", "bv-partner-hitfx", 680);
+                }
+
+                function bvPartnerMissFeedback(p) {
+                    bvPartnerFloat(p, "Daneben!", "bv-partner-miss", 950);
+                }
+
+                // ===== v7.12: Heil-Feedback am Partner =====
+                // Ring, aufsteigende Funken, grüne Zahl über dem Sprite und ein Puls
+                // auf der HUD-Karte. Alles per setTimeout aufgeräumt, keine Dauerklassen.
+                function bvPartnerHealFeedback(p, healed) {
+                    const el = bvPartnerSpriteEl(p);
+                    const box = document.getElementById("bv-party-sprites");
+                    if (!el || !box || el.offsetWidth === 0) return;
+
+                    const cx = el.offsetLeft + el.offsetWidth / 2;
+                    const centerBottom = -(el.offsetTop + el.offsetHeight / 2);
+
+                    if (healed > 0) bvPartnerFloat(p, "+" + healed, "bv-partner-heal", 1150);
+
+                    const ring = document.createElement("div");
+                    ring.className = "bv-heal-ring";
+                    ring.style.left = (cx - 32) + "px";
+                    ring.style.bottom = (centerBottom - 32) + "px";
+                    box.appendChild(ring);
+                    setTimeout(() => ring.remove(), 900);
+
+                    const icons = ["✚", "✨", "💚", "✚", "✨", "💚", "✚", "✨"];
+                    for (let i = 0; i < 10; i++) {
+                        const s = document.createElement("span");
+                        s.className = "bv-heal-spark";
+                        s.textContent = icons[i % icons.length];
+                        s.style.left = (cx + (Math.random() * 46 - 23)).toFixed(0) + "px";
+                        s.style.bottom = (18 + Math.random() * 26).toFixed(0) + "px";
+                        s.style.setProperty("--hx", (Math.random() * 34 - 17).toFixed(0) + "px");
+                        s.style.setProperty("--hy", (-(40 + Math.random() * 55)).toFixed(0) + "px");
+                        s.style.animationDelay = (i * 0.045).toFixed(2) + "s";
+                        box.appendChild(s);
+                        setTimeout(() => s.remove(), 1200);
+                    }
+                    if (typeof window.parseEmojis === "function") window.parseEmojis(box);
+
+                    const card = document.querySelector('#bv-partner-hud .bv-partner-card[data-pid="' + p.id + '"]');
+                    if (card) {
+                        card.classList.remove("bv-p-card-heal");
+                        void card.offsetWidth;
+                        card.classList.add("bv-p-card-heal");
+                        setTimeout(() => card.classList.remove("bv-p-card-heal"), 760);
+                    }
+                }
+
+                // Gültiges Partnerziel des laufenden Gegnerzugs (oder null).
+                function bvEnemyPartnerTargetActive() {
+                    return (enemyAttackTarget === "partner" && enemyPartnerTarget && enemyPartnerTarget.active && enemyPartnerTarget.hp > 0)
+                        ? enemyPartnerTarget : null;
+                }
+
+                // K.O.-Umkippen: Sprite bleibt kurz sichtbar, danach wird ausgeblendet.
+                function bvPartnerDown(p) {
+                    const el = bvPartnerSpriteEl(p);
+                    const card = document.querySelector('#bv-partner-hud .bv-partner-card[data-pid="' + (p && p.id) + '"]');
+                    if (card) {
+                        card.classList.remove("bv-p-card-act");
+                        void card.offsetWidth;
+                        card.classList.add("bv-p-card-act");
+                        setTimeout(() => card.classList.remove("bv-p-card-act"), 700);
+                    }
+                    if (!el) { bvUpdatePartnerHud(); return; }
+                    clearTimeout(el._bvEnterTimer);
+                    clearTimeout(el._bvDownTimer);
+                    el.classList.remove("bv-p-enter", "bv-p-attack", "bv-p-hurt", "bv-p-cheer", ...BV_ATK_CLASSES);
+                    void el.offsetWidth;
+                    el.classList.add("bv-p-down");
+                    el._bvDownTimer = setTimeout(() => {
+                        el.classList.remove("bv-p-down");
+                        bvUpdatePartnerHud();
+                    }, 660);
+                }
+
                 function bvPlayPartnerAnim(cls, ms, pid, extraCls) {
                     const id = pid || bvBattleParty[0]?.id;
                     const el = document.querySelector('#bv-party-sprites [data-pid="' + id + '"]');
+                    // Die HUD-Karte des Partners pulsiert synchron zur Aktion mit.
+                    const card = document.querySelector('#bv-partner-hud .bv-partner-card[data-pid="' + id + '"]');
+                    if (card) {
+                        card.classList.remove("bv-p-card-act");
+                        void card.offsetWidth;
+                        card.classList.add("bv-p-card-act");
+                        setTimeout(() => card.classList.remove("bv-p-card-act"), Math.min(ms, 700));
+                    }
                     if (!el) return;
+                    // Laufenden Einflug abbrechen. Sonst würde er nach dem Entfernen der
+                    // Aktionsklasse als Fallback wieder anspringen (Rücksprung-Effekt).
+                    clearTimeout(el._bvEnterTimer);
+                    clearTimeout(el._bvDownTimer);
+                    el.classList.remove("bv-p-enter", "bv-p-down");
                     el.classList.remove("bv-p-attack", "bv-p-hurt", "bv-p-cheer", ...BV_ATK_CLASSES);
                     void el.offsetWidth;
                     el.classList.add(cls);
                     if (extraCls) el.classList.add(extraCls);
+                    // Erst NACH dem Animationsende entfernen (ms enthält bereits Puffer),
+                    // damit der Endzustand nicht vorzeitig auf den Startwert springt.
                     setTimeout(() => el.classList.remove(cls), ms);
-                    // Waffen-Animationen dauern bis 0,9 s, daher eigene Entfernungszeit
+                    // Waffen-Animationen dauern bis 0,86 s, daher eigene Entfernungszeit
                     if (extraCls) setTimeout(() => el.classList.remove(extraCls), 1000);
                 }
 
                 function bvDamagePartner(p, dmg, isCrit) {
-                    const taken = Math.min(p.hp, Math.max(1, Math.floor(dmg)));
-                    p.hp -= taken;
-                    bvPlayPartnerAnim("bv-p-hurt", 400, p.id);
+                    if (!p) return { dmg: 0, crit: false, target: "partner" };
+                    const taken = Math.min(Math.max(0, p.hp), Math.max(1, Math.floor(dmg)));
+                    p.hp = Math.max(0, p.hp - taken);
                     bvSavePartnerProgress(p);
-                    bvUpdatePartnerHud();
-                    showDmgPopup("battle-dmg-player", taken, isCrit ? "#ffe066" : "#f9a8d4", isCrit);
-                    battleLog(currentEnemy.name + " greift " + p.name + " an! " + taken + " Schaden!" + (isCrit ? " 💥" : ""));
+
+                    // Feedback sitzt am Partner-Sprite (Zahl + Treffer-Icon),
+                    // NICHT mehr über #battle-dmg-player wie ein Spielertreffer.
+                    bvPartnerDamageFeedback(p, taken, isCrit);
+
                     if (p.hp <= 0) {
                         p.active = false;
-                        bvUpdatePartnerHud();
+                        bvPartnerDown(p);               // sichtbares K.O.-Umkippen, danach ausblenden
+                    } else {
+                        // 460 ms > Keyframe-Dauer (.42 s), damit die Klasse erst nach dem Ende fällt
+                        bvPlayPartnerAnim("bv-p-hurt", 460, p.id);
+                    }
+                    bvUpdatePartnerHud();
+
+                    battleLog(currentEnemy.name + " greift " + p.name + " an! " + taken + " Schaden!" + (isCrit ? " 💥" : ""));
+                    if (p.hp <= 0) {
                         setTimeout(() => battleLog("„" + p.name + " ist kampfunfähig!"), 900);
                     }
-                    return { dmg: taken, crit: isCrit, target: "partner" };
+                    return { dmg: taken, crit: isCrit, target: "partner", partner: p.name };
+                }
+
+                // ===== v7.13: Partner-MP, Skills und Statuswerte =====
+                // MP gab es bei Partnern schon (maxMp/mp in bvPartnerStats), war aber
+                // praktisch unsichtbar und lief leer. Jetzt:
+                //   · eigener MP-Balken + Skill-Kosten auf der HUD-Karte
+                //   · +1 MP pro Kampfrunde und ein garantierter Skill zu Kampfbeginn
+                //   · Gift / Brand / Blutung / Betäubung wie beim Gegner (BV_STATUS_DEFS)
+                const BV_PARTNER_STATUS_MAX_TURNS = 4;
+                const BV_PARTNER_STATUS_DOT = ["gift", "brand", "blutung"];
+
+                function bvPartnerSkillCost(p) {
+                    if (!p) return 3;
+                    // Deborhas Kaffee-Pause ist der günstigste Skill
+                    return p.id === "deborha" ? 2 : 3;
+                }
+
+                function bvPartnerStatusStore(p, create) {
+                    if (!p) return null;
+                    if (!p.status) {
+                        if (!create) return null;
+                        p.status = {
+                            gift: { turns: 0, dmg: 0 }, brand: { turns: 0, dmg: 0 },
+                            blutung: { turns: 0, dmg: 0 }, stun: 0
+                        };
+                    }
+                    return p.status;
+                }
+
+                // Chips für die HUD-Karte (leer, wenn nichts anhaftet)
+                function bvPartnerStatusChipsHtml(p) {
+                    const st = bvPartnerStatusStore(p, false);
+                    if (!st) return "";
+                    let html = "";
+                    Object.keys(BV_STATUS_DEFS).forEach(k => {
+                        const d = BV_STATUS_DEFS[k];
+                        if (k === "stun") {
+                            if (st.stun > 0) html += '<span class="bv-ps-chip" style="color:' + d.color + '" title="' + d.label + ': ' + st.stun + ' Runde(n)">' + d.icon + '<b>' + st.stun + '</b></span>';
+                        } else if (st[k] && st[k].turns > 0) {
+                            html += '<span class="bv-ps-chip" style="color:' + d.color + '" title="' + d.label + ': ' + st[k].turns + ' Runde(n), ' + Math.round(st[k].dmg) + ' Schaden/Runde">' + d.icon + '<b>' + st[k].turns + '</b></span>';
+                        }
+                    });
+                    return html;
+                }
+
+                // Sprite einfärben + Karte aktualisieren (pulse = kurzer Karten-Stoß)
+                function bvPartnerStatusUi(p, pulse) {
+                    if (!p) return;
+                    const st = bvPartnerStatusStore(p, false);
+                    const el = bvPartnerSpriteEl(p);
+                    if (el) {
+                        BV_PARTNER_STATUS_DOT.forEach(k => {
+                            el.classList.toggle("bv-p-st-" + k, !!(st && st[k] && st[k].turns > 0));
+                        });
+                        el.classList.toggle("bv-p-st-stun", !!(st && st.stun > 0));
+                    }
+                    const card = document.querySelector('#bv-partner-hud .bv-partner-card[data-pid="' + p.id + '"]');
+                    if (!card) return;
+                    bvFillPartnerCard(card, p);
+                    if (!pulse) return;
+                    const row = card.querySelector(".bv-partner-status");
+                    card.classList.remove("bv-p-card-status");
+                    if (row) row.classList.remove("bump");
+                    void card.offsetWidth;
+                    card.classList.add("bv-p-card-status");
+                    if (row) row.classList.add("bump");
+                    setTimeout(() => {
+                        card.classList.remove("bv-p-card-status");
+                        if (row) row.classList.remove("bump");
+                    }, 640);
+                }
+
+                function bvPartnerStatusApply(p, kind, turns, dmg) {
+                    if (!p || p.hp <= 0 || !BV_STATUS_DEFS[kind]) return;
+                    const st = bvPartnerStatusStore(p, true);
+                    if (!st) return;
+                    if (kind === "stun") {
+                        st.stun = Math.min(2, Math.max(st.stun || 0, turns));
+                    } else {
+                        const cur = st[kind] || { turns: 0, dmg: 0 };
+                        st[kind] = {
+                            turns: Math.min(BV_PARTNER_STATUS_MAX_TURNS, cur.turns + turns),
+                            dmg: Math.max(cur.dmg, Math.max(1, Math.round(dmg)))
+                        };
+                    }
+                    const d = BV_STATUS_DEFS[kind];
+                    const rest = kind === "stun" ? st.stun : st[kind].turns;
+                    bvPartnerFloat(p, d.icon, "bv-partner-hitfx", 820);
+                    battleLog("☠️ " + p.name + " ist jetzt " + d.verb + "! " + d.icon + " (" + rest + " Runde" + (rest === 1 ? "" : "n") + ")");
+                    bvPartnerStatusUi(p, true);
+                }
+
+                // Gegner-Skill auf den Partner übertragen (früher: "Partner haben keine Statuswerte")
+                function bvPartnerStatusFromSkill(p, skill) {
+                    if (!p || p.hp <= 0 || !skill) return;
+                    const eff = String(skill.effect || "");
+                    const label = String(skill.name || "") + " " + String(skill.icon || "");
+                    const atk = Number(currentEnemy?.atk) || 5;
+                    if (eff === "poison" || /gift|virus|toxic|seuche|schimmel/i.test(label)) {
+                        bvPartnerStatusApply(p, "gift", 3, Math.max(1, Math.round(atk * 0.3)));
+                        return;
+                    }
+                    if (eff === "stun" || eff === "italianSlap" || /betäub|schelle|stun|schock/i.test(label)) {
+                        // Partner haben keinen eigenen Immunitäts-Zähler – 40 % Widerstand genügt
+                        if (Math.random() < 0.4) {
+                            bvPartnerFloat(p, "🛡️", "bv-partner-hitfx", 700);
+                            battleLog(p.name + " widersteht der Betäubung! 🛡️");
+                        } else {
+                            bvPartnerStatusApply(p, "stun", 1, 0);
+                        }
+                        return;
+                    }
+                    if (eff === "brand" || /feuer|fire|brand|flamm|hitze|glut/i.test(label)) {
+                        bvPartnerStatusApply(p, "brand", 2, Math.max(1, Math.round(atk * 0.25)));
+                    }
+                }
+
+                // Kritische Treffer lassen Partner bluten
+                function bvPartnerStatusFromCrit(p) {
+                    if (!p || p.hp <= 0 || Math.random() >= 0.35) return;
+                    bvPartnerStatusApply(p, "blutung", 2, Math.max(1, Math.round((Number(currentEnemy?.atk) || 5) * 0.2)));
+                }
+
+                // Läuft zu Beginn des Partnerzugs. true = Zug ist verbraucht.
+                function bvPartnerStatusTick(p) {
+                    if (!p || p.hp <= 0 || gameState !== "BATTLE") return false;
+                    const st = bvPartnerStatusStore(p, false);
+                    if (!st) return false;
+                    let total = 0;
+                    const kinds = [];
+                    BV_PARTNER_STATUS_DOT.forEach(k => {
+                        const e = st[k];
+                        if (!e || e.turns <= 0) return;
+                        total += Math.max(1, Math.round(e.dmg));
+                        kinds.push(k);
+                        e.turns -= 1;
+                    });
+                    if (total > 0) {
+                        const real = Math.min(Math.max(0, p.hp), total);
+                        p.hp = Math.max(0, p.hp - real);
+                        bvSavePartnerProgress(p);
+                        bvPartnerFloat(p, "-" + real, "bv-partner-dmg", 950);
+                        kinds.forEach(k => bvPartnerFloat(p, BV_STATUS_DEFS[k].icon, "bv-partner-hitfx", 700));
+                        battleLog("☠️ " + kinds.map(k => BV_STATUS_DEFS[k].icon).join("") + " " + p.name + " verliert " + real + " HP durch Status!");
+                        bvPlayPartnerAnim("bv-p-hurt", 460, p.id);
+                        bvPartnerStatusUi(p, true);
+                        bvUpdatePartnerHud();
+                        if (p.hp <= 0) {
+                            p.active = false;
+                            bvPartnerDown(p);
+                            battleLog("„" + p.name + " ist kampfunfähig!");
+                            bvEndPartnerTurn();
+                            return true;
+                        }
+                    }
+                    if (st.stun > 0) {
+                        st.stun -= 1;
+                        bvPartnerStatusUi(p, true);
+                        battleLog("💫 " + p.name + " ist betäubt und setzt eine Runde aus!");
+                        bvPartnerFloat(p, "💫", "bv-partner-hitfx", 900);
+                        bvEndPartnerTurn();
+                        return true;
+                    }
+                    return false;
+                }
+
+                // Zu Beginn jeder Kampfrunde: +1 MP für jeden aktiven Partner
+                function bvPartnerRoundStart() {
+                    let changed = false;
+                    (bvBattleParty || []).forEach(p => {
+                        if (!p || !p.active || p.hp <= 0) return;
+                        const max = Math.max(1, Number(p.maxMp) || 1);
+                        const cur = Math.max(0, Number(p.mp) || 0);
+                        if (cur < max) {
+                            p.mp = Math.min(max, cur + 1);
+                            changed = true;
+                        }
+                    });
+                    if (changed) bvUpdatePartnerHud();
+                    return changed;
+                }
+
+                // Kampfstart: Status zurücksetzen und sicherstellen, dass ein Skill drin ist
+                function bvPartnerPrepareBattle() {
+                    (bvBattleParty || []).forEach(p => {
+                        if (!p) return;
+                        p.status = null;
+                        const max = Math.max(1, Number(p.maxMp) || 1);
+                        const need = Math.min(bvPartnerSkillCost(p), max);
+                        if ((Number(p.mp) || 0) < need) p.mp = need;
+                        const el = bvPartnerSpriteEl(p);
+                        if (el) el.classList.remove("bv-p-st-gift", "bv-p-st-brand", "bv-p-st-blutung", "bv-p-st-stun");
+                    });
                 }
 
                 function bvEndPartnerTurn() {
@@ -44860,26 +45905,52 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     portrait.className = "bv-partner-portrait";
                     const info = document.createElement("div");
                     info.className = "bv-partner-info";
+                    // v7.13: Name + Level in einer Zeile, darunter HP, MP und der Skill
+                    const nameRow = document.createElement("div");
+                    nameRow.className = "bv-partner-namerow";
                     const name = document.createElement("div");
                     name.className = "bv-partner-name";
+                    const level = document.createElement("div");
+                    level.className = "bv-partner-level";
+                    nameRow.append(name, level);
                     const bar = document.createElement("div");
                     bar.className = "bv-partner-bar";
                     const fill = document.createElement("span");
                     bar.appendChild(fill);
-                    const hpText = document.createElement("div");
+                    const statRow = document.createElement("div");
+                    statRow.className = "bv-partner-statrow";
+                    const hpText = document.createElement("span");
                     hpText.className = "bv-partner-hp-text";
-                    const mp = document.createElement("div");
+                    const mp = document.createElement("span");
                     mp.className = "bv-partner-mp";
-                    mp.innerHTML = "<span>☕ MP</span><b></b>";
-                    const level = document.createElement("div");
-                    level.className = "bv-partner-level";
+                    const mpVal = document.createElement("b");
+                    mp.append("☕ ", mpVal);
+                    statRow.append(hpText, mp);
+                    // Eigener MP-Balken – zeigt direkt, ob der Skill bezahlbar ist
+                    const mpBar = document.createElement("div");
+                    mpBar.className = "bv-partner-mpbar";
+                    const mpFill = document.createElement("span");
+                    mpBar.appendChild(mpFill);
+                    // Skill-Zeile (Icon, Name, MP-Kosten)
+                    const skill = document.createElement("div");
+                    skill.className = "bv-partner-skill";
+                    const skillIcon = document.createElement("span");
+                    skillIcon.className = "bv-ps-icon";
+                    const skillName = document.createElement("span");
+                    skillName.className = "bv-ps-name";
+                    const skillCost = document.createElement("span");
+                    skillCost.className = "bv-ps-cost";
+                    skill.append(skillIcon, skillName, skillCost);
+                    // Status-Chips (nur sichtbar, wenn Gift/Brand/Blutung/Betäubung aktiv ist)
+                    const status = document.createElement("div");
+                    status.className = "bv-partner-status";
                     const ep = document.createElement("div");
                     ep.className = "bv-partner-ep";
                     const epFill = document.createElement("span");
                     ep.appendChild(epFill);
-                    info.append(name, bar, hpText, mp, level, ep);
+                    info.append(nameRow, bar, statRow, mpBar, skill, status, ep);
                     card.append(portrait, info);
-                    card._refs = { portrait, name, fill, hpText, mpVal: mp.querySelector("b"), level, epFill, ep };
+                    card._refs = { portrait, name, level, fill, hpText, mpVal, mpFill, skill, skillIcon, skillName, skillCost, status, epFill, ep };
                     bvFillPartnerCard(card, p);
                     return card;
                 }
@@ -44893,10 +45964,35 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         if (typeof window.parseEmojis === "function") window.parseEmojis(r.portrait);
                     }
                     r.name.textContent = p.name;
+                    r.level.textContent = "LV " + p.level;
                     r.fill.style.width = Math.max(0, Math.min(100, p.hp / Math.max(1, p.maxHp) * 100)) + "%";
                     r.hpText.textContent = Math.max(0, p.hp) + "/" + p.maxHp;
-                    r.mpVal.textContent = Math.max(0, p.mp) + "/" + p.maxMp;
-                    r.level.textContent = "LV " + p.level;
+                    const mpNow = Math.max(0, Number(p.mp) || 0);
+                    const mpMax = Math.max(1, Number(p.maxMp) || 1);
+                    r.mpVal.textContent = mpNow + "/" + mpMax;
+                    r.mpFill.style.width = Math.max(0, Math.min(100, mpNow / mpMax * 100)) + "%";
+                    // Skill-Zeile: leuchtet, sobald die MP reichen
+                    const cost = bvPartnerSkillCost(p);
+                    if (r.skillIcon.dataset.icon !== (p.icon || "🤝")) {
+                        r.skillIcon.dataset.icon = p.icon || "🤝";
+                        r.skillIcon.textContent = p.icon || "🤝";
+                        if (typeof window.parseEmojis === "function") window.parseEmojis(r.skillIcon);
+                    }
+                    const skillLabel = p.skill || "Spezialangriff";
+                    if (r.skillName.textContent !== skillLabel) r.skillName.textContent = skillLabel;
+                    const costLabel = cost + " MP";
+                    if (r.skillCost.textContent !== costLabel) r.skillCost.textContent = costLabel;
+                    const ready = mpNow >= cost && p.hp > 0;
+                    r.skill.classList.toggle("ready", ready);
+                    r.skill.title = skillLabel + " · " + cost + " MP" + (ready ? " – bereit!" : " – zu wenig MP");
+                    // Status-Chips nur neu schreiben, wenn sich etwas geändert hat
+                    const sig = bvPartnerStatusChipsHtml(p);
+                    if (r.status.dataset.sig !== sig) {
+                        r.status.dataset.sig = sig;
+                        r.status.innerHTML = sig;
+                        r.status.classList.toggle("has", !!sig);
+                        if (sig && typeof window.parseEmojis === "function") window.parseEmojis(r.status);
+                    }
                     r.ep.title = "EP " + (p.exp || 0) + "/" + (p.expNext || 30);
                     r.epFill.style.width = Math.min(100, Math.round((p.exp || 0) / Math.max(1, p.expNext || 30) * 100)) + "%";
                 }
@@ -44920,8 +46016,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 function bvPartnerAttack(p) {
                     const partner = p;
                     if (!partner || !partner.active || partner.hp <= 0 || enemyHp <= 0 || bvPartnerActionBusy || gameState !== "BATTLE") return;
+                    // v7.13: Statuswerte zuerst – Gift/Brand/Blutung ticken und eine
+                    // Betäubung kostet den Zug, bevor der Partner angreift.
+                    if (bvPartnerStatusTick(partner)) return;
                     bvPartnerActionBusy = true;
-                    const skillCost = partner.id === "deborha" ? 2 : 3;
+                    const skillCost = bvPartnerSkillCost(partner);
                     const usesSkill = partner.mp >= skillCost;
                     if (usesSkill) partner.mp -= skillCost;
                     const raw = Math.max(1, Math.floor((partner.atk + Math.random() * 5) * (usesSkill ? partner.mult : 0.7) + (partner.level - 1) * 1.5 - (currentEnemy.def || 0) * 0.35));
@@ -44930,21 +46029,36 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const partnerSkill = partner.skill || "Spezialangriff";
                     const partnerIcon = partner.icon || "🤝";
                     const partnerColor = partner.color || "#67e8f9";
-                    showBattleActionBubble("player", partnerName + " hilft!", partnerIcon, partnerColor);
+                    // Sprechblase über dem Partner-Sprite, nicht über dem Spieler
+                    showBattleActionBubble("player", partnerName + " hilft!", partnerIcon, partnerColor, bvPartnerSpriteEl(partner));
                     // Gleiche Angriffsbewegung wie beim Spieler: die Klasse der aktuellen Spielerwaffe
                     const pw = (typeof bvWeaponCurrent === "function") ? bvWeaponCurrent() : null;
-                    bvPlayPartnerAnim("bv-p-attack", 600, partner.id, pw ? "bv-atk-" + pw.anim : null);
+                    bvPlayPartnerAnim("bv-p-attack", 660, partner.id, pw ? "bv-atk-" + pw.anim : null);
                     setTimeout(() => {
                         if (gameState !== "BATTLE" || enemyHp <= 0) { bvPartnerActionBusy = false; return; }
                         const beforeEnemyHp = enemyHp;
                         damageEnemy(hit.dmg, hit.crit);
                         const actualDamage = Math.max(0, beforeEnemyHp - enemyHp);
                         spawnBattleEffect("enemy", partnerIcon);
+                        // v7.14: Auch Partnerangriffe legen ein Blatt auf den Aktenstapel –
+                        // der Partner trägt damit zur Kombo des Spielers bei.
+                        if (actualDamage > 0 && typeof bvComboAdd === "function") bvComboAdd("partner");
                         let healing = 0;
                         if (partner.heal && player.hp > 0) {
                             healing = Math.min(partner.heal, player.maxHp - player.hp);
                             player.hp += healing;
-                            if (healing > 0) { updateHUD(); updateBattleUI(); }
+                            if (healing > 0) {
+                                // v7.12: Heilung durch den Partner sichtbar machen
+                                triggerItemHealAnimation("💚");
+                                spawnBattleEffect("player", "💚");
+                                const healEl = document.getElementById("battle-dmg-player");
+                                if (healEl) {
+                                    healEl.innerText = "+" + healing;
+                                    healEl.style.color = "#86efac";
+                                    healEl.className = "dmg-show dmg-heal";
+                                }
+                                updateHUD(); updateBattleUI();
+                            }
                         }
                         if (partner.mpGift && partner.mp >= partner.mpGift && player.mp < player.maxMp) {
                             partner.mp -= partner.mpGift;
@@ -45126,8 +46240,18 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     stopCameraLoop();
 
                     currentEnemy = { ...enemyData, enemyId: npc?.enemyId || enemyData.enemyId, npcRef: npc };
-                    bvBattleParty = npc?.isEditorTest ? [] : bvPartnerParty().map(pid => bvEnsurePartnerById(pid)).filter(Boolean);
+                    // v7.12: Im Battle-Editor kämpfen die Partner mit (Auswahl im Editor),
+                    // im normalen Spiel weiterhin das echte Partner-Team.
+                    bvBattleParty = npc?.isEditorTest
+                        ? bvBuildEditorBattleParty()
+                        : bvPartnerParty().map(pid => bvEnsurePartnerById(pid)).filter(Boolean);
                     bvPartnerActionBusy = false;
+                    // Nach einer Flucht sind die Sprites ausgeblendet (.bv-p-fled) –
+                    // ein neuer Kampf startet immer mit sichtbaren Partnern.
+                    document.querySelectorAll("#bv-party-sprites .bv-p-fled").forEach(el => el.classList.remove("bv-p-fled"));
+                    // v7.13: Partner-Status gelten pro Kampf – Heftung zurücksetzen und
+                    // genug MP sicherstellen, damit mindestens ein Skill möglich ist.
+                    bvPartnerPrepareBattle();
                     bvUpdatePartnerHud();
                     
                     // Calculate HP based on level (only for non-boss enemies)
@@ -45177,6 +46301,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     update("vs-enemy-name", currentEnemy.displayName);
                     update("vs-enemy-sprite", currentEnemy.sprite);
                     update("vs-player-sprite", player.sprite);
+                    // v7.12: Partner-Chips im VS-Splash
+                    bvRenderVsPartners();
 
                     const vsMessageText = currentEnemy.vsMessage || "";
                     // Anzeigedauer flexibel an die Textlänge anpassen:
@@ -46380,15 +47506,59 @@ function performAttack() {
                         row.dataset.skill = skill.id;
                         const skillLv = Math.max(1, Math.min(5, (player.skillLevels && player.skillLevels[skill.id]) || 1));
                         const skillCost = Math.max(1, skill.cost - Math.floor((skillLv - 1) / 3));
+                        // v7.18: Skills, die das aktuelle MP nicht deckt, werden gedimmt
+                        // dargestellt (Klick löst nur noch Log + Schütteln aus).
+                        if (player.mp < skillCost) {
+                            row.classList.add("no-mp");
+                            row.title = `Zu wenig MP – ${skillCost} benötigt, du hast ${player.mp}`;
+                        }
                         row.innerHTML = `<span class="skill-icon">${skill.icon}</span><span class="skill-name">${skill.name} <small class="skill-lv">Lv${skillLv}</small></span><span class="skill-cost">${skillCost} ☕</span>`;
                         row.onclick = () => performSkill(skill.id);
                         list.appendChild(row);
                     });
                 }
 
-function performSkill(skillId) {
-    closeSkillMenu(false);
+function bvShakeSkillRow(el) {
+    // v7.20: Schüttel-Feedback eines nicht bezahlbaren Skills.
+    // Läuft über die Web-Animations-API, damit schnelles Mehrfachklicken die
+    // Animation sauber neu startet. Vorher liefen mehrere setTimeout-Aufräumer
+    // parallel und die CSS-Transition der Zeile ließ sie mitten im Lauf abbrechen
+    // bzw. sichtbar zurückspringen.
+    if (!el) return;
+    if (el._bvShakeTimer) { clearTimeout(el._bvShakeTimer); el._bvShakeTimer = null; }
+    // Transition kurz abschalten, damit das Abbrechen der alten Animation nicht
+    // als Rück-Gleiten sichtbar wird.
+    el.style.setProperty("transition", "none", "important");
+    if (typeof el.getAnimations === "function") {
+        el.getAnimations().forEach(a => { try { a.cancel(); } catch (_) {} });
+    }
+    el.classList.remove("no-mp-shake");
+    void el.offsetWidth;
+    el.style.removeProperty("transition");
+    if (typeof el.animate === "function") {
+        el.animate([
+            { transform: "translateX(0)", boxShadow: "0 0 0 rgba(248,113,113,0)" },
+            { transform: "translateX(-7px)", boxShadow: "0 0 14px rgba(248,113,113,.55)", offset: 0.15 },
+            { transform: "translateX(6px)",  boxShadow: "0 0 12px rgba(248,113,113,.40)", offset: 0.35 },
+            { transform: "translateX(-5px)", offset: 0.55 },
+            { transform: "translateX(3px)",  offset: 0.75 },
+            { transform: "translateX(-2px)", offset: 0.90 },
+            { transform: "translateX(0)", boxShadow: "0 0 0 rgba(248,113,113,0)" }
+        ], { duration: 460, easing: "ease" });
+        return;
+    }
+    // Fallback ohne Web-Animations-API
+    el.classList.add("no-mp-shake");
+    el._bvShakeTimer = setTimeout(() => {
+        el.classList.remove("no-mp-shake");
+        el._bvShakeTimer = null;
+    }, 470);
+}
 
+function performSkill(skillId) {
+    // v7.18: Das Skill-Fenster wird erst geschlossen, wenn der Skill wirklich
+    // ausgeführt wird. Vorher lief beim Klick auf einen nicht bezahlbaren Skill
+    // die Schließen-/Neu-Öffnen-Animation, obwohl nichts passiert ist.
     const skills = {
         tacker: { cost: 4, dmgMult: 2, icon: "📎", name: "Tacker-Angriff" },
         kaffee: { cost: 6, dmgMult: 2.5, icon: "☕", name: "Kaffee-Wurf" },
@@ -46417,10 +47587,13 @@ function performSkill(skillId) {
     if (skillLevel > 1) skill.name += " Lv" + skillLevel;
 
     if (player.mp < skill.cost) {
+        // v7.18: Fenster bleibt ruhig offen – nur Log + kurzes Schütteln der Zeile.
         battleLog(`Nicht genug MP! (${skill.cost} benötigt)`);
-        openSkillMenu();
+        bvShakeSkillRow(document.querySelector(`#battle-skill-list .skill-row[data-skill="${skillId}"]`));
         return;
     }
+
+    closeSkillMenu(false);
 
     if (!godMode) {
         player.mp -= skill.cost;
@@ -47076,10 +48249,12 @@ function performSkill(skillId) {
                     const before = Math.max(0, p.hp);
                     p.hp = Math.min(p.maxHp, before + gain);
                     if (p.hp > 0) p.active = true;
+                    const healed = Math.max(0, p.hp - before);
                     bvSavePartnerProgress(p);
                     bvUpdatePartnerHud();
-                    bvPlayPartnerAnim("bv-p-cheer", 600, p.id);
-                    battleLog("🩹 " + p.name + (wasDown ? " kommt zurück ins Gefecht! " : " wird versorgt! ") + "+" + (p.hp - (wasDown ? 0 : p.hp - gain)) + (p.hp - before) + " HP");
+                    bvPlayPartnerAnim("bv-p-cheer", 660, p.id);
+                    bvPartnerHealFeedback(p, healed);
+                    battleLog("🩹 " + p.name + (wasDown ? " kommt zurück ins Gefecht! " : " wird versorgt! ") + "+" + healed + " HP");
                     updateBattleUI();
                     setTimeout(enemyTurn, 800);
                 }
@@ -47102,8 +48277,13 @@ function performSkill(skillId) {
                             playerSprite.style.transform = "translateX(-200px) scale(0.8)";
                             playerSprite.style.opacity = "0";
                         }
-                        
-                        setTimeout(endBattleToMap, 1000);
+
+                        // v7.12: Partner fliehen mit – jede/r in eine andere Richtung
+                        // und mit eigener Animation, damit die Gruppe lebendig wirkt.
+                        bvPartnerFleeAnimation();
+
+                        // Genug Zeit für die letzte, gestaffelte Partner-Animation (110 ms * n + 1,06 s)
+                        setTimeout(endBattleToMap, 1400);
                     } else {
                         battleLog("Flucht gescheitert!");
                         setTimeout(enemyTurn, 1000);
@@ -47237,6 +48417,19 @@ function performSkill(skillId) {
                     const targetArea = profile.target === "enemy" ? enemyArea : playerArea;
                     if (!enemyArea || !targetArea) return;
 
+                    // v7.11: Ist ein Partner das Ziel, sitzen Aura/Wellen/Partikel am Partner-Sprite
+                    // statt in der Mitte der Spielerfläche.
+                    const partnerTarget = profile.target === "player" ? bvEnemyPartnerTargetActive() : null;
+                    const partnerSprite = partnerTarget ? bvPartnerSpriteEl(partnerTarget) : null;
+                    const areaRect = partnerSprite ? playerArea.getBoundingClientRect() : null;
+                    const spriteRect = partnerSprite ? partnerSprite.getBoundingClientRect() : null;
+                    const anchorAtTarget = (node) => {
+                        if (!node || !spriteRect || !areaRect) return node;
+                        node.style.left = (spriteRect.left - areaRect.left + spriteRect.width / 2) + "px";
+                        node.style.top = (spriteRect.top - areaRect.top + spriteRect.height / 2) + "px";
+                        return node;
+                    };
+
                     // Caster rune (Gegner zaubert/skillt sichtbar)
                     const rune = document.createElement("div");
                     rune.className = "enemy-skill-rune-v448";
@@ -47249,6 +48442,7 @@ function performSkill(skillId) {
                     const aura = document.createElement("div");
                     aura.className = "enemy-skill-aura-v447 " + profile.type;
                     aura.style.setProperty("--fx-color", color);
+                    anchorAtTarget(aura);
                     targetArea.appendChild(aura);
                     setTimeout(() => aura.remove(), 850);
 
@@ -47257,6 +48451,14 @@ function performSkill(skillId) {
                         const beam = document.createElement("div");
                         beam.className = "enemy-skill-beam-v448 " + profile.type;
                         beam.style.setProperty("--fx-color", color);
+                        // v7.11: Bei Partnerziel zeigt der Beam auf das Partner-Sprite.
+                        if (partnerSprite) {
+                            const enemyRect = enemyArea.getBoundingClientRect();
+                            const dx = (spriteRect.left + spriteRect.width / 2) - (enemyRect.left + enemyRect.width / 2);
+                            const dy = (spriteRect.top + spriteRect.height / 2) - (enemyRect.top + enemyRect.height / 2);
+                            beam.style.setProperty("--bx", dx + "px");
+                            beam.style.setProperty("--by", dy + "px");
+                        }
                         enemyArea.appendChild(beam);
                         setTimeout(() => beam.remove(), 650);
                     }
@@ -47268,6 +48470,7 @@ function performSkill(skillId) {
                         wave.className = "enemy-skill-wave-v448";
                         wave.style.setProperty("--fx-color", color);
                         wave.style.animationDelay = (i * 0.11).toFixed(2) + "s";
+                        anchorAtTarget(wave);
                         targetArea.appendChild(wave);
                         setTimeout(() => wave.remove(), 1000);
                     }
@@ -47285,6 +48488,7 @@ function performSkill(skillId) {
                         p.style.setProperty("--dx", Math.cos(angle) * dist + "px");
                         p.style.setProperty("--dy", Math.sin(angle) * dist + "px");
                         p.style.animationDelay = (i * 0.035).toFixed(2) + "s";
+                        anchorAtTarget(p);
                         targetArea.appendChild(p);
                         setTimeout(() => p.remove(), 1100);
                     }
@@ -47539,7 +48743,10 @@ function performSkill(skillId) {
                     if (!Number.isFinite(dmg)) dmg = 0;
                     dmg = Math.max(0, Math.floor(dmg));
                     if (enemyAttackTarget === "partner" && enemyPartnerTarget?.active && enemyPartnerTarget.hp > 0 && !godMode) {
-                        return bvDamagePartner(enemyPartnerTarget, dmg, isCrit);
+                        const partnerHit = bvDamagePartner(enemyPartnerTarget, dmg, isCrit);
+                        // v7.13: Kritische Treffer können den Partner bluten lassen
+                        if (isCrit && partnerHit && partnerHit.dmg > 0) bvPartnerStatusFromCrit(enemyPartnerTarget);
+                        return partnerHit;
                     }
                     const wasDefending = defendable && !!player._bvDefending;
                     const counterSuccess = wasDefending && !!player._bvStrongAttackIncoming && dmg > 0 && !godMode;
@@ -47608,7 +48815,7 @@ function performSkill(skillId) {
                     container.classList.add("effect-show");
                 }
 
-                function showBattleActionBubble(target, text, icon = "", color = "#4a9fff") {
+                function showBattleActionBubble(target, text, icon = "", color = "#4a9fff", anchorEl = null) {
                     const host = document.getElementById(target === "enemy" ? "battle-enemy-area" : "battle-player-area");
                     if (!host || !text) return;
                     const bubble = document.createElement("div");
@@ -47616,8 +48823,42 @@ function performSkill(skillId) {
                     bubble.style.setProperty("--bubble-color", color);
                     bubble.style.borderColor = color + "99";
                     bubble.style.boxShadow = `0 12px 32px rgba(0,0,0,.45), 0 0 22px ${color}55`;
+                    // v7.12: Optionales Anker-Element – die Sprechblase sitzt dann direkt
+                    // über dem Kopf genau dieses Sprites (z. B. Partner), nicht über dem Spieler.
+                    let anchorCx = null;
+                    let hostLeft = 0;
+                    if (anchorEl && anchorEl.getBoundingClientRect) {
+                        const hostRect = host.getBoundingClientRect();
+                        const aRect = anchorEl.getBoundingClientRect();
+                        if (aRect.width > 0 && aRect.height > 0 && hostRect.height > 0) {
+                            // Horizontal: Mitte des Sprites, umgerechnet auf die Spielerfläche.
+                            // Wichtig: NICHT auf die Breite der Spielerfläche klemmen – die ist nur
+                            // so breit wie die Spieler-Sprite; Partner stehen weit daneben.
+                            anchorCx = aRect.left - hostRect.left + aRect.width / 2;
+                            hostLeft = hostRect.left;
+                            bubble.style.left = anchorCx + "px";
+                            // Vertikal: Sprite-Box ist unten ausgerichtet (align-items: flex-end),
+                            // daher liegt der sichtbare Emoji-Kopf bei ~72 % der Boxhöhe.
+                            const headTop = aRect.bottom - aRect.height * 0.72;
+                            bubble.style.bottom = (hostRect.bottom - headTop + 6) + "px";
+                        }
+                    }
                     bubble.innerHTML = `${icon ? `<span class="bubble-icon">${icon}</span>` : ""}<span class="bubble-text">${text}</span>`;
                     host.appendChild(bubble);
+                    // Feinkorrektur mit echter Blasenbreite (offsetWidth ist transform-frei):
+                    // die Blase darf nicht aus dem Kampfbild ragen.
+                    if (anchorCx !== null) {
+                        const screenEl = document.getElementById("rpg-battle-screen");
+                        if (screenEl) {
+                            const sr = screenEl.getBoundingClientRect();
+                            const halfW = bubble.offsetWidth / 2;
+                            const centerScreen = hostLeft + anchorCx;
+                            let shift = 0;
+                            if (centerScreen - halfW < sr.left + 8) shift = (sr.left + 8) - (centerScreen - halfW);
+                            else if (centerScreen + halfW > sr.right - 8) shift = (sr.right - 8) - (centerScreen + halfW);
+                            if (shift) bubble.style.left = (anchorCx + shift) + "px";
+                        }
+                    }
                     parseEmojis(bubble);
                     setTimeout(() => bubble.remove(), 1450);
                 }
@@ -47843,10 +49084,13 @@ function performSkill(skillId) {
                         const enemyMiss = Math.random() < 0.15; // 15% miss for enemies (reduced for more action)
                         
                         if (enemyMiss && !selectedSkill) {
-                            // Basic attack missed
-                            battleLog("Daneben! " + currentEnemy.name + " verfehlt! ❌");
-                            spawnBattleEffect("player", "❌");
-                            const playerSprite = document.getElementById("battle-player-sprite");
+                            // Basic attack missed – Feedback dort, wo das Ziel steht
+                            const missTarget = bvEnemyPartnerTargetActive();
+                            battleLog("Daneben! " + currentEnemy.name + (missTarget ? " verfehlt " + missTarget.name : " verfehlt dich") + "! ❌");
+                            if (missTarget) bvPartnerMissFeedback(missTarget);
+                            else spawnBattleEffect("player", "❌");
+                            // Ausweich-Bewegung nur, wenn wirklich der Spieler das Ziel war
+                            const playerSprite = missTarget ? null : document.getElementById("battle-player-sprite");
                             if (playerSprite) {
                                 playerSprite.style.transition = "all 0.25s ease-out";
                                 playerSprite.style.transform = "translateX(30px) rotateZ(12deg)";
@@ -47867,10 +49111,14 @@ function performSkill(skillId) {
                             const rawDmg = Math.max(1, baseDmg - player.def);
                             playEnemyAttackAnimation("basic");
                             const enemyHit = damagePlayer(rawDmg) || { dmg: rawDmg, crit: false };
-                            battleLog(enemyHit.crit
-                                ? currentEnemy.name + " trifft KRITISCH! " + enemyHit.dmg + " Schaden! 💥"
-                                : currentEnemy.name + " greift an! " + enemyHit.dmg + " Schaden!");
-                            spawnBattleEffect("player", enemyHit.crit ? "💥" : "💢");
+                            // Bei Partnertreffer hat bvDamagePartner bereits geloggt und
+                            // das Feedback am Partner-Sprite gesetzt – kein Spieler-Effekt.
+                            if (enemyHit.target !== "partner") {
+                                battleLog(enemyHit.crit
+                                    ? currentEnemy.name + " trifft KRITISCH! " + enemyHit.dmg + " Schaden! 💥"
+                                    : currentEnemy.name + " greift an! " + enemyHit.dmg + " Schaden!");
+                                spawnBattleEffect("player", enemyHit.crit ? "💥" : "💢");
+                            }
                             
                             if (player.hp > 0) {
                                 setTimeout(endEnemyTurn, 1000);
@@ -47889,13 +49137,17 @@ function performSkill(skillId) {
                     playEnemySkillCastFX(skill);
                     
                     setTimeout(() => {
-                        // Partnerziel: Status-Skills (Schelle, Betäubung, Gift, Debuffs) wirken nur als Schaden,
-                        // weil Partner (noch) keine Statuswerte haben und der Spieler nicht betroffen sein darf.
+                        // Partnerziel: Status-Skills (Schelle, Betäubung, Gift, Debuffs) treffen den
+                        // Partner statt den Spieler. v7.13: Gift/Betäubung/Brand landen jetzt auch
+                        // auf dem Partner (Statuswerte), nicht mehr nur als reiner Schaden.
                         const PARTNER_DAMAGE_ONLY_EFFECTS = ["italianSlap", "stun", "poison", "atkDown", "defDown"];
-                        if (enemyAttackTarget === "partner" && enemyPartnerTarget?.hp > 0 && PARTNER_DAMAGE_ONLY_EFFECTS.includes(skill.effect)) {
-                            const partnerDmg = Math.max(1, Math.floor(currentEnemy.atk * (skill.dmgMult || 1)) - (enemyPartnerTarget.def || 0));
-                            bvDamagePartner(enemyPartnerTarget, partnerDmg, false);
-                            spawnBattleEffect("enemy", skill.icon || "💢");
+                        const partnerSkillTarget = PARTNER_DAMAGE_ONLY_EFFECTS.includes(skill.effect) ? bvEnemyPartnerTargetActive() : null;
+                        if (partnerSkillTarget) {
+                            const partnerDmg = Math.max(1, Math.floor(currentEnemy.atk * (skill.dmgMult || 1)) - (partnerSkillTarget.def || 0));
+                            bvDamagePartner(partnerSkillTarget, partnerDmg, false);
+                            // Skill-Icon zusätzlich am Partner zeigen (Feedback kommt aus bvDamagePartner)
+                            bvPartnerFloat(partnerSkillTarget, skill.icon || "💢", "bv-partner-hitfx", 680);
+                            bvPartnerStatusFromSkill(partnerSkillTarget, skill);
                         }
                         // Handle different skill effects
                         else switch (skill.effect) {
@@ -48035,8 +49287,11 @@ function performSkill(skillId) {
                                 // Normal damage skill
                                 const skillDmg = Math.max(1, Math.floor((currentEnemy.atk + Math.floor(Math.random() * 8)) * skill.dmgMult) - player.def);
                                 const skillHit = damagePlayer(skillDmg);
-                                battleLog(currentEnemy.name + " nutzt " + skill.icon + " " + skill.name + "! " + skillHit.dmg + " Schaden!");
-                                spawnBattleEffect("player", skill.icon);
+                                // Partnertreffer: Log + Effekt kommen bereits aus bvDamagePartner
+                                if (skillHit.target !== "partner") {
+                                    battleLog(currentEnemy.name + " nutzt " + skill.icon + " " + skill.name + "! " + skillHit.dmg + " Schaden!");
+                                    spawnBattleEffect("player", skill.icon);
+                                }
                         }
                         
                         if (player.hp > 0) {
@@ -48047,7 +49302,11 @@ function performSkill(skillId) {
 
                 function endEnemyTurn(partnerAlreadyActed = false) {
                     // Jeder kampfbereite Partner greift nacheinander an, danach kommt der Spielerzug.
-                    if (!partnerAlreadyActed) bvRoundQueue = bvBattleParty.filter(p => p.active && p.hp > 0);
+                    if (!partnerAlreadyActed) {
+                        // v7.13: MP-Regeneration zu Beginn der Partnerrunde
+                        bvPartnerRoundStart();
+                        bvRoundQueue = bvBattleParty.filter(p => p.active && p.hp > 0);
+                    }
                     if (bvRoundQueue.length && enemyHp > 0 && gameState === "BATTLE") {
                         if (!bvPartnerActionBusy) bvPartnerAttack(bvRoundQueue.shift());
                         return;
@@ -48203,6 +49462,52 @@ function performSkill(skillId) {
                     setTimeout(() => sprite.classList.remove(selected), 1450);
                 }
 
+                // v7.12: Partner feiern ihren Sieg direkt am Partner-Emoji im Kampf –
+                // dieselben Tänze wie der Spieler, gestaffelt und pro Partner verschieden.
+                function bvPartnerVictoryDance() {
+                    const dances = ["bv-p-win-hop", "bv-p-win-spin", "bv-p-win-slide", "bv-p-win-pose", "bv-p-win-wave"];
+                    (bvBattleParty || []).forEach((p, i) => {
+                        if (!p || !p.active || p.hp <= 0) return;
+                        const el = bvPartnerSpriteEl(p);
+                        if (!el) return;
+                        el.classList.remove(...dances);
+                        void el.offsetWidth;
+                        const cls = dances[(i + Math.floor(Math.random() * dances.length)) % dances.length];
+                        setTimeout(() => {
+                            if (!el.isConnected) return;
+                            el.classList.add(cls);
+                            clearTimeout(el._bvWinTimer);
+                            el._bvWinTimer = setTimeout(() => el.classList.remove(cls), 1450);
+                        }, i * 120);
+                    });
+                }
+
+                // v7.12: Flucht-Animation der Partner. Jede/r rennt anders weg
+                // (links, rechts, nach oben, auf die Kamera zu), deutlich gestaffelt.
+                // Nach dem Lauf wird das Sprite endgültig ausgeblendet (.bv-p-fled),
+                // damit es nicht kurz vor dem Kampfende wieder auftaucht.
+                function bvPartnerFleeAnimation() {
+                    const moves = ["bv-p-flee-left", "bv-p-flee-right", "bv-p-flee-up", "bv-p-flee-down"];
+                    (bvBattleParty || []).forEach((p, i) => {
+                        if (!p || !p.active || p.hp <= 0) return;
+                        const el = bvPartnerSpriteEl(p);
+                        if (!el) return;
+                        el.classList.remove(...moves, "bv-p-fled");
+                        void el.offsetWidth;
+                        const cls = moves[i % moves.length];
+                        setTimeout(() => {
+                            if (!el.isConnected) return;
+                            el.classList.add(cls);
+                            clearTimeout(el._bvFleeTimer);
+                            el._bvFleeTimer = setTimeout(() => {
+                                el.classList.remove(cls);
+                                void el.offsetWidth;
+                                el.classList.add("bv-p-fled");
+                            }, 1060);
+                        }, i * 110);
+                    });
+                }
+
                 // Balken erst nach dem Einblenden des Sieg-Bildschirms auf den Zielwert setzen,
                 // sonst startet die CSS-Übergangsanimation unsichtbar.
                 function bvFillVictoryPartnerBars() {
@@ -48217,7 +49522,9 @@ function performSkill(skillId) {
                     bvBattleParty.forEach(p => {
                         if (p.hp <= 0) { p.hp = 1; p.active = true; bvSavePartnerProgress(p); }
                     });
-                    bvBattleParty.forEach(p => { if (p.active && p.hp > 0) bvPlayPartnerAnim("bv-p-cheer", 2600, p.id); });
+                    // Nur noch die Partner-EP-Zeilen erscheinen gestaffelt (Klasse steuert das Layout).
+                    document.getElementById("victory-screen")
+                        ?.classList.toggle("bv-has-partners", (bvBattleParty || []).some(p => p && p.active && p.hp > 0));
                     // Reset sprites for victory display
                     const enemySprite = document.getElementById("battle-enemy-sprite");
                     if (enemySprite) {
@@ -48404,8 +49711,9 @@ function performSkill(skillId) {
                         victoryScreen.classList.add("visible");
                         bvFillVictoryPartnerBars();
                         parseEmojis(victoryScreen); 
-                        // Tanz startet jetzt mit der Sieg-Szene, nicht vorher.
-                        setTimeout(triggerVictoryDance, 80);
+                        // Tanz startet jetzt mit der Sieg-Szene, nicht vorher –
+                        // Partner tanzen exakt im selben Moment wie der Spieler.
+                        setTimeout(() => { triggerVictoryDance(); bvPartnerVictoryDance(); }, 80);
                     }
                 }
 
