@@ -19318,6 +19318,17 @@
             font-weight: 800;
             letter-spacing: 1px;
         }
+        /* v7.21: Ausgang ab 18:00 = Feierabend (offen, grün) statt Bad Ending */
+        .map-door.feierabend-open .door-3d-panel {
+            border-color: rgba(105,240,174,.85) !important;
+            box-shadow: 0 0 14px rgba(105,240,174,.45);
+        }
+        .map-door.feierabend-open::after {
+            content: 'FEIERABEND';
+            color: #9dffce;
+            border-color: rgba(105,240,174,.45);
+        }
+        .map-door.feierabend-open .door-label { color: #9dffce; }
         #rpg-bad-ending-screen {
             background: #f7f7f2;
             overflow: hidden;
@@ -35696,7 +35707,17 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     clock: { emoji: "🕐", offset: { x: 8, y: -4 } },
                     poster: { emoji: "🖼️", offset: { x: 4, y: -8 } },
                     water_cooler: { emoji: "🚰", offset: { x: 4, y: -6 } },
-                    vending: { emoji: "🥤", offset: { x: 2, y: -8 } }
+                    vending: { emoji: "🥤", offset: { x: 2, y: -8 } },
+                    // v7.21: Deko fuer die Wohnung (Zuhause-Map)
+                    bed: { emoji: "🛏️", offset: { x: 0, y: -10 } },
+                    bathtub: { emoji: "🛁", offset: { x: 0, y: -8 } },
+                    toilet: { emoji: "🚽", offset: { x: 2, y: -6 } },
+                    sink: { emoji: "🚰", offset: { x: 4, y: -6 } },
+                    mirror: { emoji: "🪞", offset: { x: 4, y: -12 } },
+                    fridge: { emoji: "🧊", offset: { x: 2, y: -8 } },
+                    stove: { emoji: "🍳", offset: { x: 2, y: -8 } },
+                    wardrobe: { emoji: "🧥", offset: { x: 2, y: -10 } },
+                    rug: { emoji: "🟫", offset: { x: 0, y: 2 } }
                 };
 
                 // ===== ENEMIES =====
@@ -36725,6 +36746,115 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     start: { x: 6, y: 10 }
                 };
 
+                // ============================================================
+                // v7.21 – ZUHAUSE (Wohnung: Wohnzimmer, Küche, Zimmer, Bad)
+                // ------------------------------------------------------------
+                // Ab 18:00 ist der Ausgang im Flur kein Bad Ending mehr, sondern
+                // der Feierabend: Cutscene -> diese Map. Im Zimmer steht das Bett
+                // (Tag +1, Wecker klingelt morgens), über die Wohnungstür geht es
+                // zurück ins Büro.
+                // Aufbau: 4 Räume aussen, Flur als Kreuz in der Mitte.
+                // ============================================================
+                MAPS.zuhause = {
+                    name: "Zuhause",
+                    cols: 27,
+                    rows: 19,
+                    tiles: (() => {
+                        const W = 27, H = 19;
+                        const t = [];
+                        for (let y = 0; y < H; y++) {
+                            t[y] = [];
+                            for (let x = 0; x < W; x++) t[y][x] = 1; // alles erst Wand
+                        }
+                        // Räume
+                        for (let y = 1; y <= 7; y++) for (let x = 1; x <= 10; x++) t[y][x] = 4;   // Wohnzimmer (Teppich)
+                        for (let y = 1; y <= 7; y++) for (let x = 15; x <= 25; x++) t[y][x] = 13; // Küche (heller Boden)
+                        for (let y = 11; y <= 17; y++) for (let x = 1; x <= 10; x++) t[y][x] = 5; // Zimmer (Läufer)
+                        for (let y = 11; y <= 17; y++) for (let x = 15; x <= 25; x++) t[y][x] = 16; // Bad (Fliesen)
+                        // Flur (Mitte, senkrecht)
+                        for (let y = 1; y <= 17; y++) { t[y][12] = 0; t[y][13] = 0; }
+                        // Zimmertüren zum Flur
+                        t[4][11] = 6;   // Wohnzimmer
+                        t[4][14] = 6;   // Küche
+                        t[14][11] = 6;  // Zimmer
+                        t[14][14] = 6;  // Bad
+                        // Fenster
+                        t[0][4] = 12; t[0][7] = 12; t[0][18] = 12; t[0][21] = 12;
+                        t[18][4] = 12; t[18][8] = 12; t[18][18] = 12; t[18][22] = 12;
+                        t[2][0] = 12; t[6][0] = 12; t[12][26] = 12; t[16][26] = 12;
+                        // Wohnzimmer: Sofa, Couchtisch, Stuhl, Regal, Pflanzen
+                        t[2][3] = 15; t[2][4] = 15; t[2][5] = 15;
+                        t[4][4] = 2; t[4][5] = 2;
+                        t[5][6] = 11;
+                        t[6][1] = 10; t[6][2] = 10;
+                        t[1][1] = 3; t[1][10] = 3;
+                        // Küche: Küchenzeile, Tisch, Stühle, Pflanze
+                        t[1][17] = 2; t[1][18] = 2; t[1][19] = 2; t[1][20] = 2;
+                        t[4][19] = 2; t[4][20] = 2;
+                        t[5][19] = 11;
+                        t[1][25] = 3;
+                        // Zimmer: Schreibtisch, Stuhl, Regal, Pflanze
+                        t[11][5] = 2; t[11][6] = 2;
+                        t[12][6] = 11;
+                        t[17][1] = 10; t[17][2] = 10;
+                        t[11][10] = 3;
+                        // Bad: Schrank, Pflanze
+                        t[17][15] = 8;
+                        t[17][25] = 3;
+                        // Wohnungstür (Doppeltür unten im Flur)
+                        t[18][12] = 6; t[18][13] = 6;
+                        return t;
+                    })(),
+                    decos: [
+                        // Wohnzimmer
+                        { x: 1, y: 3, type: "lamp" },
+                        { x: 8, y: 6, type: "rug" },
+                        { x: 4, y: 1, type: "poster" },
+                        // Küche
+                        { x: 15, y: 1, type: "fridge" },
+                        { x: 21, y: 1, type: "stove" },
+                        { x: 23, y: 3, type: "lamp" },
+                        // Zimmer
+                        { x: 1, y: 11, type: "lamp" },
+                        { x: 8, y: 11, type: "wardrobe" },
+                        { x: 6, y: 17, type: "poster" },
+                        // Bad
+                        { x: 16, y: 12, type: "bathtub" },
+                        { x: 20, y: 11, type: "sink" },
+                        { x: 21, y: 11, type: "mirror" },
+                        { x: 24, y: 12, type: "toilet" },
+                        { x: 25, y: 15, type: "lamp" },
+                        // Flur
+                        { x: 12, y: 2, type: "lamp" },
+                        { x: 13, y: 10, type: "lamp" },
+                        { x: 13, y: 6, type: "plant" }
+                    ],
+                    chests: [],
+                    npcs: [
+                        {
+                            x: 2, y: 13, type: "talk", sprite: "🛏️", name: "Bett", role: "Schlafplatz",
+                            dialog: ["Dein Bett. Nach so einem Tag sieht es unglaublich einladend aus."],
+                            choiceId: "bett_schlafen", choicePrompt: "Ins Bett gehen und den nächsten Tag starten?"
+                        },
+                        {
+                            x: 15, y: 2, type: "talk", sprite: "🧊", name: "Kühlschrank", role: "Küche",
+                            dialog: ["Der Kühlschrank ist halb leer.", "Ein einzelner Joghurt wartet auf dich. Er wirkt einsam."]
+                        },
+                        {
+                            x: 4, y: 3, type: "talk", sprite: "📺", name: "Fernseher", role: "Wohnzimmer",
+                            dialog: ["Im Fernsehen läuft eine Doku über Büro-Stress.", "Du schaltest lieber um. Der Flur war schon genug Drama."]
+                        }
+                    ],
+                    start: { x: 12, y: 16 }
+                };
+
+                // Wohnungstür: morgens zurück ins Büro (nur wenn geschlafen wurde)
+                DOORS.zuhause_to_office = {
+                    from: "zuhause", fromX: 12, fromY: 18,
+                    to: "buero", toX: 5, toY: 8,
+                    label: "Zur Arbeit", double: true, extraTiles: [[13, 18]]
+                };
+
 
                 // ===== GAME STATE =====
                 let gameState = "SPLASH";
@@ -37397,7 +37527,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         boss_office:{ type:"spark", n:36, sz:[2,5], col:["#ff9a6a","#ffd2aa","#ff6a4a"], op:[.35,.8] },
                         archiv:     { type:"paper", n:40, sz:[3,6], col:["#ebe1c8","#d2c3a0","#c9b890"], op:[.3,.6] },
                         dach:       { type:"pollen",n:44, sz:[2,5], col:["#fffae6","#fff4c8","#ffffff"], op:[.35,.75] },
-                        pausenraum: { type:"steam",  n:26, sz:[4,10],col:["#ffe9c9","#fff3de"], op:[.15,.35] }
+                        pausenraum: { type:"steam",  n:26, sz:[4,10],col:["#ffe9c9","#fff3de"], op:[.15,.35] },
+                        zuhause:    { type:"dust",   n:22, sz:[2,4], col:["#ffe7c4","#fff6e2"], op:[.2,.45] }
                     };
                     let cfg = THEMES[mapId] || THEMES.flur;
                     if (tier === "high") cfg = Object.assign({}, cfg, { n: Math.min(cfg.n, 24) });
@@ -37556,7 +37687,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     boss_office:{ tint: "#2a1608", op: 0.30, vig: 0.38 },
                     archiv:     { tint: "#e6d3a8", op: 0.18, vig: 0.22 },
                     dach:       { tint: "#fff6d8", op: 0.08, vig: 0.06 },
-                    pausenraum: { tint: "#ffd9b0", op: 0.16, vig: 0.10 }
+                    pausenraum: { tint: "#ffd9b0", op: 0.16, vig: 0.10 },
+                    zuhause:    { tint: "#ffd9b0", op: 0.15, vig: 0.12 }
                 };
 
                 window.BVApplyMapLight = function (mapId) {
@@ -37682,7 +37814,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     // DRAMATIK-Orte
                     konferenz:   { max: 0.50, extra: [[10, 7, 100, "#dfe8ff"]] },
                     boss_office: { max: 0.74, extra: [[12, 4, 95, "#ffb066"]] },
-                    dach:        { max: 0.56, extra: [[2, 2, 65, "#9ad4ff"]] }
+                    dach:        { max: 0.56, extra: [[2, 2, 65, "#9ad4ff"]] },
+                    // v7.21: Wohnung – gemütliches Abendlicht, nie stockfinster
+                    zuhause:     { max: 0.38, extra: [[4, 3, 85, "#ffd9a0"], [19, 4, 80, "#ffd9a0"], [2, 13, 75, "#ffc48a"], [12, 10, 70, "#ffd9a0"]] }
                 };
                 // Deko-Typ -> Lichtquelle (wird automatisch aus currentDecos erzeugt)
                 const BV_NIGHT_LAMP_GLOW = {
@@ -37751,9 +37885,21 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const hh = Math.floor(bvNightClock) % 24;
                     const mm = Math.floor((bvNightClock - hh) * 60);
                     const txt = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
-                    if (txt === bvHudClockShown) return;
-                    bvHudClockShown = txt;
+                    // v7.21: Tagesanzeige neben der Uhr (Arbeitstag-Zähler)
+                    const day = Math.max(1, parseInt(player.workDay, 10) || 1);
+                    const sig = txt + "|" + day;
+                    if (sig === bvHudClockShown) return;
+                    bvHudClockShown = sig;
                     el.textContent = txt;
+                    let dayEl = document.getElementById("bv-hud-day-text");
+                    if (!dayEl && el.parentElement) {
+                        dayEl = document.createElement("span");
+                        dayEl.id = "bv-hud-day-text";
+                        dayEl.className = "clock-day";
+                        dayEl.style.cssText = "opacity:.72;font-size:.82em;white-space:nowrap;";
+                        el.parentElement.appendChild(dayEl);
+                    }
+                    if (dayEl) dayEl.textContent = "· Tag " + day;
                     const lv = bvNightLevel;
                     ic.textContent = lv > 0.85 ? "🌙"
                         : lv > 0.15 ? (bvNightClock >= 17 ? "🌆" : "🌅")
@@ -37914,7 +38060,10 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         const cols = currentMap[0]?.length || VIEW_COLS;
                         const rows = currentMap.length;
                         const wallSide = door.fromX === 0 ? "left" : (door.fromX === cols - 1 ? "right" : (door.fromY === 0 ? "top" : (door.fromY === rows - 1 ? "bottom" : "inside")));
-                        el.className = "map-door map-door-iso" + (isBoss ? " boss" : "") + (isLocked ? " locked" : "") + (door.badEnding ? " bad-exit" : "") + (door.double ? " double" : "") + " wall-" + wallSide + " open-out";
+                        // v7.21: Nach Schichtende ist der Ausgang offen -> eigenes Klassen-Tag
+                        const feierabendOpen = !!door.badEnding
+                            && typeof window.BVFeierabendActive === "function" && window.BVFeierabendActive();
+                        el.className = "map-door map-door-iso" + (isBoss ? " boss" : "") + (isLocked ? " locked" : "") + (door.badEnding ? " bad-exit" : "") + (feierabendOpen ? " feierabend-open" : "") + (door.double ? " double" : "") + " wall-" + wallSide + " open-out";
                         // PATCH F: eingelassene Iso-Tuer (SVG) statt CSS-Box, folgt Map-Rotation
                         const isoD = isoDoorSvg(door.fromX, door.fromY, { boss: isBoss, locked: isLocked, bad: !!door.badEnding, double: !!door.double });
                         if (isoD) {
@@ -37924,7 +38073,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             el.style.top = (baseD.y + isoD.ay) + "px";
                             // Tuer muss ueber dem Occluder der eigenen Wand liegen (occluder=base+90+22=base+112; door=base+45) -> Offset 75
                             el.style.zIndex = getMapDepth(door.fromX, door.fromY, "door") + 75;
-                            el.innerHTML = isoD.svg + `<div class="door-label">${door.label || ""}</div>` + (isLocked ? '<div class="door-lock-badge">🔒</div>' : "");
+                            el.innerHTML = isoD.svg + `<div class="door-label">${feierabendOpen ? "Feierabend 🏡" : (door.label || "")}</div>` + (isLocked ? '<div class="door-lock-badge">🔒</div>' : "");
                         } else {
                             el.innerHTML = door.double
                                 ? `<div class="door-3d-shadow"></div><div class="door-frame"><div class="door-3d-frame"></div><div class="door-leaf left"><div class="door-3d-panel"><div class="door-3d-knob"></div></div></div><div class="door-leaf right"><div class="door-3d-panel"><div class="door-3d-knob"></div></div></div></div><div class="door-icon">🚪</div>`
@@ -38046,7 +38195,28 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     for (const [doorId, door] of Object.entries(DOORS)) {
                         const hitsExtra = Array.isArray(door.extraTiles) && door.extraTiles.some(t => t[0] === x && t[1] === y);
                         if (door.from === currentMapId && ((door.fromX === x && door.fromY === y) || hitsExtra)) {
-                            if (door.badEnding) { openBadEndingWarning(doorId); return; }
+                            if (door.badEnding) {
+                                // v7.21 FEIERABEND: Zwischen 18:00 und 06:00 ist der Ausgang
+                                // kein Bad Ending mehr, sondern der Weg nach Hause
+                                // (Cutscene -> Wohnung). Davor bleibt die Warnung.
+                                if (typeof window.BVFeierabendActive === "function" && window.BVFeierabendActive()
+                                    && typeof window.BVStartFeierabend === "function") {
+                                    window.BVStartFeierabend(doorId);
+                                    return;
+                                }
+                                openBadEndingWarning(doorId);
+                                return;
+                            }
+                            // v7.21: Die Wohnungstür führt nur ins Büro, wenn geschlafen wurde.
+                            if (door.from === "zuhause") {
+                                const dayReady = !!(window.BVHome && typeof window.BVHome.isDayReady === "function" && window.BVHome.isDayReady());
+                                if (!dayReady) {
+                                    showMessage("Noch nicht — erst schlafen. Morgen geht es zurück ins Büro. 🛏️", "Wohnungstür", "🚪");
+                                    return;
+                                }
+                                // Tag ist gestartet -> für den nächsten Feierabend wieder zurücksetzen
+                                if (window.BVHome && typeof window.BVHome.setDayReady === "function") window.BVHome.setDayReady(false);
+                            }
                             if (door.requiresBossKey && !canAccessBoss()) {
                                 // v7.19: gleiche Rechnung wie canAccessBoss() – ueber ALLE Maps,
                                 // damit die Meldung nicht "0 Gegner" sagt, waehrend die Tuer zu bleibt.
@@ -38690,6 +38860,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         inventory: [{ id: "kaffee", name: "☕ Kaffee", heal: 40, count: 3 }],
                         gender: "m", dept: "einkauf", sprite: "🧑‍💼", facing: "right",
                         moveSpeed: 1, invisible: false,
+                        // v7.21: Arbeitstag-Zähler + "heute schon geschlafen?" (Wohnungstür)
+                        workDay: 1, dayReady: false,
                         unlockedSkills: ["tacker", "kaffee", "meeting"]
                     };
                     // BUGFIX: Shop/Skillshop-Patches arbeiten über window.player.
@@ -42115,6 +42287,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         queueMessage(npc.choicePrompt || "Kaffee-Frage gefällig?", npc.name, npc.sprite, () => openDeborhaChoice(npc));
                     } else if (npc.choiceId === "sebastiano_gift") {
                         queueMessage(npc.choicePrompt || "Was brauchst du?", npc.name, npc.sprite, () => openSebastianoChoice(npc));
+                    } else if (npc.choiceId === "bett_schlafen") {
+                        // v7.21: Bett in der Wohnung -> Tag beenden
+                        queueMessage(npc.choicePrompt || "Ins Bett gehen?", npc.name, npc.sprite, () => window.openBettChoice(npc));
                     } else if (npc.choiceId === "andreas_quest") {
                         queueMessage(npc.choicePrompt || "Ich suche etwas...", npc.name, npc.sprite, () => openAndreasChoice(npc));
                     } else if (npc.choiceId === "archiv_quest") {
@@ -44349,6 +44524,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         player.bvActivePartner = player.bvPartners.includes(player.bvActivePartner) ? player.bvActivePartner : null;
                         player.name = player.name || data.name || "Held";
                         player.unlockedSkills = data.unlockedSkills || player.unlockedSkills || ["tacker", "kaffee", "meeting"];
+                        // v7.21: Arbeitstag-Zähler aus alten Spielständen nachziehen
+                        player.workDay = Math.max(1, parseInt(player.workDay, 10) || 1);
+                        player.dayReady = !!player.dayReady;
 
                         // Restore gender and department
                         playerGender = data.gender || player.gender || "m";
@@ -54750,6 +54928,107 @@ window.respawnPlayer = function () {
                 window.showMessage = showMessage;
                 window.queueMessage = queueMessage;
 
+                // ============================================================
+                // v7.21 – FEIERABEND & ZUHAUSE
+                // ------------------------------------------------------------
+                // Ab 18:00 (bis 06:00) ist der Gebäude-Ausgang im Flur offen:
+                // Cutscene -> Wohnung (MAPS.zuhause). Im Bett: Tag +1, Wecker um
+                // 07:00 Uhr. Über die Wohnungstür geht es zurück ins Büro – das
+                // aber erst, wenn geschlafen wurde.
+                // ============================================================
+                function bvHomeDay() { return Math.max(1, parseInt(player.workDay, 10) || 1); }
+
+                // Aktion, die nach dem Ende einer Cutscene laufen soll (einmalig).
+                let bvAfterCutsceneAction = null;
+                function bvQueueAfterCutscene(fn) { bvAfterCutsceneAction = fn; }
+                window.addEventListener("bv-real-cutscene-ended", function () {
+                    const fn = bvAfterCutsceneAction;
+                    bvAfterCutsceneAction = null;
+                    if (typeof fn === "function") {
+                        setTimeout(function () {
+                            try { fn(); } catch (e) { console.warn("[BV Cutscene-Nachlauf]", e); }
+                        }, 160);
+                    }
+                });
+
+                window.BVHome = {
+                    day: bvHomeDay,
+                    nextDay: function () { player.workDay = bvHomeDay() + 1; return player.workDay; },
+                    isDayReady: function () { return !!player.dayReady; },
+                    setDayReady: function (v) { player.dayReady = !!v; return player.dayReady; },
+                    goHome: function () {
+                        player.dayReady = false;
+                        pendingLoadPos = { mapId: "zuhause", x: 12, y: 16, facing: "up" };
+                        loadMap("zuhause", true);
+                    },
+                    goToWork: function () {
+                        player.dayReady = false;
+                        pendingLoadPos = { mapId: "buero", x: 5, y: 8, facing: "right" };
+                        loadMap("buero", true);
+                    }
+                };
+
+                // Feierabend-Fenster: 18:00 bis 06:00
+                window.BVFeierabendActive = function () {
+                    const h = ((bvNightClock % 24) + 24) % 24;
+                    return h >= 18 || h < 6;
+                };
+
+                // "Nach Hause gehen": kurze Cutscene, danach Teleport in die Wohnung
+                window.BVStartFeierabend = function () {
+                    if (isTransitioning) return false;
+                    if (window.BVRealCutscenes && typeof window.BVRealCutscenes.isPlaying === "function" && window.BVRealCutscenes.isPlaying()) return false;
+                    const day = bvHomeDay();
+                    const steps = [
+                        { speaker: 'System', portrait: '🌆', focus: 'player', mood: 'good', accent: '#ffd166', text: 'Feierabend. Die Schicht-Uhr sagt: für heute reicht es.' },
+                        { speaker: 'System', portrait: '🎒', focus: 'player', move: [{ entity: 'player', to: { x: 9, y: 18 }, speed: 170 }], text: 'Du schnappst dir deine Tasche und gehst zur Gebäudetür.' },
+                        { speaker: 'System', portrait: '🚪', focus: 'player', mood: 'good', accent: '#69f0ae', effect: 'pop', text: 'Die Tür fällt hinter dir zu. Draußen wartet keine Kündigung — nur frische Luft und der Heimweg.' },
+                        { speaker: 'System', portrait: '🏡', focus: 'player', text: `Tag ${day} ist geschafft. Zuhause warten Wohnzimmer, Küche, Bad und dein Bett.` }
+                    ];
+                    const goHome = () => { try { window.BVHome.goHome(); } catch (e) { console.warn('[BV Feierabend]', e); } };
+                    if (window.BVRealCutscenes && typeof window.BVRealCutscenes.play === "function") {
+                        bvQueueAfterCutscene(goHome);
+                        const started = window.BVRealCutscenes.play('feierabend', steps);
+                        if (started === false) { bvAfterCutsceneAction = null; return false; }
+                        return true;
+                    }
+                    goHome();
+                    return true;
+                };
+
+                // Im Bett schlafen: Tag +1 und Wecker um 07:00 Uhr
+                window.BVStartSleep = function () {
+                    if (isTransitioning) return false;
+                    const next = bvHomeDay() + 1;
+                    const wake = () => {
+                        player.workDay = next;
+                        player.dayReady = true;
+                        try {
+                            if (window.BVNight && typeof window.BVNight.setTime === "function") window.BVNight.setTime(7);
+                        } catch (e) {}
+                        try { updateHUD(); } catch (e) {}
+                        setTimeout(() => {
+                            if (typeof showMessage === "function") {
+                                showMessage(`Tag ${next} — der Wecker hat geklingelt. ☀️ Zieh dich an und geh zur Wohnungstür.`, "🌅 Morgen", "⏰");
+                            }
+                        }, 300);
+                    };
+                    const steps = [
+                        { speaker: 'System', portrait: '🛏️', focus: 'player', mood: 'good', accent: '#8ec5ff', effect: 'dim', text: 'Du legst dich hin. Die Geräusche des Arbeitstages werden leiser …' },
+                        { speaker: 'System', portrait: '🌙', focus: 'player', text: 'Bildschirm aus, Gedanken aus. Fast.' },
+                        { speaker: 'System', portrait: '⏰', focus: 'player', mood: 'good', accent: '#ffd166', effect: 'pop', text: `Der Wecker klingelt: Tag ${next} beginnt.` },
+                        { speaker: 'System', portrait: '🚪', focus: 'player', text: 'Drüben wartet das Büro. Aber erst mal: aufstehen.' }
+                    ];
+                    if (window.BVRealCutscenes && typeof window.BVRealCutscenes.play === "function") {
+                        bvQueueAfterCutscene(wake);
+                        const started = window.BVRealCutscenes.play('tagStart', steps);
+                        if (started === false) { bvAfterCutsceneAction = null; return false; }
+                        return true;
+                    }
+                    wake();
+                    return true;
+                };
+
                 console.log("🏢 BüroVersum RPG v7.10.10 Menu Map Tabs Fixed geladen!");
                 console.log("💡 Tipp: Drücke [C] im Spiel für Cheats!");
                 console.log("🖥️ Tipp: Interagiere mit dem Computer (🖥️) im Büro!");
@@ -57745,6 +58024,34 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     window.renderQuestTab = renderQuestLog;
 
     // Fehlende Andreas-Quest-Funktion ergänzen.
+    /* v7.21: Bett in der Wohnung – Tag beenden und den nächsten Tag starten */
+    window.openBettChoice = function (npc) {
+        if (typeof window.showChoice !== 'function') return;
+        const speaker = npc?.name || 'Bett';
+        const portrait = npc?.sprite || '🛏️';
+        const day = (window.BVHome && typeof window.BVHome.day === 'function') ? window.BVHome.day() : 1;
+        const ready = !!(window.BVHome && typeof window.BVHome.isDayReady === 'function' && window.BVHome.isDayReady());
+        if (ready) {
+            window.showMessage?.(`Tag ${day} läuft schon. Zieh dich an und geh zur Wohnungstür 🚪`, speaker, portrait);
+            return;
+        }
+        window.showChoice(`Tag ${day} ist geschafft. Jetzt schlafen und Tag ${day + 1} beginnen?`, [
+            { label: 'Schlafen gehen', value: 'sleep', hint: '🌙' },
+            { label: 'Noch nicht', value: 'later', hint: '✖' }
+        ], speaker, portrait, (val) => {
+            if (val !== 'sleep') {
+                window.showMessage?.('Okay. Aber das Bett bleibt geduldig.', speaker, portrait);
+                return;
+            }
+            if (typeof window.BVStartSleep === 'function') {
+                const ok = window.BVStartSleep();
+                if (ok === false) window.showMessage?.('Gerade ist keine ruhige Minute — gleich nochmal versuchen.', speaker, portrait);
+            } else {
+                window.showMessage?.('Gute Nacht!', speaker, portrait);
+            }
+        });
+    };
+
     window.openAndreasChoice = function(npc) {
         const p = getPlayer();
         const qs = ensureQuestState();
@@ -58715,7 +59022,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     }
 
     function play(id, sceneSteps) {
-        if (playing) return;
+        // v7.21: Rueckgabe sagt jetzt, ob die Szene wirklich gestartet ist
+        // (false = gerade laeuft schon eine andere Cutscene).
+        if (playing) return false;
         if (skipping) {
             skipping = false;
             clearTimeout(skipTimer);
@@ -58755,6 +59064,7 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         if (typeof window.setBvGameState === 'function') window.setBvGameState('CUTSCENE');
         if (typeof window.clearBvMoveInput === 'function') window.clearBvMoveInput();
         renderStep();
+        return true;
     }
     function startRealCutsceneBattle(step) {
         if (!step || !step.battle) return false;
@@ -59103,10 +59413,40 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         }, 120);
     }
 
+    // v7.21: Ankunft in der Wohnung nach dem Feierabend (einmal pro Spielstand)
+    function maybeZuhauseIntro() {
+        const pl = pObj(); if (!pl) return;
+        const r = rt();
+        if (r.currentMapId !== 'zuhause') return;
+        pl.cutscenes = pl.cutscenes || {};
+        if (pl.cutscenes.homeArriveSeen || pl.cutscenes.homeArrivePending) return;
+        if (!canStartMapCutscene('zuhause')) return;
+        pl.cutscenes.homeArrivePending = true;
+        reserveCutsceneStart();
+        setTimeout(() => {
+            if (!canRunPendingCutscene('zuhause')) { pl.cutscenes.homeArrivePending = false; releaseCutsceneStart(); return; }
+            pl.cutscenes.homeArrivePending = false;
+            const day = Math.max(1, parseInt(pl.workDay, 10) || 1);
+            const started = play('zuhauseAnkunft', [
+                { speaker: 'System', portrait: '🏡', focus: 'player', mood: 'good', accent: '#ffd166', text: `Endlich zuhause. Tag ${day} liegt hinter dir — die Tür fällt ins Schloss.` },
+                { speaker: 'System', portrait: '🛋️', focus: 'player', text: 'Wohnzimmer, Küche, Bad und dein Zimmer. Der Flur verbindet alles — jede Tür führt in einen Raum.' },
+                { speaker: 'System', portrait: '🛏️', focus: 'player', mood: 'good', accent: '#69f0ae', text: 'Zum Tagesabschluss gehst du in dein Zimmer zum Bett. Morgens führt dich die Wohnungstür zurück ins Büro.' }
+            ]);
+            if (started === false) {
+                // Es lief gerade eine andere Szene -> nicht als "gesehen" markieren,
+                // State freigeben statt den Spieler in CUTSCENE haengen zu lassen.
+                releaseCutsceneStart();
+            } else {
+                pl.cutscenes.homeArriveSeen = true;
+            }
+        }, 700);
+    }
+
     function maybeGeneralMapIntros() {
         maybeFlurIntro();
         maybeKantineIntro();
         maybeBossOfficeIntro();
+        maybeZuhauseIntro();
         maybeTileCutsceneTriggers();
     }
 
