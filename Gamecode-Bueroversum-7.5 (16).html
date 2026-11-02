@@ -808,6 +808,11 @@
                         </div>
                         <!-- Minimap Toggle -->
                         <button class="minimap-toggle" onclick="toggleMinimap()">🗺️</button>
+                        <!-- v7.16: Schicht-Uhr (Tag/Nacht-Zyklus steuert Dunkelheit) -->
+                        <div class="hud-clock-badge" id="bv-hud-clock" title="Schicht-Zeit (steuert Tag/Nacht)">
+                            <span class="clock-icon" id="bv-hud-clock-icon">☀️</span>
+                            <span class="clock-text" id="bv-hud-clock-text">09:00</span>
+                        </div>
                     </div>
                     <div class="hud-right">
                         <div class="hud-gold-display">
@@ -35077,6 +35082,23 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
     animation-play-state: paused !important;
 }
 
+/* v7.16: Schicht-Uhr im HUD (zeigt die In-Game-Uhrzeit des Tag/Nacht-Zyklus) */
+.hud-clock-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    background: rgba(10, 16, 32, .85);
+    border: 1px solid rgba(255, 214, 140, .4);
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+    color: #ffe6b8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+    user-select: none;
+}
+.hud-clock-badge .clock-icon { font-size: .95rem; }
+
 /* ===== v7.15 BV NIGHT: Tag/Nacht-Zyklus, Dunkelheit & Lampen ===== */
 #bv-night-layer {
     position: absolute;
@@ -38519,9 +38541,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     // (auch waehrend der Transition) - beim Wiederaufgehen stimmt alles.
                     if (currentMapId && bvLastGuardMapId !== currentMapId) {
                         bvLastGuardMapId = currentMapId;
-                        if (typeof bvNightRefreshCache === "function") bvNightRefreshCache();
+                        if (typeof bvNightEnsureCache === "function") bvNightEnsureCache(true);
                         if (typeof window.BVApplyMapLight === "function") window.BVApplyMapLight(currentMapId);
                     }
+                    // Schicht-Uhr im HUD aktualisieren (Tag/Nacht-Phase sichtbar)
+                    if (typeof bvHudClockTick === "function") bvHudClockTick();
                 }
 
                 function bvOcclusionFadeTick() {
@@ -38555,11 +38579,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 };
 
                 // ============================================================
-                // v7.15 – BV NIGHT: TAG/NACHT-ZYKLUS & DUNKELHEITS-SYSTEM
+                // v7.16 – BV NIGHT: TAG/NACHT-ZYKLUS & DUNKELHEITS-SYSTEM
                 // ------------------------------------------------------------
-                // Eine komplette Schicht dauert ca. 7 Minuten Echtzeit:
-                //   Tag (0.00-0.45) -> Abenddaemmerung (0.45-0.55)
-                //   -> Nacht (0.55-0.92) -> Morgengrauen (0.92-1.00)
+                // SCHICHT-UHR: Die Dunkelheit folgt einer In-Game-Uhrzeit (HH:MM):
+                //   Tag 07:00-17:00 | Daemmerung 17:00-18:30 (um 18:00 bereits
+                //   deutlich dunkler!) | Nacht 18:30-05:30 | Morgengrauen 05:30-07:00
+                //   Tempo: 100 echte Sekunden = 1 Spiel-Stunde (HUD-Uhr mit HH:MM).
                 // Jede Map hat eine eigene Maximal-Dunkelheit (Lager/Archiv =
                 // fast stockfinster, Dach = mondbeschienen). Lampen entstehen
                 // automatisch aus den Map-Dekos (lamp/vending/server/...) und
@@ -38567,10 +38592,10 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 // der Spieler traegt eine Taschenlampe (warmer Halo).
                 // Aktiv nur in Map-Szenen; respektiert Low-Spec/reducedMotion:
                 // tier "low" -> weniger Lampen, kleinere Taschenlampe, kein Glow.
-                // Konsole: BVNight.setTime(0.7) | BVNight.phase()
+                // Konsole: BVNight.setTime(18) | BVNight.phase() | BVNight.time()
                 // ============================================================
-                const BV_NIGHT_CYCLE_SEC = 300; // ~5 Minuten pro Tag/Nacht-Runde
-                let bvNightTime = 0.20;         // Start am spaeten Vormittag (1. Daemmerung nach ~15 s)
+                const BV_NIGHT_HOUR_SEC = 100;  // 100 echte Sekunden = 1 Spiel-Stunde
+                let bvNightClock = 9;           // Schichtbeginn: 09:00 Uhr
                 let bvNightLevel = 0;           // geglaettete Dunkelheit 0..1
                 let bvNightSawNight = false;    // fuer das "Nachteule"-Achievement
                 let bvNightCache = { mapId: "__none__", max: 0, lights: [] };
@@ -38602,12 +38627,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     coffee:       { r: 50, col: "#ffcf9a" }
                 };
 
-                function bvNightLevelAt(t) {
-                    // Tag 0-25 % | Daemmerung 25-35 % | Nacht 35-75 % | Morgengrauen 75-85 % | Tag 85-100 %
-                    if (t < 0.25) return 0;
-                    if (t < 0.35) { const k = (t - 0.25) / 0.10; return k * k * (3 - 2 * k); }
-                    if (t < 0.75) return 1;
-                    if (t < 0.85) { const k = (t - 0.75) / 0.10; return 1 - k * k * (3 - 2 * k); }
+                function bvNightLevelAtHour(h) {
+                    // Tag 07:00-17:00 | Daemmerung 17:00-18:30 | Nacht 18:30-05:30 | Morgengrauen 05:30-07:00
+                    if (h >= 7 && h < 17) return 0;
+                    if (h >= 17 && h < 18.5) { const k = (h - 17) / 1.5; return k * k * (3 - 2 * k); }
+                    if (h >= 18.5 || h < 5.5) return 1;
+                    if (h >= 5.5 && h < 7) { const k = (h - 5.5) / 1.5; return 1 - k * k * (3 - 2 * k); }
                     return 0;
                 }
 
@@ -38633,6 +38658,41 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     bvNightCache = { mapId: currentMapId, max: prof.max, lights: lights };
                 }
 
+                // Signatur aus Map-ID + Dekos: erkennt den Map-Wechsel auch dann,
+                // wenn der Cache waehrend der Transition zu frueh (mit den alten
+                // Dekos) gebaut wurde -> Lampen werden zuverlaessig aktualisiert.
+                let bvNightCacheSig = "__none__";
+                function bvNightCacheSignature() {
+                    const d = currentDecos || [];
+                    return currentMapId + "|" + d.length + "|" +
+                        (d.length ? (d[0].x + "," + d[0].y + ";" + d[d.length - 1].x + "," + d[d.length - 1].y) : "x");
+                }
+                function bvNightEnsureCache(force) {
+                    const sig = bvNightCacheSignature();
+                    if (force || sig !== bvNightCacheSig) {
+                        bvNightCacheSig = sig;
+                        bvNightRefreshCache();
+                    }
+                }
+
+                // HUD-Schicht-Uhr (HH:MM + Phasen-Icon), aktualisiert sich im Guard-Takt
+                let bvHudClockShown = "";
+                function bvHudClockTick() {
+                    const el = document.getElementById("bv-hud-clock-text");
+                    const ic = document.getElementById("bv-hud-clock-icon");
+                    if (!el || !ic) return;
+                    const hh = Math.floor(bvNightClock) % 24;
+                    const mm = Math.floor((bvNightClock - hh) * 60);
+                    const txt = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+                    if (txt === bvHudClockShown) return;
+                    bvHudClockShown = txt;
+                    el.textContent = txt;
+                    const lv = bvNightLevel;
+                    ic.textContent = lv > 0.85 ? "🌙"
+                        : lv > 0.15 ? (bvNightClock >= 17 ? "🌆" : "🌅")
+                        : "☀️";
+                }
+
                 function bvHexRgba(hex, a) {
                     const h = hex.replace("#", "");
                     const r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
@@ -38640,11 +38700,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 }
 
                 function bvNightAdvance(dtSec) {
-                    const prev = bvNightTime;
-                    bvNightTime = (bvNightTime + dtSec / BV_NIGHT_CYCLE_SEC) % 1;
-                    const target = bvNightLevelAt(bvNightTime);
+                    const prev = bvNightClock;
+                    bvNightClock = (bvNightClock + dtSec / BV_NIGHT_HOUR_SEC) % 24;
+                    const target = bvNightLevelAtHour(bvNightClock);
                     if (target >= 0.99) bvNightSawNight = true;
-                    if (bvNightTime < prev && bvNightSawNight) {
+                    if (bvNightClock < prev && bvNightSawNight) {
                         bvNightSawNight = false;
                         player.achNightCycles = (player.achNightCycles || 0) + 1; // "Nachteule"
                     }
@@ -38658,10 +38718,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const overlay = document.getElementById("rpg-overlay");
                     const overlayOpen = !!(overlay && (overlay.classList.contains("open") || overlay.classList.contains("opening")));
                     if (bvSceneFxMode === "on") bvNightAdvance(1 / 60); // Zeit laeuft nur in laufender Map-Szene
-                    // Map-Wechsel SOFORT nachfuehren (Lampen/Dunkelheit der neuen Map) -
-                    // nicht erst nach dem Einblenden, sonst haengt die alte
-                    // Map-Atmosphaere kurz nach der Transition nach.
-                    if (currentMapId && bvNightCache.mapId !== currentMapId) bvNightRefreshCache();
+                    // Map-Wechsel SOFORT nachfuehren (per Signatur: Map + Dekos) -
+                    // nicht erst nach dem Einblenden, sonst haengen die alten
+                    // Lampen kurz nach der Transition nach. Springt auch nach,
+                    // wenn der Cache waehrend der Transition zu frueh gebaut wurde.
+                    if (typeof bvNightEnsureCache === "function") bvNightEnsureCache();
                     const dark = Math.min(0.92, bvNightLevel * (bvNightCache.max || 0.6));
                     // "freeze" (Menu/Shop/Skillshop/Transition): Ebene bleibt SICHTBAR,
                     // Bild ist eingefroren -> kein Blinken beim Oeffnen/Schliessen
@@ -38741,17 +38802,19 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 requestAnimationFrame(bvNightLoop);
 
                 window.BVNight = {
-                    time: function () { return bvNightTime; },
+                    time: function () { return bvNightClock; },          // Uhrzeit in Stunden (0-24)
                     level: function () { return bvNightLevel; },
-                    setTime: function (t) { bvNightTime = Math.max(0, Math.min(0.9999, Number(t) || 0)); return bvNightTime; },
-                    phase: function () {
-                        if (bvNightTime < 0.25) return "Tag";
-                        if (bvNightTime < 0.35) return "Abenddämmerung";
-                        if (bvNightTime < 0.75) return "Nachtschicht";
-                        if (bvNightTime < 0.85) return "Morgengrauen";
-                        return "Tag";
+                    setTime: function (h) {                              // Stunden, z. B. setTime(18) = 18:00
+                        bvNightClock = ((Number(h) || 0) % 24 + 24) % 24;
+                        return bvNightClock;
                     },
-                    cycleSeconds: BV_NIGHT_CYCLE_SEC
+                    phase: function () {
+                        if (bvNightClock >= 7 && bvNightClock < 17) return "Tag";
+                        if (bvNightClock >= 17 && bvNightClock < 18.5) return "Abenddämmerung";
+                        if (bvNightClock >= 5.5 && bvNightClock < 7) return "Morgengrauen";
+                        return "Nachtschicht";
+                    },
+                    hourSeconds: BV_NIGHT_HOUR_SEC
                 };
                 window.BVAtmos.night = window.BVNight;
 
