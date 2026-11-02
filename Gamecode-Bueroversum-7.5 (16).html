@@ -35067,6 +35067,16 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
     animation-play-state: paused !important;
 }
 
+/* Szenen-Frost (Menu/Shop/Skillshop/Transition):
+   Map bleibt SICHTBAR, FX-Animationen frieren nur ein -> kein Blinken */
+#rpg-game-window.bv-scene-fx-freeze #rpg-fx-particles .fxp,
+#rpg-game-window.bv-scene-fx-freeze #rpg-fx-particles .fx-depth,
+#rpg-game-window.bv-scene-fx-freeze #rpg-parallax-layer,
+#rpg-game-window.bv-scene-fx-freeze #rpg-parallax-layer::before,
+#rpg-game-window.bv-scene-fx-freeze #rpg-parallax-layer::after {
+    animation-play-state: paused !important;
+}
+
 /* ===== v7.15 BV NIGHT: Tag/Nacht-Zyklus, Dunkelheit & Lampen ===== */
 #bv-night-layer {
     position: absolute;
@@ -38438,11 +38448,13 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 // 1) MAP-LICHT: Jede Map bekommt eine eigene Lichtstimmung
                 //    (Tint + Staerke + Vignette) via CSS-Variablen am Window.
                 //    Wird zentral aus BVApplyMapFx mit umgeschaltet.
-                // 2) SZENEN-PAUSE: Map-FX (Partikel/Parallax/Licht) laufen nur,
-                //    wenn die Karte sichtbar ist (MAP/MESSAGE). In Battle,
-                //    Menus, Computer, Editor, Splash, Ending usw. setzt der
-                //    Guard .bv-scene-fx-off -> Animationen pausieren sauber,
-                //    Ebenen verstecken sich, nichts leakt in andere Szenen.
+                // 2) SZENEN-STUFEN ("on"/"freeze"/"off"): Map-FX laufen nur in
+                //    MAP/MESSAGE komplett. In MENU/SHOP/SKILLSHOP/TRANSITION
+                //    frieren sie ein, bleiben aber SICHTBAR (kein Blinken beim
+                //    Schliessen des Menus). In Vollbild-Szenen (Battle,
+                //    Computer, Editor, Title, Splash, Ending) verstecken sie sich.
+                //    Map-Wechsel uebernimmt der Guard selbst (Licht + Nacht
+                //    schon waehrend der Transition korrekt).
                 // 3) SCHICHTEN-GEHEN: Bleibt der Spieler HINTER einem Occluder
                 //    stehen, wird dieser halbtransparent (.bv-occ-fade), damit
                 //    der Charakter sichtbar bleibt - 2.5D-Polish ohne Tiefeingriff.
@@ -38472,9 +38484,16 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     return theme;
                 };
 
-                // Szenen, in denen Map + FX sichtbar sind (Dialoge zeigen die Map weiter)
+                // Drei Sichtbarkeits-Stufen der Map-Szene:
+                //   "on"     -> Map laeuft komplett (MAP, MESSAGE)
+                //   "freeze" -> Map bleibt SICHTBAR, FX frieren ein (MENU, SHOP,
+                //               SKILLSHOP, TRANSITION) -> kein Blinken beim Schliessen
+                //   "off"    -> Vollbild-Szene (BATTLE, COMPUTER, EDITOR, SPLASH,
+                //               TITLE, NAME, ENDING, BAD_ENDING) -> FX versteckt
                 const BV_FX_ACTIVE_STATES = new Set(["MAP", "MESSAGE"]);
-                let bvSceneFxWasOff = null;
+                const BV_FX_FREEZE_STATES = new Set(["MENU", "SHOP", "SKILLSHOP", "TRANSITION"]);
+                let bvSceneFxMode = null;   // "on" | "freeze" | "off"
+                let bvLastGuardMapId = "";
 
                 function bvSceneGuardTick() {
                     const gw = document.getElementById("rpg-game-window");
@@ -38482,24 +38501,31 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const overlay = document.getElementById("rpg-overlay");
                     // RPG-Overlay zeigt das Spiel ueber die Klassen "opening"/"open" (nicht "active")
                     const overlayOpen = !!(overlay && (overlay.classList.contains("open") || overlay.classList.contains("opening")));
-                    const off = !(overlayOpen && BV_FX_ACTIVE_STATES.has(gameState));
-                    if (off !== bvSceneFxWasOff) {
-                        bvSceneFxWasOff = off;
-                        gw.classList.toggle("bv-scene-fx-off", off);
-                        if (off && occlusionLayer) {
+                    const mode = !overlayOpen ? "off"
+                        : BV_FX_ACTIVE_STATES.has(gameState) ? "on"
+                        : BV_FX_FREEZE_STATES.has(gameState) ? "freeze"
+                        : "off";
+                    if (mode !== bvSceneFxMode) {
+                        bvSceneFxMode = mode;
+                        gw.classList.toggle("bv-scene-fx-off", mode === "off");
+                        gw.classList.toggle("bv-scene-fx-freeze", mode === "freeze");
+                        if (mode === "off" && occlusionLayer) {
                             // Beim Verlassen der Map-Szene: alle Occluder wieder undurchsichtig
                             Array.from(occlusionLayer.children).forEach(o => o.classList.remove("bv-occ-fade"));
                         }
                     }
-                    // Map-Wechsel sofort cachen (auch waehrend TRANSITION), damit Nacht/Lampen
-                    // der neuen Map bereits beim Einblenden stimmen - kein Nachhaengen mehr.
-                    if (typeof bvNightRefreshCache === "function" && currentMapId && bvNightCache.mapId !== currentMapId) {
-                        bvNightRefreshCache();
+                    // Map-Wechsel SOFORT ins Schichten-System uebernehmen:
+                    // Licht + Nacht-Lampen der neuen Map werden direkt gesetzt
+                    // (auch waehrend der Transition) - beim Wiederaufgehen stimmt alles.
+                    if (currentMapId && bvLastGuardMapId !== currentMapId) {
+                        bvLastGuardMapId = currentMapId;
+                        if (typeof bvNightRefreshCache === "function") bvNightRefreshCache();
+                        if (typeof window.BVApplyMapLight === "function") window.BVApplyMapLight(currentMapId);
                     }
                 }
 
                 function bvOcclusionFadeTick() {
-                    if (bvSceneFxWasOff !== false || gameState !== "MAP") return;
+                    if (bvSceneFxMode !== "on" || gameState !== "MAP") return;
                     if (!playerEl || !occlusionLayer) return;
                     const occs = occlusionLayer.children;
                     if (!occs.length) return;
@@ -38524,7 +38550,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 window.BVAtmos = {
                     themes: BV_LIGHT_THEME,
                     apply: function (id) { window.BVApplyMapFx(id); return BV_LIGHT_THEME[id] || null; },
-                    sceneFxOn: function () { return bvSceneFxWasOff === false; }
+                    sceneFxOn: function () { return bvSceneFxMode === "on"; },
+                    sceneMode: function () { return bvSceneFxMode; }
                 };
 
                 // ============================================================
@@ -38630,16 +38657,19 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     if (!gw || !cvs) return;
                     const overlay = document.getElementById("rpg-overlay");
                     const overlayOpen = !!(overlay && (overlay.classList.contains("open") || overlay.classList.contains("opening")));
-                    const sceneActive = overlayOpen && bvSceneFxWasOff === false;
-                    if (sceneActive) bvNightAdvance(1 / 60);
+                    if (bvSceneFxMode === "on") bvNightAdvance(1 / 60); // Zeit laeuft nur in laufender Map-Szene
                     // Map-Wechsel SOFORT nachfuehren (Lampen/Dunkelheit der neuen Map) -
                     // nicht erst nach dem Einblenden, sonst haengt die alte
                     // Map-Atmosphaere kurz nach der Transition nach.
                     if (currentMapId && bvNightCache.mapId !== currentMapId) bvNightRefreshCache();
                     const dark = Math.min(0.92, bvNightLevel * (bvNightCache.max || 0.6));
-                    const on = sceneActive && dark > 0.02;
+                    // "freeze" (Menu/Shop/Skillshop/Transition): Ebene bleibt SICHTBAR,
+                    // Bild ist eingefroren -> kein Blinken beim Oeffnen/Schliessen
+                    const visible = bvSceneFxMode === "on" || bvSceneFxMode === "freeze";
+                    const on = overlayOpen && visible && dark > 0.02;
                     gw.classList.toggle("bv-night-active", on);
                     if (!on) { bvNightLastDraw = ""; return; }
+                    if (bvSceneFxMode === "freeze") return;
 
                     const vp = document.getElementById("rpg-viewport");
                     if (!vp) return;
