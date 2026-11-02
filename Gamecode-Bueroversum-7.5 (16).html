@@ -1800,6 +1800,53 @@
                 </div>
             </div>
 
+            <!-- v7.25: ZUHAUSE-CINEMATIC (eigene Bühne, nicht die Büro-Szene) -->
+            <div id="bv-home-cinematic" hidden>
+                <div class="bv-hc-stage living">
+                    <div class="bv-hc-ceil"></div>
+                    <div class="bv-hc-wall"></div>
+                    <div class="bv-hc-window"><div class="bv-hc-sash"></div><div class="bv-hc-sash2"></div></div>
+                    <div class="bv-hc-floor"></div>
+                    <div class="bv-hc-rug"></div>
+                    <div class="bv-hc-sofa"></div>
+                    <div class="bv-hc-table"></div>
+                    <div class="bv-hc-lamp"><div class="bv-hc-glow"></div></div>
+                    <div class="bv-hc-plant"></div>
+                    <div class="bv-hc-door"></div>
+                    <div class="bv-hc-lightshaft"></div>
+                    <div class="bv-hc-sign">AUSGANG</div>
+                    <div class="bv-hc-sky"></div>
+                    <div class="bv-hc-skyline"></div>
+                    <div class="bv-hc-road"></div>
+                    <div class="bv-hc-streetlamp"><div class="bv-hc-glow"></div></div>
+                    <div class="bv-hc-bed"></div>
+                    <div class="bv-hc-nightstand"></div>
+                    <div class="bv-hc-nightlamp"></div>
+                    <div class="bv-hc-zzz"><span>z</span><span>z</span><span>z</span></div>
+                    <div class="bv-hc-tiles"></div>
+                    <div class="bv-hc-bathfloor"></div>
+                    <div class="bv-hc-washer"></div>
+                    <div class="bv-hc-shower"><div class="bv-hc-pipe"></div><div class="bv-hc-head"></div></div>
+                    <div class="bv-hc-water"></div>
+                    <div class="bv-hc-steam"><span></span><span></span><span></span></div>
+                    <div class="bv-hc-actor">🧑‍💼</div>
+                </div>
+                <div class="bv-hc-bars"><span></span><span></span></div>
+                <div class="bv-hc-vignette"></div>
+                <div class="bv-hc-grain"></div>
+                <div class="bv-hc-fade"></div>
+                <div class="bv-hc-title"></div>
+                <div class="bv-hc-dialog">
+                    <div class="bv-hc-portrait">🏡</div>
+                    <div class="bv-hc-copy">
+                        <div class="bv-hc-speaker"></div>
+                        <div class="bv-hc-text"></div>
+                        <div class="bv-hc-choices"></div>
+                        <div class="bv-hc-hint">ENTER weiter · ESC überspringen</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ENDING SCREEN - Ultimate Celebration Edition -->
             <div id="rpg-ending-screen" class="rpg-screen">
                 <div class="ending-bg">
@@ -29798,6 +29845,336 @@ body.bv-settings-particles-off .title-canvas-bg {
 .bad-ending-stats b { color:#243044 !important; }
 @keyframes badStampIn { from{opacity:0; transform:rotate(-12deg) scale(1.25)} to{opacity:.72; transform:rotate(-12deg) scale(1)} }
 
+/* ============================================================
+   v7.25: EIGENE ZUHAUSE-CINEMATIC
+   ------------------------------------------------------------
+   Eigene Bühne für Feierabend, Schlafen und Duschen – bewusst
+   NICHT die Büro-Story-Cinematic. Fünf Kulissen:
+     hall     – Büroflur mit Ausgangstür (Feierabend-Start)
+     street   – Abendstraße auf dem Heimweg
+     living   – Wohnzimmer (Sofa, Stehlampe, Fenster, Pflanze)
+     bedroom  – Schlafzimmer (Bett, Nachttisch, Mondfenster)
+     bath     – Badezimmer (Fliesen, Dusche, Dampf)
+   Zeitvarianten über .time-warm / .time-night / .time-dawn.
+   ============================================================ */
+#bv-home-cinematic {
+    position: absolute; inset: 0; z-index: 96; display: none; overflow: hidden;
+    font-family: 'VT323', monospace; color: #fff4e2;
+    background: #0a0705;
+}
+#bv-home-cinematic.visible { display: block; animation: bvHcIn .5s ease both; }
+#bv-home-cinematic.leaving { animation: bvHcOut .4s ease both; }
+@keyframes bvHcIn { from { opacity: 0; transform: scale(1.015); } to { opacity: 1; transform: none; } }
+@keyframes bvHcOut { to { opacity: 0; transform: scale(.995); } }
+@keyframes bvHcGrain { 0%{transform:translate(0,0)} 50%{transform:translate(1px,-1px)} 100%{transform:translate(-1px,1px)} }
+@keyframes bvHcFlicker { 0%,100%{opacity:.9} 45%{opacity:.74} 60%{opacity:1} }
+@keyframes bvHcWater { from { background-position: 0 0, 0 0; } to { background-position: 0 60px, 0 40px; } }
+@keyframes bvHcSteam { 0% { opacity: 0; transform: translateY(20px) scale(1); } 40% { opacity: .5; } 100% { opacity: 0; transform: translateY(-70px) scale(1.35); } }
+@keyframes bvHcZzz { 0% { opacity: 0; transform: translate(0,0) scale(.8); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(14px,-42px) scale(1.15); } }
+@keyframes bvHcSway { 0%,100% { transform: rotate(-.6deg); } 50% { transform: rotate(.6deg); } }
+
+.bv-hc-bars span { position: absolute; left: 0; right: 0; height: 34px; background: #000; z-index: 7; }
+.bv-hc-bars span:first-child { top: 0; }
+.bv-hc-bars span:last-child { bottom: 0; }
+.bv-hc-vignette { position: absolute; inset: 0; z-index: 6; pointer-events: none; background: radial-gradient(ellipse at 50% 46%, transparent 38%, rgba(0,0,0,.66) 100%); }
+.bv-hc-grain { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: .05;
+    background-image: radial-gradient(rgba(255,255,255,.45) .5px, transparent .6px);
+    background-size: 3px 3px; animation: bvHcGrain .4s steps(2) infinite; }
+
+/* ---------- Bühne ---------- */
+.bv-hc-stage { position: absolute; inset: 0; z-index: 2; }
+.bv-hc-stage > * { position: absolute; }
+.bv-hc-ceil { left: 0; right: 0; top: 0; height: 12%; background: linear-gradient(180deg, #1a1310, #2b2018); }
+.bv-hc-wall { left: 0; right: 0; top: 10%; bottom: 34%; background: linear-gradient(180deg, #4a3524 0%, #6b4b31 62%, #7d5a3b 100%); }
+.bv-hc-floor { left: 0; right: 0; bottom: 0; height: 34%; background: linear-gradient(180deg, #8a6039 0%, #6a4728 45%, #3f2a18 100%); box-shadow: inset 0 14px 34px rgba(0,0,0,.5); }
+.bv-hc-floor::after { /* Dielen */
+    content: ''; position: absolute; inset: 0; opacity: .22;
+    background: repeating-linear-gradient(90deg, rgba(0,0,0,.55) 0 2px, transparent 2px 46px);
+}
+.bv-hc-rug { left: 26%; width: 40%; bottom: 12%; height: 15%; border-radius: 50% / 26%;
+    background: linear-gradient(180deg, #a4563f, #7d3c2c); box-shadow: 0 12px 26px rgba(0,0,0,.36); }
+
+/* Fenster mit Nachthimmel */
+.bv-hc-window { left: 8%; bottom: 40%; width: 21%; height: 30%;
+    border-radius: 10px 10px 4px 4px; border: 5px solid #3a2a1e;
+    background: linear-gradient(180deg, #0d1b33 0%, #1c3352 55%, #34506f 100%);
+    box-shadow: 0 0 44px rgba(120,170,255,.22), inset 0 0 26px rgba(0,0,0,.5);
+    overflow: hidden;
+}
+.bv-hc-window::before { /* Sterne */
+    content: ''; position: absolute; inset: 0; opacity: .8;
+    background-image:
+        radial-gradient(1.4px 1.4px at 18% 22%, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 62% 16%, #dfe9ff, transparent),
+        radial-gradient(1.6px 1.6px at 78% 44%, #fff, transparent),
+        radial-gradient(1.1px 1.1px at 34% 52%, #cfe0ff, transparent),
+        radial-gradient(1.3px 1.3px at 52% 32%, #fff, transparent),
+        radial-gradient(1px 1px at 86% 22%, #fff, transparent);
+}
+.bv-hc-window::after { /* Mond */
+    content: ''; position: absolute; right: 16%; top: 14%; width: 26px; height: 26px; border-radius: 50%;
+    background: radial-gradient(circle at 34% 32%, #fffdf2, #dfd9b8);
+    box-shadow: 0 0 22px rgba(255,248,214,.65);
+}
+.bv-hc-window .bv-hc-sash { left: 48%; top: 0; bottom: 0; width: 4px; background: #3a2a1e; }
+.bv-hc-window .bv-hc-sash2 { left: 0; right: 0; top: 52%; height: 4px; background: #3a2a1e; }
+
+/* Sofa */
+.bv-hc-sofa { left: 30%; bottom: 28%; width: 30%; height: 11%; border-radius: 12px 12px 8px 8px;
+    background: linear-gradient(180deg, #5b6f8c, #37465c); box-shadow: 0 12px 22px rgba(0,0,0,.42); }
+.bv-hc-sofa::before { content: ''; position: absolute; left: -4%; right: -4%; bottom: -42%; height: 60%;
+    border-radius: 0 0 10px 10px; background: linear-gradient(180deg, #46576e, #26313f); }
+.bv-hc-sofa::after { content: ''; position: absolute; left: 8%; top: -22%; width: 30%; height: 46%; border-radius: 8px;
+    background: linear-gradient(180deg, #7d93b3, #4e6076); }
+.bv-hc-table { left: 38%; bottom: 20%; width: 15%; height: 4.6%; border-radius: 6px;
+    background: linear-gradient(180deg, #b07a48, #6c4526); box-shadow: 0 8px 16px rgba(0,0,0,.4); }
+.bv-hc-table::after { content: ''; position: absolute; left: 42%; top: 100%; width: 16%; height: 26px; background: #5a3a20; }
+
+/* Stehlampe + Lichtkegel */
+.bv-hc-lamp { right: 12%; bottom: 30%; width: 8px; height: 30%; background: #2e251d; }
+.bv-hc-lamp::before { content: ''; position: absolute; left: 50%; top: -26px; transform: translateX(-50%);
+    width: 54px; height: 30px; border-radius: 50% 50% 12% 12%;
+    background: linear-gradient(180deg, #ffe6b4, #d9a960); box-shadow: 0 0 34px rgba(255,214,140,.55); }
+.bv-hc-lamp .bv-hc-glow { position: absolute; left: 50%; top: -6px; transform: translateX(-50%);
+    width: 300px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,214,150,.34), rgba(255,200,120,.10) 45%, transparent 72%);
+    pointer-events: none; }
+
+/* Pflanze */
+.bv-hc-plant { left: 20%; bottom: 31%; width: 26px; height: 44px;
+    background: radial-gradient(circle at 50% 20%, #3f9b5f, transparent 62%),
+                radial-gradient(circle at 20% 46%, #2f7d4a, transparent 60%),
+                radial-gradient(circle at 80% 40%, #47ad68, transparent 58%); }
+.bv-hc-plant::after { content: ''; position: absolute; left: 15%; top: 74%; width: 70%; height: 30%;
+    background: linear-gradient(180deg, #8a5a34, #4c2f18); border-radius: 4px 4px 7px 7px; }
+
+/* Tür (Flur) */
+.bv-hc-door { right: 16%; bottom: 26%; width: 20%; height: 44%;
+    border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #4b5a6b, #2b3440);
+    border: 4px solid #22303d; box-shadow: 0 0 40px rgba(150,200,255,.18); }
+.bv-hc-door::after { content: ''; position: absolute; right: 9%; top: 48%; width: 9px; height: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 32%, #ffe9a8, #b9902f); }
+#bv-home-cinematic.door-open .bv-hc-door { animation: bvHcDoorOpen 1.1s cubic-bezier(.2,.9,.2,1) forwards; }
+@keyframes bvHcDoorOpen {
+    to { transform: perspective(420px) rotateY(-62deg) translateX(-8%); filter: brightness(1.5); }
+}
+.bv-hc-lightshaft { right: 14%; bottom: 26%; width: 0; height: 44%; opacity: 0;
+    background: linear-gradient(90deg, rgba(255,236,190,.42), transparent 70%);
+    transform: skewX(-10deg); }
+#bv-home-cinematic.door-open .bv-hc-lightshaft { animation: bvHcShaft .9s ease .2s forwards; }
+@keyframes bvHcShaft { from { opacity:0; width: 0; } to { opacity:1; width: 26%; } }
+.bv-hc-sign { left: 50%; top: 13%; transform: translateX(-50%); letter-spacing: 7px; font-size: 1.25rem;
+    color: #ffd36a; opacity: .9; text-shadow: 0 0 20px rgba(255,211,106,.45); }
+
+/* Straße */
+.bv-hc-sky { left: 0; right: 0; top: 0; bottom: 26%; background: linear-gradient(180deg, #050c1c 0%, #0e1d34 55%, #20304a 100%); }
+.bv-hc-sky::before { content: ''; position: absolute; inset: 0; opacity: .85;
+    background-image:
+        radial-gradient(1.4px 1.4px at 12% 26%, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 32% 14%, #dbe6ff, transparent),
+        radial-gradient(1.6px 1.6px at 58% 30%, #fff, transparent),
+        radial-gradient(1.1px 1.1px at 74% 18%, #fff, transparent),
+        radial-gradient(1.3px 1.3px at 88% 36%, #cfe0ff, transparent);
+}
+.bv-hc-skyline { left: 0; right: 0; top: 26%; height: 34%; opacity: .95;
+    background:
+        linear-gradient(180deg, #101a2b 0 100%) left bottom / 18% 62% no-repeat,
+        linear-gradient(180deg, #0b1524 0 100%) 20% bottom / 14% 82% no-repeat,
+        linear-gradient(180deg, #111c2e 0 100%) 36% bottom / 20% 48% no-repeat,
+        linear-gradient(180deg, #0a1320 0 100%) 58% bottom / 16% 70% no-repeat,
+        linear-gradient(180deg, #121d30 0 100%) 76% bottom / 22% 54% no-repeat; }
+.bv-hc-skyline::after { content: ''; position: absolute; inset: 0; opacity: .8;
+    background-image:
+        radial-gradient(2px 2px at 22% 72%, #ffd98a, transparent),
+        radial-gradient(2px 2px at 30% 64%, #ffd98a, transparent),
+        radial-gradient(2px 2px at 62% 76%, #ffe6a8, transparent),
+        radial-gradient(2px 2px at 84% 70%, #ffd98a, transparent),
+        radial-gradient(2px 2px at 88% 62%, #ffe6a8, transparent); }
+.bv-hc-road { left: 0; right: 0; bottom: 0; height: 26%; background: linear-gradient(180deg, #2a2f38, #14171d); }
+.bv-hc-road::after { content: ''; position: absolute; left: 0; right: 0; top: 52%; height: 5px; opacity: .5;
+    background: repeating-linear-gradient(90deg, #e9e3c8 0 42px, transparent 42px 86px); }
+.bv-hc-streetlamp { left: 16%; bottom: 22%; width: 7px; height: 40%; background: #262f3b; }
+.bv-hc-streetlamp::before { content: ''; position: absolute; left: 50%; top: -16px; transform: translateX(-50%);
+    width: 46px; height: 18px; border-radius: 50% 50% 40% 40%;
+    background: linear-gradient(180deg, #fff3c4, #e0b355); box-shadow: 0 0 40px rgba(255,224,150,.55); }
+.bv-hc-streetlamp .bv-hc-glow { position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+    width: 340px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,224,150,.26), transparent 70%); }
+
+/* Schlafzimmer */
+.bv-hc-bed { left: 12%; bottom: 24%; width: 40%; height: 15%; border-radius: 10px 10px 4px 4px;
+    background: linear-gradient(180deg, #43506b, #262f42); box-shadow: 0 16px 26px rgba(0,0,0,.45); }
+.bv-hc-bed::before { content: ''; position: absolute; left: -2%; top: -34%; width: 14%; height: 150%;
+    border-radius: 8px; background: linear-gradient(180deg, #55647f, #2b3446); }
+.bv-hc-bed::after { content: ''; position: absolute; left: 16%; right: 4%; top: 8%; height: 46%;
+    border-radius: 8px; background: linear-gradient(180deg, #8aa0c2, #5a6b8b); }
+.bv-hc-nightstand { left: 54%; bottom: 24%; width: 9%; height: 9%; border-radius: 4px;
+    background: linear-gradient(180deg, #8a5f36, #4d3319); box-shadow: 0 8px 14px rgba(0,0,0,.4); }
+.bv-hc-nightlamp { left: 57.5%; bottom: 33%; width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 34%, #fff6d2, #e2bd6c);
+    box-shadow: 0 0 34px rgba(255,224,150,.6); }
+.bv-hc-zzz { left: 52%; bottom: 44%; font-size: 1.5rem; color: #bcd2ff; opacity: 0; }
+.bv-hc-zzz span { position: absolute; animation: bvHcZzz 2.6s ease-in-out infinite; }
+.bv-hc-zzz span:nth-child(2) { animation-delay: .8s; font-size: .8em; }
+.bv-hc-zzz span:nth-child(3) { animation-delay: 1.6s; font-size: .65em; }
+
+/* Badezimmer */
+.bv-hc-tiles { left: 0; right: 0; top: 10%; bottom: 34%;
+    background: linear-gradient(180deg, #c8dbe0, #9fb8c0 70%, #86a2ac);
+    background-image:
+        linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,.5) 1px, transparent 1px),
+        linear-gradient(180deg, #c8dbe0, #8ea9b3);
+    background-size: 62px 62px, 62px 62px, 100% 100%; }
+.bv-hc-bathfloor { left: 0; right: 0; bottom: 0; height: 34%; background: linear-gradient(180deg, #b8c6cb, #7d8f96); }
+.bv-hc-bathfloor::after { content: ''; position: absolute; inset: 0; opacity: .35;
+    background: repeating-linear-gradient(90deg, rgba(0,0,0,.28) 0 2px, transparent 2px 56px),
+                repeating-linear-gradient(180deg, rgba(0,0,0,.28) 0 2px, transparent 2px 56px); }
+.bv-hc-shower { left: 56%; bottom: 28%; width: 22%; height: 40%; }
+.bv-hc-shower .bv-hc-pipe { position: absolute; left: 50%; top: 0; width: 8px; height: 34%; background: linear-gradient(90deg, #dfe8ea, #96a9ad); }
+.bv-hc-shower .bv-hc-head { position: absolute; left: 50%; top: 30%; transform: translateX(-50%);
+    width: 74px; height: 22px; border-radius: 50% 50% 45% 45%;
+    background: linear-gradient(180deg, #e8f1f3, #a9bcc1); box-shadow: 0 4px 10px rgba(0,0,0,.28); }
+.bv-hc-water { left: 50%; top: 40%; transform: translateX(-50%); width: 84px; height: 46%; opacity: .85;
+    background-image:
+        repeating-linear-gradient(90deg, rgba(190,235,255,.85) 0 3px, transparent 3px 12px),
+        repeating-linear-gradient(90deg, rgba(140,210,240,.55) 0 2px, transparent 2px 9px);
+    background-size: 12px 60px, 9px 40px;
+    animation: bvHcWater .55s linear infinite;
+    filter: blur(.4px); }
+.bv-hc-steam { left: 40%; bottom: 34%; width: 46%; height: 34%; pointer-events: none; }
+.bv-hc-steam span { position: absolute; bottom: 0; width: 90px; height: 90px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.55), transparent 66%);
+    animation: bvHcSteam 3.4s ease-in-out infinite; }
+.bv-hc-steam span:nth-child(2) { left: 34%; animation-delay: 1.1s; }
+.bv-hc-steam span:nth-child(3) { left: 62%; animation-delay: 2.2s; }
+.bv-hc-washer { left: 24%; bottom: 26%; width: 15%; height: 17%; border-radius: 8px;
+    background: linear-gradient(180deg, #eef4f6, #b7c6cb); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+.bv-hc-washer::after { content: ''; position: absolute; left: 50%; top: 26%; transform: translateX(-50%);
+    width: 46%; height: 44%; border-radius: 50%; border: 4px solid #8fa1a7;
+    background: radial-gradient(circle at 40% 36%, #cfe4ea, #6f848c); }
+
+/* ---------- Kulissen: welche Teile gehören zu welcher Bühne ---------- */
+#bv-home-cinematic .bv-hc-stage > .bv-hc-sky,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-skyline,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-road,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-streetlamp,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-sofa,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-table,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-rug,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-lamp,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-plant,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-door,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-lightshaft,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-sign,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-window,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-bed,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-nightstand,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-nightlamp,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-zzz,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-tiles,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-bathfloor,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-washer,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-shower,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-water,
+#bv-home-cinematic .bv-hc-stage > .bv-hc-steam { display: none; }
+
+/* Flur – Ausgangstür, Lichtkeil, Schild */
+#bv-home-cinematic .bv-hc-stage.hall > .bv-hc-door,
+#bv-home-cinematic .bv-hc-stage.hall > .bv-hc-lightshaft,
+#bv-home-cinematic .bv-hc-stage.hall > .bv-hc-sign,
+#bv-home-cinematic .bv-hc-stage.hall > .bv-hc-plant { display: block; }
+
+/* Straße – Himmel, Skyline, Fahrbahn, Laterne (keine Innenwände) */
+#bv-home-cinematic .bv-hc-stage.street > .bv-hc-sky,
+#bv-home-cinematic .bv-hc-stage.street > .bv-hc-skyline,
+#bv-home-cinematic .bv-hc-stage.street > .bv-hc-road,
+#bv-home-cinematic .bv-hc-stage.street > .bv-hc-streetlamp { display: block; }
+#bv-home-cinematic .bv-hc-stage.street > .bv-hc-ceil,
+#bv-home-cinematic .bv-hc-stage.street > .bv-hc-wall,
+#bv-home-cinematic .bv-hc-stage.street > .bv-hc-floor { display: none; }
+
+/* Wohnzimmer – Fenster, Teppich, Sofa, Tisch, Stehlampe, Pflanze */
+#bv-home-cinematic .bv-hc-stage.living > .bv-hc-window,
+#bv-home-cinematic .bv-hc-stage.living > .bv-hc-rug,
+#bv-home-cinematic .bv-hc-stage.living > .bv-hc-sofa,
+#bv-home-cinematic .bv-hc-stage.living > .bv-hc-table,
+#bv-home-cinematic .bv-hc-stage.living > .bv-hc-lamp,
+#bv-home-cinematic .bv-hc-stage.living > .bv-hc-plant { display: block; }
+
+/* Schlafzimmer – Fenster, Bett, Nachttisch, Nachtlicht, z-z-z */
+#bv-home-cinematic .bv-hc-stage.bedroom > .bv-hc-window,
+#bv-home-cinematic .bv-hc-stage.bedroom > .bv-hc-rug,
+#bv-home-cinematic .bv-hc-stage.bedroom > .bv-hc-bed,
+#bv-home-cinematic .bv-hc-stage.bedroom > .bv-hc-nightstand,
+#bv-home-cinematic .bv-hc-stage.bedroom > .bv-hc-nightlamp,
+#bv-home-cinematic .bv-hc-stage.bedroom > .bv-hc-zzz { display: block; }
+
+/* Bad – Fliesen, Duschwand, Wasser, Dampf, Waschmaschine */
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-tiles,
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-bathfloor,
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-washer,
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-shower,
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-water,
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-steam { display: block; }
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-ceil,
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-wall,
+#bv-home-cinematic .bv-hc-stage.bath > .bv-hc-floor { display: none; }
+
+/* Zeitstimmung */
+#bv-home-cinematic.time-warm .bv-hc-wall { background: linear-gradient(180deg, #5a4029, #7d5a38 62%, #966c45); }
+#bv-home-cinematic.time-night .bv-hc-wall { filter: brightness(.52) saturate(.75); }
+#bv-home-cinematic.time-night .bv-hc-floor { filter: brightness(.55); }
+#bv-home-cinematic.time-night .bv-hc-lamp .bv-hc-glow { opacity: .8; }
+#bv-home-cinematic.time-night .bv-hc-window { box-shadow: 0 0 60px rgba(120,170,255,.32), inset 0 0 26px rgba(0,0,0,.55); }
+#bv-home-cinematic.time-dawn .bv-hc-wall { background: linear-gradient(180deg, #a97a58, #d3a077 60%, #eec69a); }
+#bv-home-cinematic.time-dawn .bv-hc-window { background: linear-gradient(180deg, #ffd9a8 0%, #ffe9c8 60%, #cfe3ff 100%); }
+#bv-home-cinematic.time-dawn .bv-hc-window::before { opacity: .18; }
+#bv-home-cinematic.time-dawn .bv-hc-window::after { opacity: .15; }
+#bv-home-cinematic.time-dawn .bv-hc-lamp .bv-hc-glow { opacity: .15; }
+
+/* Schauspieler */
+.bv-hc-actor { left: 44%; bottom: 23%; font-size: 2.6rem; z-index: 5; filter: drop-shadow(0 12px 12px rgba(0,0,0,.5)); animation: bvHcSway 2.6s ease-in-out infinite; }
+#bv-home-cinematic.actor-hidden .bv-hc-actor { display: none; }
+
+/* Titel + Dialog */
+.bv-hc-title { position: absolute; left: 50%; top: 15%; transform: translateX(-50%) translateY(-6px); opacity: 0; z-index: 8;
+    font-size: 2rem; letter-spacing: 3px; color: #ffe6b8; text-shadow: 0 0 26px rgba(255,206,130,.6);
+    transition: opacity .5s ease, transform .5s ease; text-align: center; }
+.bv-hc-title.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.bv-hc-dialog { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 9;
+    width: min(840px, calc(100% - 20px)); max-height: calc(100% - 56px);
+    display: grid; grid-template-columns: 60px 1fr; gap: 12px; overflow: auto;
+    background: linear-gradient(145deg, rgba(28,18,10,.97), rgba(14,9,5,.98));
+    border: 1px solid rgba(255,214,160,.42); border-radius: 16px; padding: 12px 14px 10px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.5); backdrop-filter: blur(8px); }
+.bv-hc-portrait { width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center;
+    font-size: 1.9rem; background: linear-gradient(145deg, rgba(255,255,255,.1), rgba(0,0,0,.24));
+    border: 1px solid rgba(255,214,160,.28); }
+.bv-hc-copy { min-width: 0; }
+.bv-hc-speaker { color: #ffcf8a; letter-spacing: .8px; margin-bottom: 4px; text-transform: uppercase; font-size: .95rem; }
+.bv-hc-text { font-size: 1.18rem; min-height: 52px; line-height: 1.36; color: #fff4e4; }
+.bv-hc-text.typing::after { content: '▌'; color: #ffcf8a; animation: bvHcFlicker 1s steps(2) infinite; }
+.bv-hc-choices { display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.bv-hc-choices.visible { display: grid; }
+.bv-hc-choice { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05);
+    color: #fff; border-radius: 12px; padding: 8px 12px; font-family: 'VT323', monospace;
+    font-size: 1.05rem; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; text-align: left; }
+.bv-hc-choice:hover, .bv-hc-choice.selected { border-color: #ffd36a; background: rgba(255,211,106,.14); }
+.bv-hc-choice.danger { border-color: rgba(255,110,110,.45); }
+.bv-hc-hint { text-align: right; opacity: .55; font-size: .85rem; margin-top: 6px; }
+.bv-hc-fade { position: absolute; inset: 0; z-index: 5; background: #04050a; opacity: 0;
+    pointer-events: none; transition: opacity 1s ease; }
+.bv-hc-fade.on { opacity: 1; }
+
+@media (max-width: 720px) {
+    .bv-hc-dialog { grid-template-columns: 46px 1fr; gap: 9px; padding: 10px; }
+    .bv-hc-portrait { width: 46px; height: 46px; font-size: 1.5rem; }
+    .bv-hc-text { font-size: 1.04rem; min-height: 44px; }
+    .bv-hc-actor { font-size: 2.1rem; }
+    .bv-hc-title { font-size: 1.5rem; }
+}
+
 #bv-story-cinematic {
     position:absolute; inset:0; z-index:82; display:none; overflow:hidden;
     background:linear-gradient(135deg,#060c18 0%,#0a1830 45%,#0c1226 100%);
@@ -30003,53 +30380,6 @@ body.bv-settings-particles-off .title-canvas-bg {
     background:linear-gradient(180deg, rgba(180,30,40,.22), rgba(180,30,40,0) 70%);
 }
 
-/* ============================================================
-   v7.24: Story-Cinematic-Themes für die Wohnung
-   (Schlafen / Duschen / Feierabend – im Stil der Exit-Cutscene)
-   ============================================================ */
-#bv-story-cinematic.theme-home {
-    background: linear-gradient(135deg, #1a1008 0%, #2d1c10 42%, #120b06 100%);
-    color: #fff1dd;
-}
-#bv-story-cinematic.theme-home .story-cin-window {
-    left: 8%; right: auto;
-    border-color: rgba(255,190,120,.30);
-    background: linear-gradient(180deg, rgba(255,176,90,.30), rgba(255,120,60,.10) 60%, rgba(20,10,6,0) 100%);
-    box-shadow: 0 0 60px rgba(255,150,70,.18);
-}
-#bv-story-cinematic.theme-home .story-cin-desk {
-    background: linear-gradient(180deg, #8b5a34, #3a2212);
-}
-#bv-story-cinematic.theme-home-night {
-    background: linear-gradient(135deg, #05070f 0%, #0c1428 45%, #04060d 100%);
-    color: #e6ecff;
-}
-#bv-story-cinematic.theme-home-night .story-cin-window {
-    left: 8%; right: auto;
-    border-color: rgba(150,180,255,.24);
-    background: linear-gradient(180deg, rgba(120,150,255,.20), rgba(40,60,140,.10) 60%, rgba(0,0,0,0) 100%);
-    box-shadow: 0 0 70px rgba(120,150,255,.14);
-}
-#bv-story-cinematic.theme-home-water {
-    background: linear-gradient(135deg, #071820 0%, #0d2c3a 45%, #05121a 100%);
-    color: #e8fbff;
-}
-#bv-story-cinematic.theme-home-water .story-cin-window {
-    left: 8%; right: auto;
-    border-color: rgba(140,230,255,.30);
-    background: linear-gradient(180deg, rgba(160,235,255,.26), rgba(60,140,170,.10) 60%, rgba(0,0,0,0) 100%);
-    box-shadow: 0 0 70px rgba(120,220,255,.18);
-}
-#bv-story-cinematic.theme-home .story-cin-dialog,
-#bv-story-cinematic.theme-home-night .story-cin-dialog,
-#bv-story-cinematic.theme-home-water .story-cin-dialog {
-    border-color: rgba(255,214,160,.26);
-}
-#bv-story-cinematic.theme-home .story-cin-portrait-frame,
-#bv-story-cinematic.theme-home-night .story-cin-portrait-frame,
-#bv-story-cinematic.theme-home-water .story-cin-portrait-frame {
-    border-color: rgba(255,214,160,.34);
-}
 .story-cin-desk {
     position:absolute; left:7%; right:7%; bottom:7%; height:18%;
     background:linear-gradient(180deg, #b06a34, #5a3518);
@@ -55217,13 +55547,11 @@ window.respawnPlayer = function () {
                     return h >= 18 || h < 6;
                 };
 
-                // "Nach Hause gehen": Story-Cinematic im Exit-Stil, danach Teleport
-                // in die Wohnung (v7.24). Fallback: alte Dialog-Cutscene.
+                // "Nach Hause gehen": eigene Zuhause-Cinematic (v7.25), danach
+                // Teleport in die Wohnung. Fallback: alte Dialog-Cutscene.
                 window.BVStartFeierabend = function () {
                     if (bvAnySceneRunning()) return false;
-                    if (bvEnsureHomeScenes()) {
-                        return bvPlayHomeScene("feierabend");
-                    }
+                    if (bvPlayHomeScene("feierabend")) return true;
                     // Fallback, falls die Story-Cinematic fehlt
                     const goHome = () => { try { window.BVHome.goHome(); } catch (e) { console.warn('[BV Feierabend]', e); } };
                     if (window.BVRealCutscenes && typeof window.BVRealCutscenes.play === "function") {
@@ -55239,23 +55567,23 @@ window.respawnPlayer = function () {
                     return true;
                 };
 
-                // v7.24 – ZUHAUSE-CUTSCENES (im Stil der Exit-Cutscene)
+                // v7.25 – ZUHAUSE-CINEMATIC (eigene Bühne statt Büro-Overlay)
                 // ------------------------------------------------------------
-                // Schlafen, Duschen und Feierabend laufen jetzt über die
-                // Story-Cinematic (Themes, Shots, Kamera, Skip, Choices) statt
-                // über die schlichte Dialog-Cutscene. Szenen werden registriert
-                // und über window.BVPlayStoryCinematic gestartet; der Nachlauf
-                // (Tag +1, Heilung, Map-Wechsel) hängt an onClose – also NACH
-                // dem sauberen Schließen der Szene.
+                // Feierabend, Schlafen und Duschen laufen über eine EIGENE
+                // Cinematic-Engine mit eigenen Kulissen (Flur, Straße,
+                // Wohnzimmer, Schlafzimmer, Bad). Der Nachlauf (Tag +1,
+                // Heilung, Map-Wechsel) hängt weiterhin an onClose – also
+                // NACH dem sauberen Schließen der Szene.
                 // ============================================================
-                function bvStoryReady() {
-                    return typeof window.BVPlayStoryCinematic === "function"
-                        && typeof window.BVRegisterStoryScene === "function";
+                // v7.25: eigene Engine vorhanden?
+                function bvHomeCinematicReady() {
+                    return typeof window.BVPlayHomeCinematic === "function";
                 }
 
                 function bvAnySceneRunning() {
                     if (isTransitioning) return true;
                     try {
+                        if (window.BVHomeCinematicActive && window.BVHomeCinematicActive()) return true;
                         if (window.BVStoryCinematicActive && window.BVStoryCinematicActive()) return true;
                         if (window.BVRealCutscenes && window.BVRealCutscenes.isPlaying && window.BVRealCutscenes.isPlaying()) return true;
                     } catch (e) {}
@@ -55264,87 +55592,11 @@ window.respawnPlayer = function () {
 
                 let bvHomeScenesReady = false;
                 function bvEnsureHomeScenes() {
-                    if (bvHomeScenesReady || !bvStoryReady()) return bvHomeScenesReady;
-                    const day = () => bvHomeDay();
-
-                    // ---------- 1) FEIERABEND: Büro verlassen ----------
-                    window.BVRegisterStoryScene("feierabend", {
-                        theme: "theme-home", hideNpc: true,
-                        steps: () => [
-                            { speaker: "System", portrait: "🌆", shot: "wide", cam: "high", fx: "title", title: `Tag ${day()} · Feierabend`,
-                              text: "Die Schicht-Uhr springt auf 18:00. Der Flur wird still, die Neonröhren summen leiser." },
-                            { speaker: "Du", portrait: "🎒", shot: "hero", cam: "right",
-                              text: "Du nimmst deine Tasche, wirfst einen letzten Blick auf den Bildschirm — der Cursor blinkt noch, als wollte er dich aufhalten." },
-                            { speaker: "System", portrait: "🚪", shot: "leave", cam: "high", fx: "flash",
-                              text: "Die Doppeltür fällt hinter dir zu. Kein Sicherheits-System, keine Warnung. Nur der Weg nach draußen." },
-                            { speaker: "System", portrait: "🌬️", shot: "walkin", cam: "left",
-                              text: "Draußen: kühle Abendluft, eine Straßenbahn in der Ferne, das Handy vibriert mit einer Mail, die bis morgen warten darf." },
-                            { speaker: "Du", portrait: "🙂", shot: "narrow", cam: "right",
-                              text: "Der Heimweg ist kurz. Die Wohnung wartet: Wohnzimmer, Küche, Bad, dein Zimmer." },
-                            { speaker: "System", portrait: "🏡", shot: "wide", cam: "high", fx: "title", title: "Zuhause",
-                              text: "Schlüssel drehen, Licht an. Der Tag ist durch — jetzt gehört der Abend dir." }
-                        ],
-                        onClose: () => {
-                            bvSceneFade(0, 900, null);
-                            setTimeout(() => {
-                                try { window.BVHome.goHome(); } catch (e) { console.warn("[BV Feierabend]", e); }
-                            }, 120);
-                        }
-                    });
-
-                    // ---------- 2) SCHLAFEN: Tag beenden ----------
-                    window.BVRegisterStoryScene("schlafen", {
-                        theme: "theme-home-night", hideNpc: true,
-                        steps: () => {
-                            const next = day() + 1;
-                            return [
-                                { speaker: "System", portrait: "🛏️", shot: "wide", cam: "high", fx: "title", title: `Tag ${day()} · Schlafen`,
-                                  text: "Du ziehst dich um, stellst das Glas in die Spüle und machst das Licht aus." },
-                                { speaker: "Du", portrait: "😮‍💨", shot: "hero", cam: "right",
-                                  text: "Der Rücken sinkt in die Matratze. Draußen fährt ein Auto vorbei, dann wird es still." },
-                                { speaker: "System", portrait: "🌙", shot: "wide", cam: "low", fx: "flash",
-                                  onEnter: () => bvSceneFade(0.85, 1100, null),
-                                  text: "Die Augen fallen zu. Der Tag zieht noch einmal vorbei — Meeting, Drucker, Kaffee Nummer vier." },
-                                { speaker: "System", portrait: "💭", shot: "narrow", cam: "high",
-                                  text: "Traum: Der Drucker druckt von selbst deine Bewerbung aus. Du liest sie nicht. Sehr klug." },
-                                { speaker: "System", portrait: "💤", shot: "wide", cam: "low",
-                                  text: "Dann: nichts. Tiefe, dunkle Stille." },
-                                { speaker: "System", portrait: "⏰", shot: "shake", cam: "high", fx: "impact",
-                                  onEnter: () => bvSceneFade(0, 900, null),
-                                  text: "RIIING. 07:00. Der Wecker gewinnt mal wieder." },
-                                { speaker: "Du", portrait: "😴", shot: "hero", cam: "right",
-                                  text: "Aufstehen. Zähneputzen. Duschen wäre jetzt auch eine Idee." },
-                                { speaker: "System", portrait: "☀️", shot: "wide", cam: "high", fx: "title", title: `Tag ${next}`,
-                                  text: `Tag ${next} beginnt. Die Wohnungstür führt zurück ins Büro.` }
-                            ];
-                        },
-                        onClose: () => bvApplyWakeUp()
-                    });
-
-                    // ---------- 3) DUSCHE ----------
-                    window.BVRegisterStoryScene("dusche", {
-                        theme: "theme-home-water", hideNpc: true,
-                        steps: () => [
-                            { speaker: "System", portrait: "🚿", shot: "wide", cam: "high", fx: "title", title: "Duschen",
-                              text: "Wasser aufdrehen. Erst eiskalt, dann genau die Temperatur, die den Tag wegspült." },
-                            { speaker: "Du", portrait: "😌", shot: "hero", cam: "right",
-                              onEnter: () => bvSceneFade(0.45, 700, "steam"),
-                              text: "Dampf steigt auf. Die Schultern sinken zwei Zentimeter tiefer." },
-                            { speaker: "System", portrait: "🧴", shot: "narrow", cam: "low",
-                              text: "Shampoo, Seife, Zähneputzen — der komplette Feierabend-Reset in zehn Minuten." },
-                            { speaker: "System", portrait: "💧", shot: "wide", cam: "high",
-                              text: "Das Wasser läuft ab, die Anspannung mit ihm." },
-                            { speaker: "Du", portrait: "✨", shot: "hero", cam: "right", fx: "sparkle",
-                              onEnter: () => bvSceneFade(0, 900, "steam"),
-                              text: "Handtuch, frisches Shirt, Spiegelbild mit deutlich besserer Laune." },
-                            { speaker: "System", portrait: "💪", shot: "wide", cam: "high", fx: "title", title: "Frisch",
-                              text: "HP und MP wieder voll. Der Abend kann kommen." }
-                        ],
-                        onClose: () => bvApplyShower()
-                    });
-
-                    bvHomeScenesReady = true;
-                    return true;
+                    if (bvHomeCinematicReady()) {
+                        bvHomeScenesReady = true;
+                        return true;
+                    }
+                    return bvHomeScenesReady;
                 }
 
                 // Nachlauf: Schlafen -> Tag +1, Wecker 07:00
@@ -55384,26 +55636,34 @@ window.respawnPlayer = function () {
                     }, 480);
                 }
 
+                // Nachlauf nach außen sichtbar machen (die Home-Cinematic ruft sie in onClose)
+                window.BVApplyWakeUp = function () { try { bvApplyWakeUp(); } catch (e) { console.warn("[BV WakeUp]", e); } };
+                window.BVApplyShower = function () { try { bvApplyShower(); } catch (e) { console.warn("[BV Shower]", e); } };
+
                 // Startet eine Wohnungs-Szene sicher (nie doppelt, nie aus einem kaputten State)
                 function bvPlayHomeScene(key) {
                     if (bvAnySceneRunning()) return false;
-                    if (!bvEnsureHomeScenes()) return false;
+                    if (!bvHomeCinematicReady()) return false;
                     if (typeof window.bvCloseDialogForScene === "function") window.bvCloseDialogForScene("CUTSCENE");
-                    const started = window.BVPlayStoryCinematic(key);
+                    const started = window.BVPlayHomeCinematic(key);
                     return started !== false;
                 }
 
-                // v7.24: Schlafen – Story-Cinematic, Tag +1 erst nach dem Schließen
+                // v7.25: Schlafen – eigene Zuhause-Cinematic, Tag +1 erst nach dem Schließen
                 window.BVStartSleep = function () {
                     if (bvAnySceneRunning()) return false;
-                    if (!bvPlayHomeScene("schlafen")) return false;
+                    if (bvPlayHomeScene("schlafen")) return true;
+                    // Fallback: ohne Cinematic direkt schlafen
+                    bvApplyWakeUp();
                     return true;
                 };
 
-                // v7.24: Duschen – Story-Cinematic, Heilung nach dem Schließen
+                // v7.25: Duschen – eigene Zuhause-Cinematic, Heilung nach dem Schließen
                 window.BVStartShower = function () {
                     if (bvAnySceneRunning()) return false;
-                    if (!bvPlayHomeScene("dusche")) return false;
+                    if (bvPlayHomeScene("dusche")) return true;
+                    // Fallback: ohne Cinematic direkt duschen
+                    bvApplyShower();
                     return true;
                 };
 
@@ -62500,6 +62760,462 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         return true;
     };
     window.BVStoryCinematicActive = function () { return !!active; };
+})();
+
+/* ============================================================
+   v7.25 – ZUHAUSE-CINEMATIC (eigene Bühne, nicht die Büro-Szene)
+   ------------------------------------------------------------
+   Eigene Engine + eigene Kulissen (Flur, Straße, Wohnzimmer,
+   Schlafzimmer, Bad). Wird von Feierabend, Schlafen und Duschen genutzt;
+   als Fallback bleibt die Story-Cinematic erhalten.
+   API: BVPlayHomeCinematic('feierabend'|'schlafen'|'dusche')
+        BVHomeCinematicActive()
+   ============================================================ */
+(function () {
+    'use strict';
+
+    var ov = null, active = false, current = null, steps = [], index = 0;
+    var typing = false, typeTimer = null, fullText = '', typeIndex = 0;
+    var waitingChoice = false, choiceList = [], choiceIdx = 0;
+    var lastAdvanceAt = 0;
+
+    function el(id) { return document.getElementById(id); }
+    function host() { return el('rpg-game-window') || document.body; }
+    function lock(on) {
+        var a = el('rpg-overlay'), b = el('rpg-game-window');
+        if (a) a.classList.toggle('exit-cinematic-lock', !!on);
+        if (b) b.classList.toggle('exit-cinematic-lock', !!on);
+    }
+    function gated(fn) {
+        var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        if (now - lastAdvanceAt < (typing ? 70 : 180)) return;
+        lastAdvanceAt = now;
+        fn();
+    }
+    function setTwemoji(node, glyph) {
+        if (!node) return;
+        node.textContent = glyph || '';
+        if (typeof window.parseEmojis === 'function') {
+            try { window.parseEmojis(node); return; } catch (e) {}
+        }
+        if (typeof window.twemoji !== 'undefined') {
+            try {
+                window.twemoji.parse(node, {
+                    folder: 'svg', ext: '.svg',
+                    base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'
+                });
+            } catch (e) {}
+        }
+    }
+    function playerName() { return (window.player && window.player.name) || 'Du'; }
+    function actorGlyph() { return (window.player && window.player.sprite) || '🧑‍💼'; }
+
+    function markup() {
+        return '' +
+            '<div class="bv-hc-bars"><span></span><span></span></div>' +
+            '<div class="bv-hc-stage living">' +
+                '<div class="bv-hc-ceil"></div>' +
+                '<div class="bv-hc-wall"></div>' +
+                '<div class="bv-hc-window"><div class="bv-hc-sash"></div><div class="bv-hc-sash2"></div></div>' +
+                '<div class="bv-hc-floor"></div>' +
+                '<div class="bv-hc-rug"></div>' +
+                '<div class="bv-hc-sofa"></div>' +
+                '<div class="bv-hc-table"></div>' +
+                '<div class="bv-hc-lamp"><div class="bv-hc-glow"></div></div>' +
+                '<div class="bv-hc-plant"></div>' +
+                '<div class="bv-hc-door"></div>' +
+                '<div class="bv-hc-lightshaft"></div>' +
+                '<div class="bv-hc-sign">AUSGANG</div>' +
+                '<div class="bv-hc-sky"></div>' +
+                '<div class="bv-hc-skyline"></div>' +
+                '<div class="bv-hc-road"></div>' +
+                '<div class="bv-hc-streetlamp"><div class="bv-hc-glow"></div></div>' +
+                '<div class="bv-hc-bed"></div>' +
+                '<div class="bv-hc-nightstand"></div>' +
+                '<div class="bv-hc-nightlamp"></div>' +
+                '<div class="bv-hc-zzz"><span>z</span><span>z</span><span>z</span></div>' +
+                '<div class="bv-hc-tiles"></div>' +
+                '<div class="bv-hc-bathfloor"></div>' +
+                '<div class="bv-hc-washer"></div>' +
+                '<div class="bv-hc-shower"><div class="bv-hc-pipe"></div><div class="bv-hc-head"></div></div>' +
+                '<div class="bv-hc-water"></div>' +
+                '<div class="bv-hc-steam"><span></span><span></span><span></span></div>' +
+                '<div class="bv-hc-actor">🧑‍💼</div>' +
+            '</div>' +
+            '<div class="bv-hc-vignette"></div>' +
+            '<div class="bv-hc-grain"></div>' +
+            '<div class="bv-hc-fade"></div>' +
+            '<div class="bv-hc-title"></div>' +
+            '<div class="bv-hc-dialog">' +
+                '<div class="bv-hc-portrait">🏡</div>' +
+                '<div class="bv-hc-copy">' +
+                    '<div class="bv-hc-speaker"></div>' +
+                    '<div class="bv-hc-text"></div>' +
+                    '<div class="bv-hc-choices"></div>' +
+                    '<div class="bv-hc-hint">ENTER weiter · ESC überspringen</div>' +
+                '</div>' +
+            '</div>';
+    }
+
+    function ensureOverlay() {
+        if (ov && document.body.contains(ov)) return ov;
+        ov = el('bv-home-cinematic');
+        if (!ov) {
+            ov = document.createElement('div');
+            ov.id = 'bv-home-cinematic';
+            ov.hidden = true;
+            ov.innerHTML = markup();
+            host().appendChild(ov);
+        }
+        return ov;
+    }
+
+    function setStage(stage, light) {
+        var stageEl = ov && ov.querySelector('.bv-hc-stage');
+        if (!stageEl) return;
+        stageEl.className = 'bv-hc-stage ' + (stage || 'living');
+        ov.classList.remove('time-warm', 'time-night', 'time-dawn');
+        if (light) ov.classList.add('time-' + light);
+    }
+
+    function setFade(on) {
+        var f = ov && ov.querySelector('.bv-hc-fade');
+        if (f) f.classList.toggle('on', !!on);
+    }
+
+    function setActor(show) {
+        if (ov) ov.classList.toggle('actor-hidden', show === false);
+    }
+
+    function stopType() {
+        if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
+        typing = false;
+        var t = ov && ov.querySelector('.bv-hc-text');
+        if (t) t.classList.remove('typing');
+    }
+
+    function typeSpeed() {
+        var s = window.BV_SETTINGS && window.BV_SETTINGS.textSpeed;
+        if (s === 'instant') return 0;
+        if (s === 'fast') return 12;
+        if (s === 'slow') return 36;
+        return 18;
+    }
+
+    function startType(text) {
+        stopType();
+        fullText = String(text || '');
+        typeIndex = 0;
+        var node = ov && ov.querySelector('.bv-hc-text');
+        if (!node) return;
+        var speed = typeSpeed();
+        if (!fullText || speed === 0) {
+            node.textContent = fullText;
+            return;
+        }
+        node.textContent = '';
+        node.classList.add('typing');
+        typing = true;
+        var tick = function () {
+            typeIndex += 1;
+            node.textContent = fullText.slice(0, typeIndex);
+            if (typeIndex >= fullText.length) {
+                typing = false; typeTimer = null; node.classList.remove('typing');
+                renderChoicesIfWaiting();
+                return;
+            }
+            typeTimer = setTimeout(tick, speed);
+        };
+        tick();
+    }
+
+    function finishType() {
+        stopType();
+        var node = ov && ov.querySelector('.bv-hc-text');
+        if (node) node.textContent = fullText;
+        renderChoicesIfWaiting();
+    }
+
+    function renderChoicesIfWaiting() {
+        if (!waitingChoice || !choiceList.length) return;
+        var box = ov && ov.querySelector('.bv-hc-choices');
+        if (!box) return;
+        box.innerHTML = '';
+        choiceList.forEach(function (c, i) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bv-hc-choice' + (c.kind ? ' ' + c.kind : '') + (i === choiceIdx ? ' selected' : '');
+            btn.dataset.i = String(i);
+            btn.innerHTML = '<span>' + (c.label || '') + '</span><span>' + (c.hint || '') + '</span>';
+            box.appendChild(btn);
+            if (typeof window.parseEmojis === 'function') window.parseEmojis(btn);
+        });
+        box.classList.add('visible');
+        var hint = ov.querySelector('.bv-hc-hint');
+        if (hint) hint.textContent = '↑/↓ wählen · ENTER bestätigen · ESC überspringen';
+    }
+
+    function clearChoices() {
+        waitingChoice = false;
+        choiceList = [];
+        choiceIdx = 0;
+        var box = ov && ov.querySelector('.bv-hc-choices');
+        if (box) { box.classList.remove('visible'); box.innerHTML = ''; }
+        var hint = ov && ov.querySelector('.bv-hc-hint');
+        if (hint) hint.textContent = 'ENTER weiter · ESC überspringen';
+    }
+
+    function render() {
+        var step = steps[index];
+        if (!step) { close('done'); return; }
+        setStage(step.stage || (current && current.stage) || 'living', step.light || (current && current.light) || null);
+        setActor(step.actor !== false);
+        setFade(step.fade === 'on');
+        if (ov) ov.classList.toggle('door-open', step.fx === 'door');
+        var title = ov.querySelector('.bv-hc-title');
+        if (title) {
+            title.textContent = step.title || '';
+            title.classList.toggle('show', !!step.title);
+        }
+        setTwemoji(ov.querySelector('.bv-hc-portrait'), step.portrait || '🏡');
+        var speaker = ov.querySelector('.bv-hc-speaker');
+        if (speaker) speaker.textContent = step.speaker || 'System';
+        clearChoices();
+        if (typeof step.onEnter === 'function') {
+            try { step.onEnter(step); } catch (e) { console.warn('[BV Home-Cinematic] onEnter', e); }
+        }
+        startType(step.text || '');
+        if (step.choices && step.choices.length) {
+            waitingChoice = true;
+            choiceList = step.choices.slice();
+            choiceIdx = 0;
+            if (!typing) renderChoicesIfWaiting();
+        }
+    }
+
+    function jumpTo(id) {
+        var i = steps.findIndex(function (s) { return s && s.id === id; });
+        index = i >= 0 ? i : index + 1;
+        render();
+    }
+
+    function advance() {
+        if (!active) return;
+        if (typing) { finishType(); return; }
+        if (waitingChoice) { pick(choiceIdx); return; }
+        index += 1;
+        if (index >= steps.length) { close('done'); return; }
+        render();
+    }
+
+    function pick(i) {
+        var step = steps[index];
+        var choice = step && step.choices && step.choices[i];
+        if (!choice) return;
+        if (typeof choice.onSelect === 'function') {
+            try { choice.onSelect(choice); } catch (e) {}
+        }
+        clearChoices();
+        if (choice.nextId) { jumpTo(choice.nextId); return; }
+        advance();
+    }
+
+    function updateChoiceSelection() {
+        var btns = ov ? ov.querySelectorAll('.bv-hc-choice') : [];
+        for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('selected', i === choiceIdx);
+    }
+
+    function close(result) {
+        if (!active) return;
+        active = false;
+        stopType();
+        clearChoices();
+        var closing = current;
+        current = null;
+        if (typeof window.setBvGameState === 'function') window.setBvGameState('MAP');
+        lock(false);
+        if (ov) {
+            ov.classList.add('leaving');
+            ov.classList.remove('door-open');
+            setTimeout(function () {
+                if (!ov) return;
+                ov.hidden = true;
+                ov.classList.remove('visible', 'leaving', 'time-warm', 'time-night', 'time-dawn', 'actor-hidden');
+                var t = ov.querySelector('.bv-hc-title');
+                if (t) t.classList.remove('show');
+                setFade(false);
+                if (closing && typeof closing.onClose === 'function') {
+                    try { closing.onClose(result); } catch (e) { console.warn('[BV Home-Cinematic] onClose', e); }
+                }
+            }, 400);
+        }
+    }
+
+    function play(key, overrideSteps) {
+        var def = SCENES[key];
+        if (!def && !overrideSteps) return false;
+        if (active) return false;
+        ensureOverlay();
+        if (!ov) return false;
+        steps = Array.isArray(overrideSteps) ? overrideSteps : def.steps();
+        if (!steps.length) return false;
+        index = 0;
+        current = { key: key, onClose: (def && typeof def.onClose === 'function') ? def.onClose : null };
+        active = true;
+        waitingChoice = false;
+        choiceList = [];
+        fullText = '';
+        lastAdvanceAt = 0;
+        ov.hidden = false;
+        ov.classList.remove('leaving', 'door-open');
+        ov.classList.add('visible');
+        setTwemoji(ov.querySelector('.bv-hc-actor'), actorGlyph());
+        if (typeof window.setBvGameState === 'function') window.setBvGameState('CUTSCENE');
+        if (typeof window.clearBvMoveInput === 'function') window.clearBvMoveInput();
+        lock(true);
+        if (typeof window.bvCloseDialogForScene === 'function') {
+            try { window.bvCloseDialogForScene('CUTSCENE'); } catch (e) {}
+        }
+        render();
+        return true;
+    }
+
+    /* ---------------- Szenen ---------------- */
+    var SCENES = {
+        feierabend: {
+            onClose: function () {
+                try { if (window.BVHome && window.BVHome.goHome) window.BVHome.goHome(); } catch (e) { console.warn('[BV Feierabend]', e); }
+            },
+            steps: function () {
+                var day = (window.BVHome && window.BVHome.day) ? window.BVHome.day() : 1;
+                return [
+                    { stage: 'hall', light: null, title: 'Tag ' + day + ' · Feierabend', portrait: '🌆', speaker: 'System',
+                      text: 'Die Schicht-Uhr springt auf 18:00. Die Neonröhren über dir summen leiser, der Flur wird still.' },
+                    { stage: 'hall', portrait: '🎒', speaker: playerName(), fx: 'door',
+                      text: 'Tasche packen, Bildschirm aus. Die Doppeltür öffnet sich — kein Sicherheitssystem, keine Warnung. Nur der Weg nach draußen.' },
+                    { stage: 'street', light: 'night', title: 'Heimweg', portrait: '🌃', speaker: 'System', fx: null,
+                      text: 'Draußen: kühle Abendluft, eine Straßenbahn in der Ferne, ein Handy, das vibriert — die Mail darf bis morgen warten.' },
+                    { stage: 'street', light: 'night', portrait: '🚶', speaker: playerName(),
+                      text: 'Der Weg ist kurz. Hinter zwei Straßenecken wartet deine Wohnung: Wohnzimmer, Küche, Bad, dein Zimmer.' },
+                    { stage: 'living', light: 'warm', title: 'Zuhause', portrait: '🏡', speaker: 'System',
+                      text: 'Schlüssel drehen, Licht an. Die Stehlampe wirft einen warmen Kreis auf den Boden — der Tag ist durch.' },
+                    { stage: 'living', light: 'warm', portrait: '🛋️', speaker: playerName(),
+                      text: 'Was zuerst?', choices: [
+                          { label: 'Aufs Sofa fallen', hint: '🛋️', nextId: 'abend_sofa' },
+                          { label: 'In die Küche', hint: '🧊', nextId: 'abend_kueche' },
+                          { label: 'Ins Bad', hint: '🚿', nextId: 'abend_bad' }
+                      ] },
+                    { id: 'abend_sofa', stage: 'living', light: 'warm', portrait: '🛋️', speaker: playerName(), nextId: 'abend_ende',
+                      text: 'Du sinkst in die Sofadelle. Die Deckenlampe bleibt aus — die Stehlampe reicht völlig.' },
+                    { id: 'abend_kueche', stage: 'living', light: 'warm', portrait: '🧊', speaker: playerName(), nextId: 'abend_ende',
+                      text: 'Kühlschrank auf, Licht an: ein Joghurt, zwei Eier und etwas, das besser nicht mehr gegessen wird.' },
+                    { id: 'abend_bad', stage: 'bath', light: 'warm', portrait: '🚿', speaker: playerName(), nextId: 'abend_ende',
+                      text: 'Kurzer Blick ins Bad. Die Dusche wartet schon — aber erst nach dem Abendessen.' },
+                    { id: 'abend_ende', stage: 'living', light: 'night', portrait: '🌙', speaker: 'System', title: 'Guten Abend',
+                      text: 'Der Abend gehört dir. Wenn der Tag wirklich vorbei sein soll: im Zimmer wartet das Bett.' }
+                ];
+            }
+        },
+        schlafen: {
+            onClose: function () {
+                if (typeof window.BVApplyWakeUp === 'function') window.BVApplyWakeUp();
+            },
+            steps: function () {
+                var day = (window.BVHome && window.BVHome.day) ? window.BVHome.day() : 1;
+                var next = day + 1;
+                return [
+                    { stage: 'bedroom', light: 'night', title: 'Tag ' + day + ' · Schlafen', portrait: '🛏️', speaker: 'System',
+                      text: 'Du ziehst dich um, stellst das Glas in die Spüle und machst das Licht im Flur aus.' },
+                    { stage: 'bedroom', light: 'night', portrait: '😮‍💨', speaker: playerName(),
+                      text: 'Der Rücken sinkt in die Matratze. Draußen fährt ein Auto vorbei — dann wird es still.' },
+                    { stage: 'bedroom', light: 'night', portrait: '🌙', speaker: 'System', fade: 'on',
+                      onEnter: function () { if (window.BVSceneFade) window.BVSceneFade(0.15, 900, null); },
+                      text: 'Die Augen fallen zu. Der Tag zieht noch einmal vorbei: Meeting, Drucker, Kaffee Nummer vier.' },
+                    { stage: 'bedroom', light: 'night', portrait: '💭', speaker: 'System', fade: 'on',
+                      text: 'Traum: Der Drucker druckt von selbst deine Bewerbung aus. Du liest sie nicht. Sehr klug.' },
+                    { stage: 'bedroom', light: 'night', portrait: '💤', speaker: 'System', fade: 'on',
+                      text: 'Dann: nichts. Tiefe, dunkle Stille.' },
+                    { stage: 'bedroom', light: 'dawn', portrait: '⏰', speaker: 'System', title: 'RIIING', fade: 'off',
+                      onEnter: function () { if (window.BVSceneFade) window.BVSceneFade(0, 900, null); },
+                      text: '07:00. Der Wecker gewinnt mal wieder. Das Morgenlicht steht schon an der Wand.' },
+                    { stage: 'bedroom', light: 'dawn', portrait: '😴', speaker: playerName(),
+                      text: 'Aufstehen. Zähneputzen. Und danach: duschen wäre jetzt wirklich eine gute Idee.' },
+                    { stage: 'bedroom', light: 'dawn', portrait: '☀️', speaker: 'System', title: 'Tag ' + next,
+                      text: 'Tag ' + next + ' beginnt. Die Wohnungstür unten im Flur führt zurück ins Büro.' }
+                ];
+            }
+        },
+        dusche: {
+            onClose: function () {
+                if (typeof window.BVApplyShower === 'function') window.BVApplyShower();
+            },
+            steps: function () {
+                return [
+                    { stage: 'bath', light: 'warm', title: 'Duschen', portrait: '🚿', speaker: 'System',
+                      text: 'Wasser aufdrehen. Erst eiskalt, dann genau die Temperatur, die den Tag wegspült.' },
+                    { stage: 'bath', light: 'warm', portrait: '🌡️', speaker: playerName(),
+                      text: 'Wie soll es sein?', choices: [
+                          { label: 'Richtig heiß', hint: '🔥', nextId: 'heiss' },
+                          { label: 'Lauwarm', hint: '💧', nextId: 'lauwarm' }
+                      ] },
+                    { id: 'heiss', stage: 'bath', light: 'warm', portrait: '🔥', speaker: playerName(), nextId: 'dampf',
+                      onEnter: function () { if (window.BVSceneFade) window.BVSceneFade(0.45, 700, 'steam'); },
+                      text: 'Dampf steigt sofort auf. Die Schultern sinken zwei Zentimeter tiefer — das war die richtige Entscheidung.' },
+                    { id: 'lauwarm', stage: 'bath', light: 'warm', portrait: '💧', speaker: playerName(), nextId: 'dampf',
+                      onEnter: function () { if (window.BVSceneFade) window.BVSceneFade(0.3, 700, 'steam'); },
+                      text: 'Angenehm lauwarm. Nicht spektakulär, aber genau das, was ein müder Kopf braucht.' },
+                    { id: 'dampf', stage: 'bath', light: 'warm', portrait: '🧴', speaker: 'System',
+                      text: 'Shampoo, Seife, Zähneputzen — der komplette Feierabend-Reset in zehn Minuten.' },
+                    { stage: 'bath', light: 'warm', portrait: '💨', speaker: 'System',
+                      text: 'Das Wasser läuft ab, die Anspannung mit ihm. Der Spiegel beschlägt und bleibt es kurz.' },
+                    { stage: 'bath', light: 'warm', portrait: '✨', speaker: playerName(), title: 'Frisch',
+                      onEnter: function () { if (window.BVSceneFade) window.BVSceneFade(0, 900, 'steam'); },
+                      text: 'Handtuch, frisches Shirt, Spiegelbild mit deutlich besserer Laune. HP und MP wieder voll.' }
+                ];
+            }
+        }
+    };
+
+    /* ---------------- Eingaben ---------------- */
+    document.addEventListener('keydown', function (e) {
+        if (!active) return;
+        if (e.key === 'Escape' || e.code === 'Escape') {
+            e.preventDefault(); e.stopImmediatePropagation();
+            close('skip');
+            return;
+        }
+        if (waitingChoice && (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W')) {
+            e.preventDefault(); e.stopImmediatePropagation();
+            choiceIdx = (choiceIdx - 1 + choiceList.length) % choiceList.length;
+            updateChoiceSelection();
+            return;
+        }
+        if (waitingChoice && (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S')) {
+            e.preventDefault(); e.stopImmediatePropagation();
+            choiceIdx = (choiceIdx + 1) % choiceList.length;
+            updateChoiceSelection();
+            return;
+        }
+        if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+            e.preventDefault(); e.stopImmediatePropagation();
+            gated(advance);
+        }
+    }, true);
+
+    document.addEventListener('click', function (e) {
+        if (!active || !ov || !ov.contains(e.target)) return;
+        var choiceBtn = e.target.closest && e.target.closest('.bv-hc-choice');
+        if (choiceBtn) {
+            e.preventDefault(); e.stopImmediatePropagation();
+            pick(Number(choiceBtn.dataset.i || 0));
+            return;
+        }
+        e.preventDefault(); e.stopImmediatePropagation();
+        gated(advance);
+    }, true);
+
+    window.BVPlayHomeCinematic = function (key) { return play(key); };
+    window.BVHomeCinematicActive = function () { return !!active; };
 })();
 
 /* ============================================================
