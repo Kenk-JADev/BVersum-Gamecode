@@ -32204,6 +32204,28 @@ body.bv-settings-particles-off .title-canvas-bg {
     font-weight: 700;
     white-space: nowrap;
 }
+/* v7.18: Skill, für den das MP nicht reicht – gedimmt, Klick löst keine
+   Fenster-Animation mehr aus, sondern nur Log + kurzes Schütteln. */
+#rpg-battle-screen .skill-row.no-mp {
+    opacity: .5 !important;
+    border-color: rgba(248, 113, 113, .32) !important;
+    background: linear-gradient(110deg, rgba(48, 26, 30, .82), rgba(24, 12, 16, .84)) !important;
+}
+#rpg-battle-screen .skill-row.no-mp:hover {
+    transform: none !important;
+    border-color: rgba(248, 113, 113, .42) !important;
+    background: linear-gradient(110deg, rgba(56, 30, 34, .88), rgba(28, 14, 18, .9)) !important;
+    box-shadow: none !important;
+}
+#rpg-battle-screen .skill-row.no-mp .skill-cost { color: #fca5a5 !important; }
+#rpg-battle-screen .skill-row.no-mp-shake { animation: bvSkillNoMpShake .42s ease both !important; }
+@keyframes bvSkillNoMpShake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(5px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(3px); }
+}
 #rpg-battle-screen .submenu-back {
     flex: 0 0 auto !important;
     display: block !important;
@@ -47477,6 +47499,12 @@ function performAttack() {
                         row.dataset.skill = skill.id;
                         const skillLv = Math.max(1, Math.min(5, (player.skillLevels && player.skillLevels[skill.id]) || 1));
                         const skillCost = Math.max(1, skill.cost - Math.floor((skillLv - 1) / 3));
+                        // v7.18: Skills, die das aktuelle MP nicht deckt, werden gedimmt
+                        // dargestellt (Klick löst nur noch Log + Schütteln aus).
+                        if (player.mp < skillCost) {
+                            row.classList.add("no-mp");
+                            row.title = `Zu wenig MP – ${skillCost} benötigt, du hast ${player.mp}`;
+                        }
                         row.innerHTML = `<span class="skill-icon">${skill.icon}</span><span class="skill-name">${skill.name} <small class="skill-lv">Lv${skillLv}</small></span><span class="skill-cost">${skillCost} ☕</span>`;
                         row.onclick = () => performSkill(skill.id);
                         list.appendChild(row);
@@ -47484,8 +47512,9 @@ function performAttack() {
                 }
 
 function performSkill(skillId) {
-    closeSkillMenu(false);
-
+    // v7.18: Das Skill-Fenster wird erst geschlossen, wenn der Skill wirklich
+    // ausgeführt wird. Vorher lief beim Klick auf einen nicht bezahlbaren Skill
+    // die Schließen-/Neu-Öffnen-Animation, obwohl nichts passiert ist.
     const skills = {
         tacker: { cost: 4, dmgMult: 2, icon: "📎", name: "Tacker-Angriff" },
         kaffee: { cost: 6, dmgMult: 2.5, icon: "☕", name: "Kaffee-Wurf" },
@@ -47514,10 +47543,19 @@ function performSkill(skillId) {
     if (skillLevel > 1) skill.name += " Lv" + skillLevel;
 
     if (player.mp < skill.cost) {
+        // v7.18: Fenster bleibt ruhig offen – nur Log + kurzes Schütteln der Zeile.
         battleLog(`Nicht genug MP! (${skill.cost} benötigt)`);
-        openSkillMenu();
+        const rowEl = document.querySelector(`#battle-skill-list .skill-row[data-skill="${skillId}"]`);
+        if (rowEl) {
+            rowEl.classList.remove("no-mp-shake");
+            void rowEl.offsetWidth;
+            rowEl.classList.add("no-mp-shake");
+            setTimeout(() => rowEl.classList.remove("no-mp-shake"), 460);
+        }
         return;
     }
+
+    closeSkillMenu(false);
 
     if (!godMode) {
         player.mp -= skill.cost;
