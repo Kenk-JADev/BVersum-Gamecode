@@ -37948,7 +37948,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     bvEnemyMaps().forEach(mapId => {
                         const all = (MAPS[mapId]?.npcs || []).filter(n => n && n.type === "enemy" && !n.isBoss);
                         totalEnemies += all.length;
-                        aliveCount += bvAliveEnemies(mapId).length;
+                        // Wichtig: hier OHNE Schicht-Pruefung – ein nachts abwesender
+                        // Gegner ist nicht besiegt und darf nicht mitgezaehlt werden.
+                        aliveCount += bvUndefeatedEnemies(mapId).length;
                     });
                     const defeatedCount = Math.max(0, totalEnemies - aliveCount);
                     const minRequired = Math.min(10, totalEnemies);
@@ -41552,31 +41554,57 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 // v7.19 – NPC-ANWESENHEIT (zentral)
                 // ------------------------------------------------------------
                 // Eine einzige Stelle entscheidet, wer gerade "da ist":
-                //   * GEGNER: unbesiegte Gegner zaehlen IMMER als anwesend –
-                //     auch wenn sie keine Arbeitszeiten haben. Besiegte Gegner
-                //     (defeatedEnemies) sind weg. Der Key wird ausschliesslich
-                //     ueber bvEnemyKey() gebaut, damit Laden/Speichern, Kampf-
-                //     Ende, Cheats und Boss-Tuer dieselben Schluessel nutzen.
+                //   * GEGNER: besiegt (defeatedEnemies) -> fuer immer weg.
+                //     Unbesiegte Gegner haben eine SCHICHT: eigenes hours:[von,bis]
+                //     oder die Standard-Gegner-Schicht 07:00-18:00. Ausserhalb
+                //     dieser Zeit sind sie ABWESEND – auch wenn sie noch nicht
+                //     besiegt sind (nachts ist der Flur gegnerfrei).
+                //     Ausnahme: Bosse (isBoss) bleiben, damit Bosskaempfe nicht
+                //     von der Uhrzeit abhaengen.
                 //   * NPCs: hours:[von,bis] -> nur innerhalb der Schicht.
                 // Geprueft wird beim Map-Wechsel/Laden – niemand verschwindet
                 // mitten im Gespraech oder Kampf.
+                // Der Key fuer besiegte Gegner kommt ausschliesslich aus
+                // bvEnemyKey(), damit Laden/Speichern, Kampf-Ende, Cheats und
+                // Boss-Tuer dieselben Schluessel nutzen.
                 // ============================================================
+                const BV_ENEMY_DEFAULT_HOURS = [7, 18];   // Standard-Schicht der Gegner
+
                 function bvEnemyKey(mapId, npc) {
                     const mid = mapId || currentMapId;
                     return `${mid}_${npc.x}_${npc.y}_${npc.enemyId}`;
                 }
 
+                // Schicht eines Gegners: eigenes hours-Feld gewinnt, sonst Standard.
+                // Bosse sind ausgenommen (immer da, solange nicht besiegt).
+                function bvEnemySchedule(npc) {
+                    if (!npc) return null;
+                    if (Array.isArray(npc.hours) && npc.hours.length >= 2) return npc.hours;
+                    if (npc.isBoss) return null;
+                    return BV_ENEMY_DEFAULT_HOURS;
+                }
+
+                function bvHoursAllow(hours) {
+                    if (!hours || hours.length < 2) return true;
+                    if (window.BVNight && typeof window.BVNight.npcHoursActive === "function") {
+                        return window.BVNight.npcHoursActive(hours);
+                    }
+                    return true;
+                }
+
+                function bvEnemyDefeated(mapId, npc) {
+                    return defeatedEnemies.has(bvEnemyKey(mapId, npc));
+                }
+
                 function bvNpcIsPresent(npc, mapId) {
                     if (!npc) return false;
                     if (npc.type === "enemy") {
-                        // Besiegt? Dann nicht mehr anwesend.
-                        if (defeatedEnemies.has(bvEnemyKey(mapId, npc))) return false;
-                        // Unbesiegte Gegner sind anwesend – unabhaengig von der Uhrzeit.
-                        return true;
+                        // Besiegt? Dann nie wieder anwesend.
+                        if (bvEnemyDefeated(mapId, npc)) return false;
+                        // Unbesiegt heisst NICHT automatisch anwesend – es gilt die Schicht.
+                        return bvHoursAllow(bvEnemySchedule(npc));
                     }
-                    if (npc.hours && window.BVNight && typeof window.BVNight.npcHoursActive === "function"
-                        && !window.BVNight.npcHoursActive(npc.hours)) return false;
-                    return true;
+                    return bvHoursAllow(npc.hours);
                 }
 
                 function bvMapNpcsPresent(mapId) {
@@ -41585,8 +41613,16 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     return mapData.npcs.filter(n => bvNpcIsPresent(n, mapId));
                 }
 
+                // Anwesende (und unbesiegte) Gegner – also Gegner, die gerade WIRKLICH da sind.
                 function bvAliveEnemies(mapId) {
                     return bvMapNpcsPresent(mapId).filter(n => n.type === "enemy" && !n.isBoss);
+                }
+
+                // Unbesiegte Gegner OHNE Schicht-Pruefung – Basis fuer die Boss-Tuer-Rechnung
+                // (sonst wuerden nachts "abwesende" Gegner faelschlich als besiegt zaehlen).
+                function bvUndefeatedEnemies(mapId) {
+                    return (MAPS[mapId]?.npcs || []).filter(n => n && n.type === "enemy" && !n.isBoss
+                        && !bvEnemyDefeated(mapId, n));
                 }
 
                 // Alle Maps mit Gegnern (fuer Boss-Tuer-Rechnung/Anzeige)
@@ -41598,9 +41634,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 window.BVNpcPresence = {
                     isPresent: (npc, mapId) => bvNpcIsPresent(npc, mapId),
                     enemyKey: (mapId, npc) => bvEnemyKey(mapId, npc),
+                    enemySchedule: (npc) => bvEnemySchedule(npc),
+                    defaultEnemyHours: BV_ENEMY_DEFAULT_HOURS.slice(),
                     presentOnMap: (mapId) => bvMapNpcsPresent(mapId),
                     aliveEnemies: (mapId) => bvAliveEnemies(mapId),
                     aliveEnemyCount: (mapId) => bvAliveEnemies(mapId).length,
+                    undefeatedEnemies: (mapId) => bvUndefeatedEnemies(mapId),
                     isAvailable: (name, mapId) => {
                         const defs = MAPS[mapId]?.npcs || [];
                         const def = defs.find(n => n && n.name === name);
