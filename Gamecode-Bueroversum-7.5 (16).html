@@ -62795,16 +62795,9 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
     function setTwemoji(node, glyph) {
         if (!node) return;
         node.textContent = glyph || '';
+        // Emoji-Rendering übernimmt der globale Parser (Twemoji/Font-Fallback)
         if (typeof window.parseEmojis === 'function') {
-            try { window.parseEmojis(node); return; } catch (e) {}
-        }
-        if (typeof window.twemoji !== 'undefined') {
-            try {
-                window.twemoji.parse(node, {
-                    folder: 'svg', ext: '.svg',
-                    base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'
-                });
-            } catch (e) {}
+            try { window.parseEmojis(node); } catch (e) {}
         }
     }
     function playerName() { return (window.player && window.player.name) || 'Du'; }
