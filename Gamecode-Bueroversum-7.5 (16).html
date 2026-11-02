@@ -38335,7 +38335,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 // SCHICHT-UHR: Die Dunkelheit folgt einer In-Game-Uhrzeit (HH:MM):
                 //   Tag 07:00-17:00 | Daemmerung 17:00-18:30 (um 18:00 bereits
                 //   deutlich dunkler!) | Nacht 18:30-05:30 | Morgengrauen 05:30-07:00
-                //   Tempo: 100 echte Sekunden = 1 Spiel-Stunde (HUD-Uhr mit HH:MM).
+                //   Tempo: 30 echte Sekunden = 1 Spiel-Stunde (HUD-Uhr mit HH:MM).
                 // Jede Map hat eine eigene Maximal-Dunkelheit (Lager/Archiv =
                 // fast stockfinster, Dach = mondbeschienen). Lampen entstehen
                 // automatisch aus den Map-Dekos (lamp/vending/server/...) und
@@ -38345,7 +38345,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 // tier "low" -> weniger Lampen, kleinere Taschenlampe, kein Glow.
                 // Konsole: BVNight.setTime(18) | BVNight.phase() | BVNight.time()
                 // ============================================================
-                const BV_NIGHT_HOUR_SEC = 100;  // 100 echte Sekunden = 1 Spiel-Stunde
+                const BV_NIGHT_HOUR_SEC = 30;   // 30 echte Sekunden = 1 Spiel-Stunde
+                                                // (Schicht 09:00-18:00 ~ 4,5 Min; ganzer Tag 12 Min)
                 let bvNightClock = 9;           // Schichtbeginn: 09:00 Uhr
                 let bvNightLevel = 0;           // geglaettete Dunkelheit 0..1
                 let bvNightSawNight = false;    // fuer das "Nachteule"-Achievement
@@ -38481,7 +38482,14 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const on = overlayOpen && visible && dark > 0.02;
                     gw.classList.toggle("bv-night-active", on);
                     if (!on) { bvNightLastDraw = ""; return; }
-                    if (bvSceneFxMode === "freeze") return;
+                    // v7.16.2: MAP-TRANSITION darf trotz Scene-Freeze neuzeichnen!
+                    // Sonst zeigt die Ebene beim Aufblenden der neuen Map noch die
+                    // alte Dunkelheit + alte Lampen + das Spieler-Licht an der alten
+                    // Position (Map-Daten/Kamera/Position wechseln bereits MIDDEN in
+                    // der Transition) -> sichtbares Nachhinken & "Licht vom anderen
+                    // Raum". Waehrend TRANSITION ist das Umblenden verdeckt, deshalb
+                    // ploetzliche Freischaltung erst bei MAP = sichtbarer Sprung.
+                    if (bvSceneFxMode === "freeze" && gameState !== "TRANSITION") return;
 
                     const vp = document.getElementById("rpg-viewport");
                     if (!vp) return;
