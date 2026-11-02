@@ -38480,7 +38480,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const gw = document.getElementById("rpg-game-window");
                     if (!gw) return;
                     const overlay = document.getElementById("rpg-overlay");
-                    const overlayOpen = !!(overlay && overlay.classList.contains("active"));
+                    // RPG-Overlay zeigt das Spiel ueber die Klassen "opening"/"open" (nicht "active")
+                    const overlayOpen = !!(overlay && (overlay.classList.contains("open") || overlay.classList.contains("opening")));
                     const off = !(overlayOpen && BV_FX_ACTIVE_STATES.has(gameState));
                     if (off !== bvSceneFxWasOff) {
                         bvSceneFxWasOff = off;
@@ -38536,8 +38537,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 // tier "low" -> weniger Lampen, kleinere Taschenlampe, kein Glow.
                 // Konsole: BVNight.setTime(0.7) | BVNight.phase()
                 // ============================================================
-                const BV_NIGHT_CYCLE_SEC = 420; // ~7 Minuten pro Tag/Nacht-Runde
-                let bvNightTime = 0.12;         // Start am Vormittag
+                const BV_NIGHT_CYCLE_SEC = 300; // ~5 Minuten pro Tag/Nacht-Runde
+                let bvNightTime = 0.20;         // Start am spaeten Vormittag (1. Daemmerung nach ~15 s)
                 let bvNightLevel = 0;           // geglaettete Dunkelheit 0..1
                 let bvNightSawNight = false;    // fuer das "Nachteule"-Achievement
                 let bvNightCache = { mapId: "__none__", max: 0, lights: [] };
@@ -38567,10 +38568,12 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 };
 
                 function bvNightLevelAt(t) {
-                    if (t < 0.45) return 0;
-                    if (t < 0.55) { const k = (t - 0.45) / 0.10; return k * k * (3 - 2 * k); }
-                    if (t < 0.92) return 1;
-                    const k = (t - 0.92) / 0.08; return 1 - k * k * (3 - 2 * k);
+                    // Tag 0-25 % | Daemmerung 25-35 % | Nacht 35-75 % | Morgengrauen 75-85 % | Tag 85-100 %
+                    if (t < 0.25) return 0;
+                    if (t < 0.35) { const k = (t - 0.25) / 0.10; return k * k * (3 - 2 * k); }
+                    if (t < 0.75) return 1;
+                    if (t < 0.85) { const k = (t - 0.75) / 0.10; return 1 - k * k * (3 - 2 * k); }
+                    return 0;
                 }
 
                 function bvNightPoint(tx, ty) {
@@ -38618,7 +38621,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const cvs = document.getElementById("bv-night-layer");
                     if (!gw || !cvs) return;
                     const overlay = document.getElementById("rpg-overlay");
-                    const overlayOpen = !!(overlay && overlay.classList.contains("active"));
+                    const overlayOpen = !!(overlay && (overlay.classList.contains("open") || overlay.classList.contains("opening")));
                     const sceneActive = overlayOpen && bvSceneFxWasOff === false;
                     if (sceneActive) bvNightAdvance(1 / 60);
                     const dark = Math.min(0.92, bvNightLevel * (bvNightCache.max || 0.6));
@@ -38701,10 +38704,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     level: function () { return bvNightLevel; },
                     setTime: function (t) { bvNightTime = Math.max(0, Math.min(0.9999, Number(t) || 0)); return bvNightTime; },
                     phase: function () {
-                        if (bvNightTime < 0.45) return "Tag";
-                        if (bvNightTime < 0.55) return "Abenddämmerung";
-                        if (bvNightTime < 0.92) return "Nachtschicht";
-                        return "Morgengrauen";
+                        if (bvNightTime < 0.25) return "Tag";
+                        if (bvNightTime < 0.35) return "Abenddämmerung";
+                        if (bvNightTime < 0.75) return "Nachtschicht";
+                        if (bvNightTime < 0.85) return "Morgengrauen";
+                        return "Tag";
                     },
                     cycleSeconds: BV_NIGHT_CYCLE_SEC
                 };
