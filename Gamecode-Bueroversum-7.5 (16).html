@@ -45180,11 +45180,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 let enemyAttackTarget = "player";
                 let enemyPartnerTarget = null;
                 let bvRoundQueue = [];
-                // v7.12: Platz für ALLE definierten Partner (vorher hart auf 3 begrenzt).
-                const BV_PARTNER_TEAM_LIMIT = Math.max(1, Object.keys(BV_PARTNER_DEFS).length);
-                // v7.14: Im Kampf laufen höchstens 3 Partner gleichzeitig mit. Mehr ist
-                // unübersichtlich (HUD-Karten, Sprites, Rundenlog, VS-Splash). Das Team
-                // selbst darf weiter alle Partner halten – gewechselt wird im Team-Menü.
+                // v7.12: Team und Kampfgruppe sind getrennte Grenzen.
+                // v7.14: Beides wieder 3 – die Team-Texte ("1 von 3 Partnern") passen
+                // sonst nicht, und mehr als 3 Partner gleichzeitig ergeben im Kampf
+                // (HUD, Sprites, Rundenlog) keinen Sinn.
+                const BV_PARTNER_TEAM_LIMIT = 3;
                 const BV_PARTNER_PARTY_LIMIT = 3;
 
                 function bvPartnerDefForNpc(npc) {
@@ -45350,6 +45350,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 // Kampfgruppe: bis zu 3 aktive Partner (zusätzlich zum Spieler)
                 function bvPartnerParty() {
+                    // v7.14: Alte Spielstände können noch 4 Team-Mitglieder haben –
+                    // hier auf die aktuelle Grenze (3) kürzen, damit alle Texte passen.
+                    if (Array.isArray(player.bvPartners) && player.bvPartners.length > BV_PARTNER_TEAM_LIMIT) {
+                        player.bvPartners = player.bvPartners.slice(0, BV_PARTNER_TEAM_LIMIT);
+                    }
                     if (!Array.isArray(player.bvActiveParty)) player.bvActiveParty = player.bvActivePartner ? [player.bvActivePartner] : [];
                     player.bvActiveParty = [...new Set(player.bvActiveParty)]
                         .filter(pid => BV_PARTNER_DEFS[pid] && (player.bvPartners || []).includes(pid))
@@ -46006,6 +46011,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         damageEnemy(hit.dmg, hit.crit);
                         const actualDamage = Math.max(0, beforeEnemyHp - enemyHp);
                         spawnBattleEffect("enemy", partnerIcon);
+                        // v7.14: Auch Partnerangriffe legen ein Blatt auf den Aktenstapel –
+                        // der Partner trägt damit zur Kombo des Spielers bei.
+                        if (actualDamage > 0 && typeof bvComboAdd === "function") bvComboAdd("partner");
                         let healing = 0;
                         if (partner.heal && player.hp > 0) {
                             healing = Math.min(partner.heal, player.maxHp - player.hp);
