@@ -871,6 +871,8 @@
                     </div>
                     <!-- PATCH O: Partikel-Overlay (viewport-fix, ueber Map, unter HUD) -->
                     <div id="rpg-fx-particles"></div>
+                    <!-- v7.14: Atmosphaeren-/Licht-Ebene (viewport-fix, ueber Map, unter HUD) -->
+                    <div id="bv-lighting-layer" aria-hidden="true"></div>
                     <div id="interaction-hint">
                         <span class="hint-key">ENTER</span>
                         <span class="hint-action-icon" id="interaction-icon">💬</span>
@@ -35006,6 +35008,62 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 @media (max-width: 900px) {
     .editor-loadout-row { grid-template-columns: 1fr; }
 }
+
+/* ===== v7.14 BV ATMOSPHERE: Map-Licht, Szenen-Pause & Schichten-Gehen =====
+   Zentrales Schichten-System:
+   - Lichtstimmung pro Map ueber CSS-Variablen am Game-Window
+     (--bv-light-tint / --bv-light-op / --bv-light-vig)
+   - Szenen-Pause: .bv-scene-fx-off pausiert & versteckt Map-FX in Battle,
+     Menus, Computer, Editor, Splash usw. -> kein Leck, kein Flackern
+   - Schichten-Gehen: .bv-occ-fade macht Occluder halbtransparent, wenn
+     der Spieler hinter ihnen laeuft */
+#bv-lighting-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9; /* ueber #rpg-fx-particles (8), UNTER HUD (60) */
+    contain: layout paint;
+}
+#bv-lighting-layer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--bv-light-tint, #ffffff);
+    opacity: var(--bv-light-op, 0);
+    mix-blend-mode: soft-light;
+    transition: opacity .6s ease, background .6s ease;
+}
+#bv-lighting-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 52%, rgba(4,8,18,var(--bv-light-vig, 0.14)) 100%);
+    transition: opacity .6s ease;
+}
+
+/* Occlusion-Fading: Spieler hinter Objekten bleibt sichtbar */
+.bv-occluder, .bv-clean-occluder, .me-v6-occluder { transition: opacity .18s ease; }
+.bv-occluder.bv-occ-fade,
+.bv-clean-occluder.bv-occ-fade,
+.me-v6-occluder.bv-occ-fade { opacity: .26 !important; }
+
+/* Szenen-Pause (Battle, Menus, Computer, Editor, Splash ...): */
+#rpg-game-window.bv-scene-fx-off #rpg-fx-particles {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .25s ease, visibility 0s linear .25s;
+}
+#rpg-game-window.bv-scene-fx-off #bv-lighting-layer {
+    opacity: 0;
+    transition: opacity .25s ease;
+}
+#rpg-game-window.bv-scene-fx-off #rpg-fx-particles .fxp,
+#rpg-game-window.bv-scene-fx-off #rpg-fx-particles .fx-depth,
+#rpg-game-window.bv-scene-fx-off #rpg-parallax-layer,
+#rpg-game-window.bv-scene-fx-off #rpg-parallax-layer::before,
+#rpg-game-window.bv-scene-fx-off #rpg-parallax-layer::after {
+    animation-play-state: paused !important;
+}
 </style>
 
     <script>
@@ -38225,7 +38283,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         konferenz:  { type:"spark", n:38, sz:[2,4], col:["#e1d7ff","#b9a9ff"], op:[.3,.65] },
                         boss_office:{ type:"spark", n:36, sz:[2,5], col:["#ff9a6a","#ffd2aa","#ff6a4a"], op:[.35,.8] },
                         archiv:     { type:"paper", n:40, sz:[3,6], col:["#ebe1c8","#d2c3a0","#c9b890"], op:[.3,.6] },
-                        dach:       { type:"pollen",n:44, sz:[2,5], col:["#fffae6","#fff4c8","#ffffff"], op:[.35,.75] }
+                        dach:       { type:"pollen",n:44, sz:[2,5], col:["#fffae6","#fff4c8","#ffffff"], op:[.35,.75] },
+                        pausenraum: { type:"steam",  n:26, sz:[4,10],col:["#ffe9c9","#fff3de"], op:[.15,.35] }
                     };
                     let cfg = THEMES[mapId] || THEMES.flur;
                     if (tier === "high") cfg = Object.assign({}, cfg, { n: Math.min(cfg.n, 24) });
@@ -38326,6 +38385,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const cls = BV_FX_BY_MAP[mapId] || "fx-flur";
                     BV_ALL_FX.forEach(c => { if (c !== cls) gw.classList.remove(c); });
                     gw.classList.add(cls);
+                    // v7.14: Lichtstimmung der Map mit umsetzen (lernt per CSS sanft ueber)
+                    if (typeof window.BVApplyMapLight === "function") window.BVApplyMapLight(mapId);
                     return cls;
                 };
 
@@ -38353,6 +38414,96 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         };
                     }
                 };
+
+                // ============================================================
+                // v7.14 – BV ATMOSPHERE & SCENE-FX GUARD ("Schichten-System")
+                // ------------------------------------------------------------
+                // 1) MAP-LICHT: Jede Map bekommt eine eigene Lichtstimmung
+                //    (Tint + Staerke + Vignette) via CSS-Variablen am Window.
+                //    Wird zentral aus BVApplyMapFx mit umgeschaltet.
+                // 2) SZENEN-PAUSE: Map-FX (Partikel/Parallax/Licht) laufen nur,
+                //    wenn die Karte sichtbar ist (MAP/MESSAGE). In Battle,
+                //    Menus, Computer, Editor, Splash, Ending usw. setzt der
+                //    Guard .bv-scene-fx-off -> Animationen pausieren sauber,
+                //    Ebenen verstecken sich, nichts leakt in andere Szenen.
+                // 3) SCHICHTEN-GEHEN: Bleibt der Spieler HINTER einem Occluder
+                //    stehen, wird dieser halbtransparent (.bv-occ-fade), damit
+                //    der Charakter sichtbar bleibt - 2.5D-Polish ohne Tiefeingriff.
+                // ============================================================
+                const BV_LIGHT_THEME = {
+                    buero:      { tint: "#ffe9c4", op: 0.16, vig: 0.16 },
+                    flur:       { tint: "#dfe8ff", op: 0.12, vig: 0.14 },
+                    zentrale:   { tint: "#bfe6ff", op: 0.15, vig: 0.16 },
+                    serverraum: { tint: "#16324a", op: 0.26, vig: 0.34 },
+                    kantine:    { tint: "#ffe3b8", op: 0.18, vig: 0.12 },
+                    lager:      { tint: "#c9b79a", op: 0.20, vig: 0.26 },
+                    konferenz:  { tint: "#d4d9ff", op: 0.14, vig: 0.18 },
+                    boss_office:{ tint: "#2a1608", op: 0.30, vig: 0.38 },
+                    archiv:     { tint: "#e6d3a8", op: 0.18, vig: 0.22 },
+                    dach:       { tint: "#fff6d8", op: 0.08, vig: 0.06 },
+                    pausenraum: { tint: "#ffd9b0", op: 0.16, vig: 0.10 }
+                };
+
+                window.BVApplyMapLight = function (mapId) {
+                    const gw = document.getElementById("rpg-game-window");
+                    if (!gw) return null;
+                    const theme = BV_LIGHT_THEME[mapId] || BV_LIGHT_THEME.flur;
+                    gw.style.setProperty("--bv-light-tint", theme.tint);
+                    gw.style.setProperty("--bv-light-op", String(theme.op));
+                    gw.style.setProperty("--bv-light-vig", String(theme.vig));
+                    gw.dataset.bvLight = mapId;
+                    return theme;
+                };
+
+                // Szenen, in denen Map + FX sichtbar sind (Dialoge zeigen die Map weiter)
+                const BV_FX_ACTIVE_STATES = new Set(["MAP", "MESSAGE"]);
+                let bvSceneFxWasOff = null;
+
+                function bvSceneGuardTick() {
+                    const gw = document.getElementById("rpg-game-window");
+                    if (!gw) return;
+                    const overlay = document.getElementById("rpg-overlay");
+                    const overlayOpen = !!(overlay && overlay.classList.contains("active"));
+                    const off = !(overlayOpen && BV_FX_ACTIVE_STATES.has(gameState));
+                    if (off !== bvSceneFxWasOff) {
+                        bvSceneFxWasOff = off;
+                        gw.classList.toggle("bv-scene-fx-off", off);
+                        if (off && occlusionLayer) {
+                            // Beim Verlassen der Map-Szene: alle Occluder wieder undurchsichtig
+                            Array.from(occlusionLayer.children).forEach(o => o.classList.remove("bv-occ-fade"));
+                        }
+                    }
+                }
+
+                function bvOcclusionFadeTick() {
+                    if (bvSceneFxWasOff !== false || gameState !== "MAP") return;
+                    if (!playerEl || !occlusionLayer) return;
+                    const occs = occlusionLayer.children;
+                    if (!occs.length) return;
+                    const pZ = parseInt(playerEl.style.zIndex || "0", 10);
+                    const pr = playerEl.getBoundingClientRect();
+                    // Leicht aufgeblaehte Box, damit das Fade frueh genug einsetzt
+                    const px = { l: pr.left - 8, r: pr.right + 8, t: pr.top - 6, b: pr.bottom + 10 };
+                    for (let i = 0; i < occs.length; i++) {
+                        const o = occs[i];
+                        const oZ = parseInt(o.style.zIndex || "0", 10);
+                        if (oZ <= pZ) { o.classList.remove("bv-occ-fade"); continue; } // nur Occluder VOR dem Spieler
+                        const r = o.getBoundingClientRect();
+                        const overlap = !(r.left > px.r || r.right < px.l || r.top > px.b || r.bottom < px.t);
+                        o.classList.toggle("bv-occ-fade", overlap);
+                    }
+                }
+
+                setInterval(bvSceneGuardTick, 200);    // Szenen-Pause (nur Klassen-Flip bei Aenderung)
+                setInterval(bvOcclusionFadeTick, 140); // Schichten-Gehen (nur in MAP aktiv)
+
+                // Debug-/Kreativ-API (Konsole): BVAtmos.apply('serverraum'), BVAtmos.sceneFxOn()
+                window.BVAtmos = {
+                    themes: BV_LIGHT_THEME,
+                    apply: function (id) { window.BVApplyMapFx(id); return BV_LIGHT_THEME[id] || null; },
+                    sceneFxOn: function () { return bvSceneFxWasOff === false; }
+                };
+
                 function spawnDoors() {
                     if (!doorLayer) return;
                     doorLayer.innerHTML = "";
