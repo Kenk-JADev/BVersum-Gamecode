@@ -34466,6 +34466,23 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
     user-select: none;
 }
 .hud-clock-badge .clock-icon { font-size: .95rem; }
+/* v7.21/v7.22: Tagesanzeige + Fade-Ebene für Schlaf-/Dusche-Szenen */
+.hud-clock-badge .clock-day { color: #ffd9a0; letter-spacing: .5px; }
+#bv-sleep-fade {
+    position: absolute;
+    inset: 0;
+    z-index: 45; /* über der Map, UNTER HUD (60) und Cutscene-Box (100060) */
+    background: #05070d;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+}
+#bv-sleep-fade.steam {
+    background: linear-gradient(160deg, #e8f7ff 0%, #cfe9f6 45%, #f4fbff 100%);
+}
+/* Hinweis: bewusst KEINE "scene-fx-off"-Regel hier – Cutscenes setzen die
+   Szene auf "off", der Fade muss aber während der Schlaf-/Dusche-Szene
+   sichtbar bleiben. Zurückgesetzt wird er per JS (wake / Map-Wechsel). */
 
 /* ===== v7.15 BV NIGHT: Tag/Nacht-Zyklus, Dunkelheit & Lampen ===== */
 #bv-night-layer {
@@ -36758,101 +36775,117 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 MAPS.zuhause = {
                     name: "Zuhause",
                     cols: 27,
-                    rows: 19,
+                    rows: 21,
                     tiles: (() => {
-                        const W = 27, H = 19;
+                        // v7.22: Grundriss neu – breiter durchgehender Flur (5 Felder),
+                        // 2 Felder breite Durchgänge zu jedem Raum, damit man nicht in
+                        // unsichtbaren Wänden hängt. Die Innenwände werden jetzt auch
+                        // als 3D-Wände gerendert (siehe spawnOccluders).
+                        const W = 27, H = 21;
                         const t = [];
                         for (let y = 0; y < H; y++) {
                             t[y] = [];
                             for (let x = 0; x < W; x++) t[y][x] = 1; // alles erst Wand
                         }
                         // Räume
-                        for (let y = 1; y <= 7; y++) for (let x = 1; x <= 10; x++) t[y][x] = 4;   // Wohnzimmer (Teppich)
-                        for (let y = 1; y <= 7; y++) for (let x = 15; x <= 25; x++) t[y][x] = 13; // Küche (heller Boden)
-                        for (let y = 11; y <= 17; y++) for (let x = 1; x <= 10; x++) t[y][x] = 5; // Zimmer (Läufer)
-                        for (let y = 11; y <= 17; y++) for (let x = 15; x <= 25; x++) t[y][x] = 16; // Bad (Fliesen)
-                        // Flur (Mitte, senkrecht)
-                        for (let y = 1; y <= 17; y++) { t[y][12] = 0; t[y][13] = 0; }
-                        // Zimmertüren zum Flur
-                        t[4][11] = 6;   // Wohnzimmer
-                        t[4][14] = 6;   // Küche
-                        t[14][11] = 6;  // Zimmer
-                        t[14][14] = 6;  // Bad
-                        // Fenster
-                        t[0][4] = 12; t[0][7] = 12; t[0][18] = 12; t[0][21] = 12;
-                        t[18][4] = 12; t[18][8] = 12; t[18][18] = 12; t[18][22] = 12;
-                        t[2][0] = 12; t[6][0] = 12; t[12][26] = 12; t[16][26] = 12;
+                        for (let y = 1; y <= 8; y++) for (let x = 1; x <= 9; x++) t[y][x] = 4;    // Wohnzimmer (Teppich)
+                        for (let y = 1; y <= 8; y++) for (let x = 17; x <= 25; x++) t[y][x] = 13; // Küche (heller Boden)
+                        for (let y = 12; y <= 19; y++) for (let x = 1; x <= 9; x++) t[y][x] = 5;  // Zimmer (Läufer)
+                        for (let y = 12; y <= 19; y++) for (let x = 17; x <= 25; x++) t[y][x] = 16; // Bad (Fliesen)
+                        // Flur (Mitte): 5 Felder breit, von oben bis unten durchgehend
+                        for (let y = 1; y <= 19; y++) for (let x = 11; x <= 15; x++) t[y][x] = 0;
+                        // Durchgänge (je 2 Felder breit) von den Räumen in den Flur
+                        t[4][10] = 6; t[5][10] = 6;    // Wohnzimmer <-> Flur
+                        t[4][16] = 6; t[5][16] = 6;    // Küche <-> Flur
+                        t[14][10] = 6; t[15][10] = 6;  // Zimmer <-> Flur
+                        t[14][16] = 6; t[15][16] = 6;  // Bad <-> Flur
+                        // Fenster in den Außenwänden
+                        t[0][3] = 12; t[0][6] = 12; t[0][20] = 12; t[0][23] = 12;
+                        t[20][3] = 12; t[20][6] = 12; t[20][20] = 12; t[20][23] = 12;
+                        t[2][0] = 12; t[16][0] = 12; t[2][26] = 12; t[16][26] = 12;
                         // Wohnzimmer: Sofa, Couchtisch, Stuhl, Regal, Pflanzen
                         t[2][3] = 15; t[2][4] = 15; t[2][5] = 15;
                         t[4][4] = 2; t[4][5] = 2;
                         t[5][6] = 11;
-                        t[6][1] = 10; t[6][2] = 10;
-                        t[1][1] = 3; t[1][10] = 3;
-                        // Küche: Küchenzeile, Tisch, Stühle, Pflanze
-                        t[1][17] = 2; t[1][18] = 2; t[1][19] = 2; t[1][20] = 2;
-                        t[4][19] = 2; t[4][20] = 2;
-                        t[5][19] = 11;
-                        t[1][25] = 3;
-                        // Zimmer: Schreibtisch, Stuhl, Regal, Pflanze
-                        t[11][5] = 2; t[11][6] = 2;
-                        t[12][6] = 11;
-                        t[17][1] = 10; t[17][2] = 10;
-                        t[11][10] = 3;
+                        t[7][1] = 10; t[7][2] = 10;
+                        t[1][1] = 3; t[1][9] = 3;
+                        // Küche: Küchenzeile, Tisch, Stuhl, Pflanze
+                        t[1][18] = 2; t[1][19] = 2; t[1][20] = 2; t[1][21] = 2;
+                        t[5][20] = 2; t[5][21] = 2;
+                        t[6][20] = 11;
+                        t[8][25] = 3;
+                        // Zimmer: Schreibtisch, Stuhl, Regal, Pflanze (bewusst luftig)
+                        t[13][7] = 2; t[13][8] = 2;
+                        t[14][8] = 11;
+                        t[19][1] = 10;
+                        t[19][9] = 3;
                         // Bad: Schrank, Pflanze
-                        t[17][15] = 8;
-                        t[17][25] = 3;
-                        // Wohnungstür (Doppeltür unten im Flur)
-                        t[18][12] = 6; t[18][13] = 6;
+                        t[19][25] = 8;
+                        t[19][17] = 3;
+                        // Wohnungstür (Doppeltür in der unteren Außenwand)
+                        t[20][12] = 6; t[20][13] = 6;
                         return t;
                     })(),
                     decos: [
                         // Wohnzimmer
                         { x: 1, y: 3, type: "lamp" },
-                        { x: 8, y: 6, type: "rug" },
-                        { x: 4, y: 1, type: "poster" },
+                        { x: 8, y: 7, type: "lamp" },
+                        { x: 3, y: 1, type: "poster" },
                         // Küche
-                        { x: 15, y: 1, type: "fridge" },
-                        { x: 21, y: 1, type: "stove" },
-                        { x: 23, y: 3, type: "lamp" },
+                        { x: 18, y: 2, type: "fridge" },
+                        { x: 24, y: 1, type: "stove" },
+                        { x: 19, y: 7, type: "lamp" },
                         // Zimmer
-                        { x: 1, y: 11, type: "lamp" },
-                        { x: 8, y: 11, type: "wardrobe" },
-                        { x: 6, y: 17, type: "poster" },
+                        { x: 1, y: 12, type: "lamp" },
+                        { x: 5, y: 12, type: "wardrobe" },
+                        { x: 6, y: 19, type: "poster" },
                         // Bad
-                        { x: 16, y: 12, type: "bathtub" },
-                        { x: 20, y: 11, type: "sink" },
-                        { x: 21, y: 11, type: "mirror" },
-                        { x: 24, y: 12, type: "toilet" },
-                        { x: 25, y: 15, type: "lamp" },
+                        { x: 18, y: 12, type: "bathtub" },
+                        { x: 21, y: 12, type: "sink" },
+                        { x: 22, y: 12, type: "mirror" },
+                        { x: 18, y: 18, type: "toilet" },
+                        { x: 25, y: 16, type: "lamp" },
                         // Flur
-                        { x: 12, y: 2, type: "lamp" },
-                        { x: 13, y: 10, type: "lamp" },
-                        { x: 13, y: 6, type: "plant" }
+                        { x: 11, y: 1, type: "lamp" },
+                        { x: 15, y: 18, type: "lamp" },
+                        { x: 15, y: 6, type: "plant" }
                     ],
                     chests: [],
                     npcs: [
                         {
-                            x: 2, y: 13, type: "talk", sprite: "🛏️", name: "Bett", role: "Schlafplatz",
+                            x: 3, y: 15, type: "talk", sprite: "🛏️", name: "Bett", role: "Schlafplatz",
                             dialog: ["Dein Bett. Nach so einem Tag sieht es unglaublich einladend aus."],
                             choiceId: "bett_schlafen", choicePrompt: "Ins Bett gehen und den nächsten Tag starten?"
                         },
                         {
-                            x: 15, y: 2, type: "talk", sprite: "🧊", name: "Kühlschrank", role: "Küche",
-                            dialog: ["Der Kühlschrank ist halb leer.", "Ein einzelner Joghurt wartet auf dich. Er wirkt einsam."]
+                            x: 24, y: 13, type: "talk", sprite: "🚿", name: "Dusche", role: "Bad",
+                            dialog: ["Eine heiße Dusche wäre jetzt genau das Richtige."],
+                            choiceId: "dusche_nehmen", choicePrompt: "Duschen gehen?"
                         },
                         {
-                            x: 4, y: 3, type: "talk", sprite: "📺", name: "Fernseher", role: "Wohnzimmer",
-                            dialog: ["Im Fernsehen läuft eine Doku über Büro-Stress.", "Du schaltest lieber um. Der Flur war schon genug Drama."]
+                            x: 18, y: 3, type: "talk", sprite: "🧊", name: "Kühlschrank", role: "Küche",
+                            dialog: ["Der Kühlschrank ist halb leer.", "Ein einzelner Joghurt wartet auf dich. Er wirkt einsam."],
+                            choiceId: "kuehlschrank_snack", choicePrompt: "Kleinen Snack nehmen?"
+                        },
+                        {
+                            x: 4, y: 6, type: "talk", sprite: "📺", name: "Fernseher", role: "Wohnzimmer",
+                            dialog: ["Im Fernsehen läuft eine Doku über Büro-Stress.", "Du schaltest lieber um. Der Flur war schon genug Drama."],
+                            choiceId: "fernseher_entspannen", choicePrompt: "Kurz abschalten?"
+                        },
+                        {
+                            x: 22, y: 2, type: "talk", sprite: "☕", name: "Kaffeemaschine", role: "Küche",
+                            dialog: ["Die Kaffeemaschine blubbert vor sich hin."],
+                            choiceId: "kaffeemaschine", choicePrompt: "Einen Kaffee kochen?"
                         }
                     ],
-                    start: { x: 12, y: 16 }
+                    start: { x: 13, y: 18 }
                 };
 
                 // Wohnungstür: morgens zurück ins Büro (nur wenn geschlafen wurde)
                 DOORS.zuhause_to_office = {
-                    from: "zuhause", fromX: 12, fromY: 18,
+                    from: "zuhause", fromX: 12, fromY: 20,
                     to: "buero", toX: 5, toY: 8,
-                    label: "Zur Arbeit", double: true, extraTiles: [[13, 18]]
+                    label: "Zur Arbeit", double: true, extraTiles: [[13, 20]]
                 };
 
 
@@ -37816,7 +37849,7 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     boss_office: { max: 0.74, extra: [[12, 4, 95, "#ffb066"]] },
                     dach:        { max: 0.56, extra: [[2, 2, 65, "#9ad4ff"]] },
                     // v7.21: Wohnung – gemütliches Abendlicht, nie stockfinster
-                    zuhause:     { max: 0.38, extra: [[4, 3, 85, "#ffd9a0"], [19, 4, 80, "#ffd9a0"], [2, 13, 75, "#ffc48a"], [12, 10, 70, "#ffd9a0"]] }
+                    zuhause:     { max: 0.38, extra: [[4, 6, 90, "#ffd9a0"], [19, 5, 85, "#ffd9a0"], [4, 15, 80, "#ffc48a"], [13, 10, 75, "#ffd9a0"], [22, 15, 75, "#cfe9ff"]] }
                 };
                 // Deko-Typ -> Lichtquelle (wird automatisch aus currentDecos erzeugt)
                 const BV_NIGHT_LAMP_GLOW = {
@@ -41821,6 +41854,9 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
 
                 function actuallyLoadMap(mapId) {
                     currentMapId = mapId;
+                    // v7.22: Ein evtl. noch aktiver Schlaf-/Dusche-Fade darf beim
+                    // Map-Wechsel nicht auf dem Bildschirm kleben bleiben.
+                    if (typeof bvSceneFade === "function") bvSceneFade(0, 0, null);
                     const mapData = MAPS[mapId];
                     if (!mapData) return;
                     validateMapData(mapId, mapData);
@@ -41995,9 +42031,27 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                                 : '';
                             if (!type) continue;
                             // Wände/Ecken dürfen Figuren verdecken, aber nur dort, wo sie wirklich vorne/seitlich liegen.
+                            // v7.22: INNENWÄNDE (z. B. die Zimmerwände der Wohnung) waren bisher
+                            // komplett unsichtbar – man lief gegen "Luft" und Optik/Kollision
+                            // passten nicht zusammen. Liegt die Wand NICHT auf dem Aussenring,
+                            // wird sie jetzt ebenfalls als Iso-Wand gerendert (mit Fade, wenn
+                            // der Spieler dahinter steht). Maps ohne Innenwände bleiben
+                            // unverändert, weil dort schlicht keine solchen Tiles existieren.
                             if (type === 'wall') {
-                                const isFrontOrSide = (y === mapRows - 1) || (x === 0) || (x === mapCols - 1);
-                                if (!isFrontOrSide) continue;
+                                const onOuterRing = (y === mapRows - 1) || (x === 0) || (x === mapCols - 1);
+                                if (!onOuterRing) {
+                                    // Nur die sichtbaren Wandflaechen einer Innenwand-Masse
+                                    // rendern (Vorderseite oder Seite frei) - sonst entstehen
+                                    // sinnlos gestapelte Waende mitten in der Wand.
+                                    if (y === 0) continue;
+                                    const isWallTileAt = (wx, wy) => {
+                                        if (wy < 0 || wy >= mapRows || wx < 0 || wx >= mapCols) return true;
+                                        const nm = String((TILES[currentMap[wy]?.[wx] ?? 0] || {}).name || '');
+                                        return nm.includes('wall');
+                                    };
+                                    const exposed = !isWallTileAt(x, y + 1) || !isWallTileAt(x - 1, y) || !isWallTileAt(x + 1, y);
+                                    if (!exposed) continue;
+                                }
                             }
                             // PATCH E: echte Iso-Wand statt flachem CSS-Sechseck
                             const iso = isoWallSvg(x, y, type);
@@ -42290,6 +42344,14 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     } else if (npc.choiceId === "bett_schlafen") {
                         // v7.21: Bett in der Wohnung -> Tag beenden
                         queueMessage(npc.choicePrompt || "Ins Bett gehen?", npc.name, npc.sprite, () => window.openBettChoice(npc));
+                    } else if (npc.choiceId === "dusche_nehmen") {
+                        queueMessage(npc.choicePrompt || "Duschen gehen?", npc.name, npc.sprite, () => window.openShowerChoice(npc));
+                    } else if (npc.choiceId === "kuehlschrank_snack") {
+                        queueMessage(npc.choicePrompt || "Kleinen Snack nehmen?", npc.name, npc.sprite, () => window.openFridgeChoice(npc));
+                    } else if (npc.choiceId === "fernseher_entspannen") {
+                        queueMessage(npc.choicePrompt || "Kurz abschalten?", npc.name, npc.sprite, () => window.openTvChoice(npc));
+                    } else if (npc.choiceId === "kaffeemaschine") {
+                        queueMessage(npc.choicePrompt || "Einen Kaffee kochen?", npc.name, npc.sprite, () => window.openCoffeeChoice(npc));
                     } else if (npc.choiceId === "andreas_quest") {
                         queueMessage(npc.choicePrompt || "Ich suche etwas...", npc.name, npc.sprite, () => openAndreasChoice(npc));
                     } else if (npc.choiceId === "archiv_quest") {
@@ -54951,6 +55013,26 @@ window.respawnPlayer = function () {
                     }
                 });
 
+                // v7.22: Fade-Ebene für Schlaf-/Dusche-Szenen.
+                // Liegt über der Map (z-index 45), aber unter HUD und Cutscene-Box.
+                function bvSceneFade(value, ms, variant) {
+                    const host = document.getElementById("rpg-game-window") || document.body;
+                    let el = document.getElementById("bv-sleep-fade");
+                    if (!el) {
+                        el = document.createElement("div");
+                        el.id = "bv-sleep-fade";
+                        host.appendChild(el);
+                    }
+                    el.classList.toggle("steam", variant === "steam");
+                    el.style.transition = "opacity " + (typeof ms === "number" ? ms : 1200) + "ms ease";
+                    el.style.pointerEvents = "none";
+                    const target = Math.max(0, Math.min(1, Number(value) || 0));
+                    // Ein Frame warten, damit die Transition wirklich startet
+                    requestAnimationFrame(() => { el.style.opacity = String(target); });
+                    return el;
+                }
+                window.BVSceneFade = bvSceneFade;
+
                 window.BVHome = {
                     day: bvHomeDay,
                     nextDay: function () { player.workDay = bvHomeDay() + 1; return player.workDay; },
@@ -54958,8 +55040,19 @@ window.respawnPlayer = function () {
                     setDayReady: function (v) { player.dayReady = !!v; return player.dayReady; },
                     goHome: function () {
                         player.dayReady = false;
-                        pendingLoadPos = { mapId: "zuhause", x: 12, y: 16, facing: "up" };
+                        // v7.22: Spawn im Flur direkt über der Wohnungstür
+                        pendingLoadPos = { mapId: "zuhause", x: 13, y: 18, facing: "up" };
                         loadMap("zuhause", true);
+                    },
+                    // v7.22: "einmal pro Tag"-Merker für die Wohnungs-Interaktionen
+                    dailyUsed: function (key) {
+                        player.homeDaily = player.homeDaily || {};
+                        return player.homeDaily[key] === bvHomeDay();
+                    },
+                    dailyMark: function (key) {
+                        player.homeDaily = player.homeDaily || {};
+                        player.homeDaily[key] = bvHomeDay();
+                        return player.homeDaily[key];
                     },
                     goToWork: function () {
                         player.dayReady = false;
@@ -54997,27 +55090,39 @@ window.respawnPlayer = function () {
                 };
 
                 // Im Bett schlafen: Tag +1 und Wecker um 07:00 Uhr
+                // v7.22: Schlaf-Sequenz mit richtigem Fade (dunkel werden, Traum, Wecker)
                 window.BVStartSleep = function () {
                     if (isTransitioning) return false;
                     const next = bvHomeDay() + 1;
+                    const bedNpc = (typeof npcs !== "undefined" ? npcs : []).find(n => n && n.name === "Bett");
+                    const bedSide = bedNpc ? { x: bedNpc.x, y: bedNpc.y + 1 } : null;
                     const wake = () => {
                         player.workDay = next;
                         player.dayReady = true;
                         try {
                             if (window.BVNight && typeof window.BVNight.setTime === "function") window.BVNight.setTime(7);
                         } catch (e) {}
+                        bvSceneFade(0, 1400, null); // morgens wieder hell werden
                         try { updateHUD(); } catch (e) {}
                         setTimeout(() => {
                             if (typeof showMessage === "function") {
                                 showMessage(`Tag ${next} — der Wecker hat geklingelt. ☀️ Zieh dich an und geh zur Wohnungstür.`, "🌅 Morgen", "⏰");
                             }
-                        }, 300);
+                        }, 420);
                     };
                     const steps = [
-                        { speaker: 'System', portrait: '🛏️', focus: 'player', mood: 'good', accent: '#8ec5ff', effect: 'dim', text: 'Du legst dich hin. Die Geräusche des Arbeitstages werden leiser …' },
-                        { speaker: 'System', portrait: '🌙', focus: 'player', text: 'Bildschirm aus, Gedanken aus. Fast.' },
-                        { speaker: 'System', portrait: '⏰', focus: 'player', mood: 'good', accent: '#ffd166', effect: 'pop', text: `Der Wecker klingelt: Tag ${next} beginnt.` },
-                        { speaker: 'System', portrait: '🚪', focus: 'player', text: 'Drüben wartet das Büro. Aber erst mal: aufstehen.' }
+                        { speaker: 'System', portrait: '🛏️', focus: 'player', mood: 'good', accent: '#8ec5ff',
+                          move: bedSide ? [{ entity: 'player', to: bedSide, speed: 150 }] : undefined,
+                          text: 'Du ziehst dich um, machst das Licht aus und legst dich ins Bett.' },
+                        { speaker: 'System', portrait: '😴', focus: 'player', effect: 'dim', accent: '#b3a4ff',
+                          onEnter: () => bvSceneFade(1, 1600, null),
+                          text: 'Die Augen fallen zu. Draußen wird es still … zZz' },
+                        { speaker: 'System', portrait: '💭', focus: 'player', text: 'Traum: Der Drucker druckt von selbst deine Bewerbung. Du ignorierst ihn gekonnt.' },
+                        { speaker: 'System', portrait: '💤', focus: 'player', text: 'Irgendwo klingelt ein Wecker. Es ist deiner.' },
+                        { speaker: 'System', portrait: '⏰', focus: 'player', mood: 'good', accent: '#ffd166', effect: 'pop',
+                          onEnter: () => bvSceneFade(0, 1500, null),
+                          text: `Guten Morgen — Tag ${next} beginnt.` },
+                        { speaker: 'System', portrait: '🚪', focus: 'player', text: 'Frisch gemacht, angezogen: Die Wohnungstür führt zurück ins Büro.' }
                     ];
                     if (window.BVRealCutscenes && typeof window.BVRealCutscenes.play === "function") {
                         bvQueueAfterCutscene(wake);
@@ -55026,6 +55131,46 @@ window.respawnPlayer = function () {
                         return true;
                     }
                     wake();
+                    return true;
+                };
+
+                // v7.22: Dusche – kurze Cutscene, danach frisch (HP/MP voll), 1x pro Tag
+                window.BVStartShower = function () {
+                    if (isTransitioning) return false;
+                    const finish = () => {
+                        player.hp = player.maxHp;
+                        player.mp = player.maxMp;
+                        if (window.BVHome && typeof window.BVHome.dailyMark === "function") window.BVHome.dailyMark("shower");
+                        bvSceneFade(0, 900, "steam");
+                        try { updateHUD(); } catch (e) {}
+                        setTimeout(() => {
+                            if (typeof showMessage === "function") {
+                                showMessage("Frisch geduscht — HP und MP voll aufgefüllt. ✨", "🚿 Dusche", "🚿");
+                            }
+                        }, 420);
+                    };
+                    const steps = [
+                        { speaker: 'System', portrait: '🚿', focus: 'player', mood: 'good', accent: '#7ee3ff',
+                          text: 'Du drehst das Wasser auf. Erst kalt, dann genau richtig.' },
+                        { speaker: 'System', portrait: '💨', focus: 'player', accent: '#bfe9ff',
+                          onEnter: () => bvSceneFade(0.55, 700, "steam"),
+                          text: 'Dampf steigt auf, die Anspannung des Tages läuft mit dem Wasser ab.' },
+                        { speaker: 'System', portrait: '🧼', focus: 'player', text: 'Shampoo, Seife, Zähne putzen — der volle Feierabend-Reset.' },
+                        { speaker: 'System', portrait: '✨', focus: 'player', mood: 'good', accent: '#69f0ae', effect: 'sparkle',
+                          text: 'Du fühlst dich wie neu. HP und MP sind wieder komplett.' }
+                    ];
+                    if (window.BVRealCutscenes && typeof window.BVRealCutscenes.play === "function") {
+                        bvQueueAfterCutscene(finish);
+                        bvSceneFade(0.55, 700, "steam"); // schon beim Start leicht dampfen
+                        const started = window.BVRealCutscenes.play('dusche', steps);
+                        if (started === false) {
+                            bvAfterCutsceneAction = null;
+                            bvSceneFade(0, 400, null);
+                            return false;
+                        }
+                        return true;
+                    }
+                    finish();
                     return true;
                 };
 
@@ -58052,6 +58197,114 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         });
     };
 
+    /* v7.22: Dusche – Cutscene + volle HP/MP (1x pro Tag) */
+    window.openShowerChoice = function (npc) {
+        if (typeof window.showChoice !== 'function') return;
+        const speaker = npc?.name || 'Dusche';
+        const portrait = npc?.sprite || '🚿';
+        const B = window.BVHome || {};
+        if (typeof B.dailyUsed === 'function' && B.dailyUsed('shower')) {
+            window.showMessage?.('Du bist für heute schon frisch geduscht. 💧', speaker, portrait);
+            return;
+        }
+        window.showChoice('Heiß duschen? Das macht dich wieder komplett fit (HP und MP voll).', [
+            { label: 'Duschen', value: 'shower', hint: '🚿' },
+            { label: 'Später', value: 'later', hint: '✖' }
+        ], speaker, portrait, (val) => {
+            if (val !== 'shower') {
+                window.showMessage?.('Okay. Der Dampf wartet geduldig.', speaker, portrait);
+                return;
+            }
+            if (typeof window.BVStartShower !== 'function') {
+                window.showMessage?.('Die Dusche ist gerade kaputt. Natürlich.', speaker, portrait);
+                return;
+            }
+            const ok = window.BVStartShower();
+            if (ok === false) window.showMessage?.('Gerade ist keine ruhige Minute — gleich nochmal versuchen.', speaker, portrait);
+        });
+    };
+
+    /* v7.22: Kühlschrank – kleiner Snack (+25 HP, 1x pro Tag) */
+    window.openFridgeChoice = function (npc) {
+        if (typeof window.showChoice !== 'function') return;
+        const speaker = npc?.name || 'Kühlschrank';
+        const portrait = npc?.sprite || '🧊';
+        const B = window.BVHome || {};
+        if (typeof B.dailyUsed === 'function' && B.dailyUsed('fridge')) {
+            window.showMessage?.('Für heute ist der Kühlschrank geplündert. Morgen wieder. 🧊', speaker, portrait);
+            return;
+        }
+        window.showChoice('Im Kühlschrank: ein Joghurt, Reste von gestern und eine zweifelhafte Wurst. Zuschlagen?', [
+            { label: 'Joghurt essen', value: 'eat', hint: '🥣' },
+            { label: 'Lieber nicht', value: 'no', hint: '✖' }
+        ], speaker, portrait, (val) => {
+            if (val !== 'eat') {
+                window.showMessage?.('Vielleicht später. Der Joghurt bleibt gelassen.', speaker, portrait);
+                return;
+            }
+            const p = getPlayer();
+            p.hp = Math.min(p.maxHp || 100, (p.hp || 0) + 25);
+            if (typeof B.dailyMark === 'function') B.dailyMark('fridge');
+            window.updateHUD?.();
+            window.showMessage?.('+25 HP. Der Joghurt war mutiger als er aussah.', speaker, portrait);
+        });
+    };
+
+    /* v7.22: Fernseher – abschalten (+10 MP, 1x pro Tag) */
+    window.openTvChoice = function (npc) {
+        if (typeof window.showChoice !== 'function') return;
+        const speaker = npc?.name || 'Fernseher';
+        const portrait = npc?.sprite || '📺';
+        const B = window.BVHome || {};
+        if (typeof B.dailyUsed === 'function' && B.dailyUsed('tv')) {
+            window.showMessage?.('Für heute hast du genug ferngesehen. Der Kopf dankt es dir.', speaker, portrait);
+            return;
+        }
+        window.showChoice('Eine Folge von „Büro-Notaufnahme" schauen und den Tag loslassen?', [
+            { label: 'Kurz abschalten', value: 'watch', hint: '📺' },
+            { label: 'Später', value: 'later', hint: '✖' }
+        ], speaker, portrait, (val) => {
+            if (val !== 'watch') {
+                window.showMessage?.('Auch gut. Der Fernseher läuft nicht weg.', speaker, portrait);
+                return;
+            }
+            const p = getPlayer();
+            p.mp = Math.min(p.maxMp || 10, (p.mp || 0) + 10);
+            if (typeof B.dailyMark === 'function') B.dailyMark('tv');
+            window.updateHUD?.();
+            window.showMessage?.('+10 MP. Die Serie war schlecht, aber erholsam.', speaker, portrait);
+        });
+    };
+
+    /* v7.22: Kaffeemaschine – ein Kaffee für den nächsten Bürotag (1x pro Tag) */
+    window.openCoffeeChoice = function (npc) {
+        if (typeof window.showChoice !== 'function') return;
+        const speaker = npc?.name || 'Kaffeemaschine';
+        const portrait = npc?.sprite || '☕';
+        const B = window.BVHome || {};
+        if (typeof B.dailyUsed === 'function' && B.dailyUsed('coffee')) {
+            window.showMessage?.('Für heute ist genug Kaffee gekocht. Sonst schläfst du wieder nicht. ☕', speaker, portrait);
+            return;
+        }
+        window.showChoice('Noch eine Kanne für den nächsten Bürotag kochen?', [
+            { label: 'Kaffee kochen', value: 'brew', hint: '☕' },
+            { label: 'Lieber nicht', value: 'no', hint: '✖' }
+        ], speaker, portrait, (val) => {
+            if (val !== 'brew') {
+                window.showMessage?.('Vernünftig. Der Blutdruck sagt danke.', speaker, portrait);
+                return;
+            }
+            const p = getPlayer();
+            p.inventory = p.inventory || [];
+            const has = p.inventory.find(i => i.id === 'kaffee');
+            if (has) has.count = (has.count || 0) + 1;
+            else p.inventory.push({ id: 'kaffee', name: '☕ Kaffee', heal: 40, count: 1 });
+            if (typeof B.dailyMark === 'function') B.dailyMark('coffee');
+            window.updateHUD?.();
+            window.showMessage?.('Ein ☕ Kaffee für den nächsten Tag wandert in deine Tasche.', speaker, portrait);
+        });
+    };
+
     window.openAndreasChoice = function(npc) {
         const p = getPlayer();
         const qs = ensureQuestState();
@@ -58628,6 +58881,10 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
             visited.add(i);
             const step = steps[i];
             if (!step) break;
+            // v7.22: auch beim Skippen die Step-Effekte anwenden (Fades etc.)
+            if (typeof step.onEnter === 'function') {
+                try { step.onEnter(step); } catch (e) { console.warn('[BV Cutscene] onEnter(skip) failed', e); }
+            }
             if (step.setFlag) {
                 const pl = pObj();
                 pl.cutscenes = pl.cutscenes || {};
@@ -58978,6 +59235,11 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         if (!step) { renderBusy = false; return end(); }
         renderBusy = true;
         textReady = false;
+        // v7.22: Steps können einen Effekt beim Anzeigen auslösen (z. B. Fade für
+        // Schlaf-/Dusche-Szenen), ohne dass die Szene dafür Sonderlogik braucht.
+        if (typeof step.onEnter === 'function') {
+            try { step.onEnter(step); } catch (e) { console.warn('[BV Cutscene] onEnter failed', e); }
+        }
         try {
             // Kamera kann pro Cutscene-Step auf Spieler/Sprecher/Boss/Tile umstellen.
             applyCutsceneCamera(step, false);
@@ -59430,7 +59692,8 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
             const started = play('zuhauseAnkunft', [
                 { speaker: 'System', portrait: '🏡', focus: 'player', mood: 'good', accent: '#ffd166', text: `Endlich zuhause. Tag ${day} liegt hinter dir — die Tür fällt ins Schloss.` },
                 { speaker: 'System', portrait: '🛋️', focus: 'player', text: 'Wohnzimmer, Küche, Bad und dein Zimmer. Der Flur verbindet alles — jede Tür führt in einen Raum.' },
-                { speaker: 'System', portrait: '🛏️', focus: 'player', mood: 'good', accent: '#69f0ae', text: 'Zum Tagesabschluss gehst du in dein Zimmer zum Bett. Morgens führt dich die Wohnungstür zurück ins Büro.' }
+                { speaker: 'System', portrait: '🛏️', focus: 'player', mood: 'good', accent: '#69f0ae', text: 'Zum Tagesabschluss gehst du in dein Zimmer zum Bett. Morgens führt dich die Wohnungstür zurück ins Büro.' },
+                { speaker: 'System', portrait: '🚿', focus: 'player', text: 'Im Bad wartet die Dusche (HP/MP wieder voll), in der Küche Kühlschrank und Kaffeemaschine, im Wohnzimmer der Fernseher.' }
             ]);
             if (started === false) {
                 // Es lief gerade eine andere Szene -> nicht als "gesehen" markieren,
