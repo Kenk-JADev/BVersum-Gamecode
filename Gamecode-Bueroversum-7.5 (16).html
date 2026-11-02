@@ -38491,6 +38491,11 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             Array.from(occlusionLayer.children).forEach(o => o.classList.remove("bv-occ-fade"));
                         }
                     }
+                    // Map-Wechsel sofort cachen (auch waehrend TRANSITION), damit Nacht/Lampen
+                    // der neuen Map bereits beim Einblenden stimmen - kein Nachhaengen mehr.
+                    if (typeof bvNightRefreshCache === "function" && currentMapId && bvNightCache.mapId !== currentMapId) {
+                        bvNightRefreshCache();
+                    }
                 }
 
                 function bvOcclusionFadeTick() {
@@ -38545,17 +38550,20 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                 let bvNightLastDraw = "";
 
                 const BV_NIGHT_PROFILE = {
-                    buero:       { max: 0.62 },
-                    flur:        { max: 0.66, extra: [[5, 4, 90, "#ffd28a"], [14, 4, 90, "#ffd28a"], [5, 15, 90, "#ffd28a"], [14, 15, 90, "#ffd28a"]] },
-                    zentrale:    { max: 0.58 },
+                    // BETRIEBSLICHT-Orte: Hauptbeleuchtung bleibt nachts an -> nur leicht abgedunkelt
+                    buero:       { max: 0.30 },
+                    flur:        { max: 0.45, extra: [[5, 4, 90, "#ffd28a"], [14, 4, 90, "#ffd28a"], [5, 15, 90, "#ffd28a"], [14, 15, 90, "#ffd28a"]] },
+                    zentrale:    { max: 0.35 },
+                    kantine:     { max: 0.30, extra: [[5, 4, 85, "#ffd9a0"], [14, 4, 85, "#ffd9a0"], [23, 4, 85, "#ffd9a0"]] },
+                    pausenraum:  { max: 0.25 },
+                    // KELLERLICHT-Orte: kaum/kein Betriebslicht -> fast stockfinster
                     serverraum:  { max: 0.84 },
-                    kantine:     { max: 0.52, extra: [[5, 4, 85, "#ffd9a0"], [14, 4, 85, "#ffd9a0"], [23, 4, 85, "#ffd9a0"]] },
                     lager:       { max: 0.86, extra: [[13, 8, 95, "#ffca7a"]] },
-                    konferenz:   { max: 0.60, extra: [[10, 7, 100, "#dfe8ff"]] },
-                    boss_office: { max: 0.74, extra: [[12, 4, 95, "#ffb066"]] },
                     archiv:      { max: 0.88, extra: [[12, 6, 75, "#e6d3a8"]] },
-                    dach:        { max: 0.56, extra: [[2, 2, 65, "#9ad4ff"]] },
-                    pausenraum:  { max: 0.50 }
+                    // DRAMATIK-Orte
+                    konferenz:   { max: 0.50, extra: [[10, 7, 100, "#dfe8ff"]] },
+                    boss_office: { max: 0.74, extra: [[12, 4, 95, "#ffb066"]] },
+                    dach:        { max: 0.56, extra: [[2, 2, 65, "#9ad4ff"]] }
                 };
                 // Deko-Typ -> Lichtquelle (wird automatisch aus currentDecos erzeugt)
                 const BV_NIGHT_LAMP_GLOW = {
@@ -38624,11 +38632,14 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                     const overlayOpen = !!(overlay && (overlay.classList.contains("open") || overlay.classList.contains("opening")));
                     const sceneActive = overlayOpen && bvSceneFxWasOff === false;
                     if (sceneActive) bvNightAdvance(1 / 60);
+                    // Map-Wechsel SOFORT nachfuehren (Lampen/Dunkelheit der neuen Map) -
+                    // nicht erst nach dem Einblenden, sonst haengt die alte
+                    // Map-Atmosphaere kurz nach der Transition nach.
+                    if (currentMapId && bvNightCache.mapId !== currentMapId) bvNightRefreshCache();
                     const dark = Math.min(0.92, bvNightLevel * (bvNightCache.max || 0.6));
                     const on = sceneActive && dark > 0.02;
                     gw.classList.toggle("bv-night-active", on);
                     if (!on) { bvNightLastDraw = ""; return; }
-                    if (currentMapId && bvNightCache.mapId !== currentMapId) bvNightRefreshCache();
 
                     const vp = document.getElementById("rpg-viewport");
                     if (!vp) return;
