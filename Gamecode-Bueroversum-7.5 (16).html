@@ -36394,6 +36394,16 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         ]
                     },
 
+                    kabelsalat: { 
+                        name: "Kabelsalat-Krake", sprite: "🐙", hp: 62, atk: 14, def: 4, gold: 44, exp: 27, level: 3, 
+                        vsMessage: "Zzzt! Wer wagt es, mein Kabel-Territorium zu betreten?!",
+                        skills: [
+                            { name: "Kabel-Würger", icon: "🔌", dmgMult: 1.35, effect: "stun", chance: 0.3, desc: "Wickelt dich fest in Kabel ein!" },
+                            { name: "Netzteil-Schock", icon: "⚡", dmgMult: 1.6, effect: "none", chance: 0.3, desc: "230 Volt Büro-Realität!" },
+                            { name: "Stolper-Tentakel", icon: "🐙", dmgMult: 1.0, effect: "defDown", chance: 0.2, desc: "Du stolperst über das Kabelchaos!" }
+                        ]
+                    },
+
                     // ===== ARENA: eigene Gegner statt Ersatz-EnemyIds =====
                     stoersignal: {
                         name: "Störsignal", sprite: "📡", hp: 58, atk: 13, def: 3, gold: 38, exp: 24, level: 3,
@@ -37049,7 +37059,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             { x: 10, y: 7, type: "talk", sprite: "🤖", name: "Server-Admin", role: "IT", dialog: ["*BEEP BOOP*", "Server-Status: Online."] },
                             { x: 6, y: 4, type: "enemy", sprite: "🐛", name: "Kritischer Bug", enemyId: "bug" },
                             { x: 14, y: 10, type: "enemy", sprite: "🔄", name: "Updates", enemyId: "update" },
-                            { x: 18, y: 7, type: "enemy", sprite: "🚨", name: "Fehlalarm", enemyId: "feueralarm" }
+                            { x: 18, y: 7, type: "enemy", sprite: "🚨", name: "Fehlalarm", enemyId: "feueralarm" },
+                            { x: 22, y: 7, type: "enemy", sprite: "🐙", name: "Kabelsalat-Krake", enemyId: "kabelsalat" }
                         ],
                         start: { x: 2, y: 5 }
                     },
