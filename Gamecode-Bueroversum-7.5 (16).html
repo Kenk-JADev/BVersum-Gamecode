@@ -36827,39 +36827,57 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                         name: "Pausenraum",
                         cols: 18, rows: 14,
                         tiles: (function () {
+                            // v7.15: Pausenraum neu aufgebaut – Teeküche oben, zwei Lounges,
+                            // Leseecke in der Mitte. Tür unten bleibt bei (9,13).
                             const W = 18, H = 14;
-                            let t = [];
+                            const t = [];
                             for (let y = 0; y < H; y++) {
                                 t[y] = [];
-                                for (let x = 0; x < W; x++) {
-                                    // Tür unten auf Außenwand
-                                    if (x === 9 && y === 13) t[y][x] = 6;
-                                    else if (y === 0 || y === H - 1 || x === 0 || x === W - 1) t[y][x] = 1;
-                                    // Fenster/Lichtreihe oben
-                                    else if (y === 1 && (x === 4 || x === 8 || x === 13)) t[y][x] = 12;
-                                    // Sitzinseln / Teppiche
-                                    else if (x >= 3 && x <= 6 && y >= 4 && y <= 6) t[y][x] = 4;
-                                    else if (x >= 11 && x <= 14 && y >= 4 && y <= 6) t[y][x] = 4;
-                                    else if (x >= 7 && x <= 10 && y >= 8 && y <= 10) t[y][x] = 5;
-                                    // Sofa/Sitze/Automaten als Blocker
-                                    else if ((x === 2 && y >= 4 && y <= 6) || (x === 15 && y >= 4 && y <= 6)) t[y][x] = 15;
-                                    else if ((x === 4 && y === 3) || (x === 13 && y === 3)) t[y][x] = 2;
-                                    else if (x === 2 && y === 10) t[y][x] = 20;
-                                    else if (x === 15 && y === 10) t[y][x] = 19;
-                                    else if ((x === 6 && y === 11) || (x === 12 && y === 11)) t[y][x] = 3;
-                                    else t[y][x] = 13;
-                                }
+                                for (let x = 0; x < W; x++) t[y][x] = (y === 0 || y === H - 1 || x === 0 || x === W - 1) ? 1 : 13;
                             }
-                            // Weg von Tür zum Raumzentrum
-                            for (let y = 8; y < 13; y++) { t[y][9] = 4; t[y][8] = 4; }
-                            t[13][9] = 6;
+                            const set = (x, y, v) => { if (x > 0 && x < W - 1 && y > 0 && y < H - 1) t[y][x] = v; };
+                            const fill = (x0, y0, x1, y1, v) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, v); };
+
+                            // Fensterbänder
+                            [4, 8, 13].forEach(x => { t[0][x] = 12; });
+                            [5, 9].forEach(y => { t[y][0] = 12; t[y][W - 1] = 12; });
+
+                            // Sitzinseln
+                            fill(1, 4, 6, 6, 4);      // Lounge links
+                            fill(11, 4, 16, 6, 4);    // Lounge rechts
+                            fill(7, 8, 10, 11, 5);    // Leseecke Mitte
+
+                            // Teeküche (Theke) + Bücherregal
+                            fill(12, 1, 16, 1, 8);
+                            fill(1, 1, 2, 1, 10);
+
+                            // Sofas
+                            set(1, 5, 15); set(1, 6, 15);
+                            set(16, 5, 15); set(16, 6, 15);
+                            set(7, 11, 15); set(10, 11, 15);
+
+                            // Tische + Stühle
+                            set(4, 4, 2); set(5, 4, 11);
+                            set(12, 4, 2); set(13, 4, 11);
+
+                            // Automaten, Pflanzen, Säule
+                            set(1, 9, 20);            // Snackautomat
+                            set(16, 9, 19);           // Wasserspender
+                            set(2, 11, 3); set(15, 11, 3);
+                            set(6, 2, 3); set(11, 2, 3);
+                            set(3, 9, 17);
+
+                            // Weg von der Tür nach oben
+                            for (let y = 7; y < 13; y++) { set(9, y, 4); set(8, y, 4); }
+                            t[13][9] = 6;   // Tür zum Flur (Außenwand)
                             return t;
                         })(),
                         decos: [
-                            { x: 4, y: 3, type: "coffee" }, { x: 13, y: 3, type: "coffee" },
-                            { x: 2, y: 10, type: "vending" }, { x: 15, y: 10, type: "water_cooler" },
-                            { x: 6, y: 11, type: "plant" }, { x: 12, y: 11, type: "plant" },
-                            { x: 8, y: 2, type: "clock" }, { x: 10, y: 2, type: "poster" }
+                            { x: 13, y: 1, type: "coffee" }, { x: 15, y: 1, type: "microwave" },
+                            { x: 8, y: 2, type: "clock" }, { x: 10, y: 2, type: "poster" },
+                            { x: 1, y: 9, type: "vending" }, { x: 16, y: 9, type: "water_cooler" },
+                            { x: 6, y: 9, type: "football" }, { x: 12, y: 11, type: "papers" },
+                            { x: 4, y: 4, type: "lamp" }
                         ],
                         chests: [
                             { x: 15, y: 2, type: "normal" },
@@ -36869,6 +36887,8 @@ body.bv-settings-reduced-motion .bv-stamp-impact { animation-duration: .25s; box
                             { x: 5, y: 5, type: "talk", sprite: "☕", name: "Mira", role: "Pausencoach", dialog: ["Willkommen im Pausenraum.", "Hier sammelt man Energie, bevor das Büro zurückschlägt.", "Tipp: Mittags fühlen sich Pausen besonders gut an."], wander: true },
                             { x: 12, y: 5, type: "talk", sprite: "🧘", name: "Ruhiger Ralf", role: "Entspannung", dialog: ["Atme ein... und ignorier die ungelesenen Mails.", "Eine kurze Pause kann stärker sein als ein Skill."], wander: true },
                             { x: 9, y: 9, type: "shop", sprite: "🍪", name: "Snack-Sandra", role: "Snack-Bar", dialog: ["Kekse, Kaffee, Nervennahrung!", "Pausenraum-Snacks sind offiziell motivierend."] },
+                            // v7.15: Neue Figur im Pausenraum
+                            { x: 14, y: 2, type: "talk", sprite: "🧋", name: "Barista Ben", role: "Kaffeebar", dialog: ["Ben, Kaffeebar. Ich braue hier die einzige Rettung gegen das Mittagstief.", "Ein Schluck und die MP sind wieder da – zumindest fühlt es sich so an. ☕"], wander: true },
                             { x: 14, y: 8, type: "enemy", sprite: "🥱", name: "Mittagstief", enemyId: "deadline", wander: true }
                         ],
                         start: { x: 9, y: 12 }
