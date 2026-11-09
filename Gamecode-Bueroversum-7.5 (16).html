@@ -72700,14 +72700,6 @@ console.log('   → ' + BV_SHOP_ITEMS.length + ' Items | ' + BV_SKILL_ITEMS.leng
         if (!node) return;
         node.textContent = glyph || '';
         if (typeof window.parseEmojis === 'function') window.parseEmojis(node);
-        else if (typeof twemoji !== 'undefined') {
-            try {
-                twemoji.parse(node, {
-                    folder: 'svg', ext: '.svg',
-                    base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'
-                });
-            } catch (e) {}
-        }
     }
     function lock(on) {
         document.getElementById('rpg-overlay')?.classList.toggle('exit-cinematic-lock', !!on);
